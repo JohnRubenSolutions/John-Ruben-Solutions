@@ -11,12 +11,11 @@
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>John Ruben Solutions - Weight Management Tools</title>
+<title>John Ruben Solutions - Macronutrient Target Calculator</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@300;400;600;700&display=swap" rel="stylesheet">
 
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
@@ -36,8 +35,7 @@
                     }
                 },
                 fontFamily: { 
-                    sans: ['"Plus Jakarta Sans"', 'sans-serif'],
-                    comfortaa: ['"Comfortaa"', 'cursive'] 
+                    sans: ['"Plus Jakarta Sans"', 'sans-serif']
                 },
                 boxShadow: {
                     'glow': '0 0 20px rgba(132, 204, 22, 0.15)',
@@ -61,68 +59,18 @@
         background-position: right 1rem center; 
         background-size: 1em; 
     }
-
-    /* PULSE ANIMATION */
-    @keyframes pulse-dot {
-        0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
-        70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
-        100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
-    }
-    .animate-pulse-dot {
-        animation: pulse-dot 2s infinite;
-    }
 </style>
 </head>
 <body class="antialiased pb-20 selection:bg-brand-green selection:text-brand-navy">
 
     <div class="max-w-3xl mx-auto px-4 pt-10">
 
-        <div class="text-center mb-10">
+        <div class="text-center mb-8">
             <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight text-white mb-2">JOHN RUBEN</h1>
-            <p class="text-xs font-bold text-brand-green uppercase tracking-[0.3em] mb-6">Weight Management Tools</p>
-            
-            <div class="max-w-xl mx-auto space-y-4">
-                <h2 class="text-2xl font-bold text-white">Take Control of Your Daily Diet</h2>
-                
-                <p class="text-brand-muted text-sm leading-relaxed">
-                    Whether you want to <strong class="text-white">lose weight</strong>, <strong class="text-white">gain muscle</strong>, or simply <strong class="text-white">live healthier</strong>, our <strong class="text-white">free tools</strong> are here to help you calculate <strong class="text-white">metabolic targets</strong>, analyze <strong class="text-white">nutrition facts</strong>, and check <strong class="text-white">medication</strong> interactions.
-                </p>
-
-                <p class="text-brand-muted text-sm leading-relaxed">
-                    Success isn't about willpower—it's about identifying your "why." Whether it's for mental health or a better quality of life, finding your purpose turns healthy living into a routine as automatic as brushing your teeth.
-                </p>
-
-                <p class="text-brand-green/90 italic font-medium text-xs md:text-sm border-l-2 border-brand-green pl-3 mx-auto max-w-md">
-                    "For God gave us a spirit not of fear but of power and love and self-control." — 2 Timothy 1:7
-                </p>
-            </div>
-        </div>
-
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-10">
-            <a href="https://johnrubensolutions.github.io/Nutrition-Information-Scanner/Food-Scanner/" target="_top" class="p-4 bg-brand-card border border-slate-700 hover:border-brand-green hover:shadow-glow rounded-2xl text-center transition-all group">
-                <div class="text-2xl mb-2 group-hover:scale-110 transition-transform">🥗</div>
-                <div class="text-xs font-bold text-white">Food Search</div>
-            </a>
-            <a href="https://www.johnrubensolutions.com/medication-information" target="_top" class="p-4 bg-brand-card border border-slate-700 hover:border-brand-teal hover:shadow-glow-teal rounded-2xl text-center transition-all group">
-                <div class="text-2xl mb-2 group-hover:scale-110 transition-transform">💊</div>
-                <div class="text-xs font-bold text-white">Drug Info</div>
-            </a>
-            <a href="https://www.johnrubensolutions.com/learn-more" target="_top" class="p-4 bg-brand-card border border-slate-700 hover:border-white rounded-2xl text-center transition-all group">
-                <div class="text-2xl mb-2 group-hover:scale-110 transition-transform">📚</div>
-                <div class="text-xs font-bold text-white">Protocols</div>
-            </a>
-            <a href="https://www.johnrubensolutions.com/about-me" target="_top" class="p-4 bg-brand-card border border-slate-700 hover:border-white rounded-2xl text-center transition-all group">
-                <div class="text-2xl mb-2 group-hover:scale-110 transition-transform">👤</div>
-                <div class="text-xs font-bold text-white">About Me</div>
-            </a>
+            <h2 class="text-xl md:text-2xl font-bold text-brand-green tracking-tight">Macronutrient Target Calculator</h2>
         </div>
 
         <div class="bg-brand-card rounded-[2rem] border border-slate-700 shadow-2xl p-6 md:p-8 mb-8">
-            <h3 class="text-xl font-extrabold text-white mb-6 flex items-center gap-3">
-                <span class="w-1.5 h-6 bg-brand-green rounded-full shadow-[0_0_10px_#84cc16]"></span>
-                Macronutrient Target Calculator
-            </h3>
-
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 <div class="space-y-2">
                     <label class="text-xs font-bold text-brand-muted uppercase tracking-wider">Gender</label>
@@ -181,28 +129,6 @@
             <button onclick="calculate()" class="w-full py-4 bg-gradient-to-r from-brand-green to-lime-600 hover:to-brand-green text-brand-navy rounded-xl font-extrabold text-lg shadow-glow transition-all active:scale-[0.98]">
                 GENERATE TARGETS
             </button>
-        </div>
-
-        <div class="flex justify-center mb-10 w-full">
-            <a href="https://www.johnrubensolutions.com/apply-for-a-live-strategy-call" target="_top" class="group relative w-full"> 
-                <div class="absolute inset-0 bg-brand-green blur-lg opacity-20 group-hover:opacity-40 transition-opacity rounded-full"></div>
-                
-                <div class="relative flex items-center justify-between bg-gradient-to-r from-brand-card to-slate-800 border border-brand-green/30 p-3 pr-5 rounded-full shadow-2xl hover:scale-[1.01] transition-transform cursor-pointer">
-                    
-                    <div class="flex items-center gap-3 w-full"> 
-                        <div class="bg-brand-navy p-2.5 rounded-full relative flex-shrink-0">
-                            <div class="w-3 h-3 bg-red-500 rounded-full animate-pulse-dot"></div>
-                        </div>
-                        
-                        <div class="flex flex-col text-left flex-grow">
-                            <span class="text-[11px] md:text-xs font-bold uppercase tracking-wide text-brand-green leading-tight">Limited Spots Available</span>
-                            <span class="font-extrabold text-[13px] md:text-sm text-white leading-tight whitespace-nowrap">APPLY FOR A LIVE CALL TODAY!</span>
-                        </div>
-                    </div>
-
-                    <svg xmlns="http://www.w3.org/2000/svg" class="text-white/50 w-5 h-5 flex-shrink-0 group-hover:translate-x-1 transition-transform ml-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
-                </div>
-            </a>
         </div>
 
         <div id="results" class="hidden animate-up">
