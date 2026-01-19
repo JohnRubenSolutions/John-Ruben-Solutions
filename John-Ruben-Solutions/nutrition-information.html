@@ -125,8 +125,10 @@
             const [measureUnit, setMeasureUnit] = useState('g');
             const [isScanning, setIsScanning] = useState(false);
             const [loading, setLoading] = useState(false);
+            
             const scannerRef = useRef(null);
-            const chartRef = useRef(null); 
+            const chartRef = useRef(null);
+            const chartInstance = useRef(null); // STABLE CHART REF
 
             useEffect(() => {
                 const check = setInterval(() => {
@@ -147,6 +149,7 @@
                 if (snap.exists()) setTargets(snap.data());
             };
 
+            // DATA FETCHING
             useEffect(() => {
                 if (!user || !window.fb) return;
                 const q = window.fb.query(window.fb.collection(window.fb.db, "users", user.uid, "logs"), window.fb.where("date", "==", currentDate));
@@ -165,14 +168,16 @@
                 return () => unsub();
             }, [user, currentDate]);
 
+            // ANALYTICS & GRAPH
             useEffect(() => {
                 if (view === 'trends' && user) {
-                    setTimeout(calculateAnalytics, 100);
+                    setTimeout(calculateAnalytics, 200); // Slight delay for canvas render
                 }
             }, [view, user]);
 
             const calculateAnalytics = async () => {
                 if(!chartRef.current) return;
+
                 const logSnap = await window.fb.getDocs(window.fb.collection(window.fb.db, "users", user.uid, "logs"));
                 const weightSnap = await window.fb.getDocs(window.fb.collection(window.fb.db, "users", user.uid, "daily_stats"));
                 
@@ -188,6 +193,7 @@
                     dailyData[d.date].weight = parseFloat(d.weight);
                 });
 
+                // --- SCORES ---
                 const dates = Object.keys(dailyData).sort();
                 if (dates.length > 0) {
                     const firstDate = new Date(dates[0]);
@@ -212,6 +218,7 @@
                     setScores({ adherence: adherenceScore, consistency: consistencyScore });
                 }
 
+                // --- CHART DATA ---
                 const weeklyData = {};
                 Object.keys(dailyData).forEach(dateStr => {
                     const weekKey = getWeekNumber(new Date(dateStr));
@@ -232,9 +239,13 @@
                 const avgCals = sortedWeeks.map(w => weeklyData[w].daysWithCals ? weeklyData[w].totalCals / weeklyData[w].daysWithCals : 0);
                 const avgWeights = sortedWeeks.map(w => weeklyData[w].daysWithWeight ? weeklyData[w].totalWeight / weeklyData[w].daysWithWeight : null);
 
-                if (window.myChart) window.myChart.destroy();
+                // --- DESTROY & RE-RENDER ---
+                if (chartInstance.current) {
+                    chartInstance.current.destroy();
+                }
+
                 const ctx = chartRef.current.getContext('2d');
-                window.myChart = new Chart(ctx, {
+                chartInstance.current = new Chart(ctx, {
                     type: 'line',
                     data: {
                         labels: labels,
@@ -256,6 +267,7 @@
             };
 
             const exportFullHistory = async () => {
+                // Force Render Graph
                 setView('trends');
                 await new Promise(r => setTimeout(r, 1500)); 
 
@@ -292,6 +304,7 @@
 
                 let finalY = 130; 
 
+                // DAILY TABLES
                 Object.keys(grouped).forEach(date => {
                     if (finalY > 250) { doc.addPage(); finalY = 20; }
                     const items = grouped[date];
@@ -382,27 +395,20 @@
                 doc.save("Full_History_Report.pdf");
             };
 
-            const saveWeight = async () => {
-                if (!user) return;
-                await window.fb.setDoc(window.fb.doc(window.fb.db, "users", user.uid, "daily_stats", currentDate), { weight: dailyWeight, date: currentDate }, { merge: true });
-            };
-
-            // HARD RESET FUNCTION
+            // HARD RESET
             const hardReset = async () => {
-                if(!confirm("⚠️ DANGER: Are you sure you want to delete ALL data? This action cannot be undone.")) return;
+                if(!confirm("Nutrition Information Says:\n\n⚠️ DANGER: Are you sure you want to delete ALL data? This action cannot be undone.")) return;
                 if(!confirm("Final Confirmation: Do you want to wipe your entire history and start fresh?")) return;
                 
                 try {
                     setLoading(true);
                     
-                    // 1. Delete all logs
                     const logsQ = window.fb.query(window.fb.collection(window.fb.db, "users", user.uid, "logs"));
                     const logsSnap = await window.fb.getDocs(logsQ);
                     const batch1 = window.fb.writeBatch(window.fb.db);
                     logsSnap.forEach(d => batch1.delete(d.ref));
                     await batch1.commit();
 
-                    // 2. Delete all daily stats (weight)
                     const statsQ = window.fb.query(window.fb.collection(window.fb.db, "users", user.uid, "daily_stats"));
                     const statsSnap = await window.fb.getDocs(statsQ);
                     const batch2 = window.fb.writeBatch(window.fb.db);
@@ -413,7 +419,7 @@
                     setLog([]);
                     setDailyWeight("");
                     setScores({ adherence: 0, consistency: 0 });
-                    if(window.myChart) window.myChart.destroy();
+                    if(chartInstance.current) chartInstance.current.destroy();
                     
                 } catch(e) {
                     console.error(e);
@@ -421,6 +427,11 @@
                 } finally {
                     setLoading(false);
                 }
+            };
+
+            const saveWeight = async () => {
+                if (!user) return;
+                await window.fb.setDoc(window.fb.doc(window.fb.db, "users", user.uid, "daily_stats", currentDate), { weight: dailyWeight, date: currentDate }, { merge: true });
             };
 
             const handleSearch = async (e, overrideQuery = null) => {
@@ -747,7 +758,7 @@
                             <div className="bg-brand-card p-4 rounded-2xl border border-slate-700">
                                 <h3 className="font-bold text-white mb-4">Weekly Trends</h3>
                                 <div className="relative h-80 w-full">
-                                    <canvas id="trendChart"></canvas>
+                                    <canvas ref={chartRef} id="trendChart"></canvas>
                                 </div>
                             </div>
                         </div>
