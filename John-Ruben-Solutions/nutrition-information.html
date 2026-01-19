@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>John Ruben Solutions - Food Tracker</title>
+    <title>John Ruben Solutions - Advanced Tracker</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -14,11 +14,13 @@
     
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, query, where, onSnapshot, deleteDoc, doc, setDoc, getDoc, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, query, where, onSnapshot, deleteDoc, doc, setDoc, getDoc, orderBy, serverTimestamp, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         
         const firebaseConfig = {
             apiKey: "AIzaSyD2h_sejv6lB8sFC15xHSgqxfdD2hLd5Kg",
@@ -34,13 +36,7 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
         
-        // Expose to Global Window for React
-        window.fb = { 
-            auth, db, 
-            signInWithEmailAndPassword, createUserWithEmailAndPassword, 
-            onAuthStateChanged, signOut, 
-            collection, addDoc, query, where, onSnapshot, deleteDoc, doc, setDoc, getDoc, orderBy, serverTimestamp 
-        };
+        window.fb = { auth, db, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, collection, addDoc, query, where, onSnapshot, deleteDoc, doc, setDoc, getDoc, getDocs, orderBy, serverTimestamp };
     </script>
     
     <script>
@@ -58,10 +54,9 @@
     <style> 
         body { background-color: #0f172a; color: #f8fafc; } 
         #reader video { object-fit: cover; border-radius: 12px; }
-        /* Scrollbar */
-        .dropdown-scroll::-webkit-scrollbar { width: 4px; }
-        .dropdown-scroll::-webkit-scrollbar-track { background: #334155; }
-        .dropdown-scroll::-webkit-scrollbar-thumb { background: #84cc16; border-radius: 3px; }
+        .table-scroll::-webkit-scrollbar { height: 4px; width: 4px; }
+        .table-scroll::-webkit-scrollbar-thumb { background: #84cc16; border-radius: 4px; }
+        .table-scroll::-webkit-scrollbar-track { background: #1e293b; }
     </style>
 </head>
 <body>
@@ -70,17 +65,16 @@
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
         const API_KEY = '4FRpc4urF9W2UedPH6agara8y52PR0efkZRmoPvv'; 
-        
+
+        // --- AUTH COMPONENT ---
         const AuthScreen = () => {
             const [isRegister, setIsRegister] = useState(false);
             const [email, setEmail] = useState("");
             const [password, setPassword] = useState("");
             const [error, setError] = useState("");
-            
             const handleSubmit = async (e) => {
-                e.preventDefault();
-                setError("");
-                if(!window.fb) { setError("Firebase not loaded. Refresh page."); return; }
+                e.preventDefault(); setError("");
+                if(!window.fb) return setError("Firebase loading...");
                 try {
                     if (isRegister) await window.fb.createUserWithEmailAndPassword(window.fb.auth, email, password);
                     else await window.fb.signInWithEmailAndPassword(window.fb.auth, email, password);
@@ -94,7 +88,7 @@
                             <input type="email" placeholder="Email" className="w-full p-3 mb-4 bg-brand-input rounded-xl text-white outline-none focus:border-brand-green border border-transparent" value={email} onChange={e=>setEmail(e.target.value)} />
                             <input type="password" placeholder="Password" className="w-full p-3 mb-6 bg-brand-input rounded-xl text-white outline-none focus:border-brand-green border border-transparent" value={password} onChange={e=>setPassword(e.target.value)} />
                             {error && <p className="text-red-500 text-xs mb-4 text-center">{error}</p>}
-                            <button type="submit" className="w-full py-3 bg-brand-green text-brand-navy font-bold rounded-xl">{isRegister ? "Sign Up" : "Log In"} </button>
+                            <button type="submit" className="w-full py-3 bg-brand-green text-brand-navy font-bold rounded-xl">{isRegister ? "Sign Up" : "Log In"}</button>
                         </form>
                         <button onClick={()=>setIsRegister(!isRegister)} className="w-full mt-4 text-xs text-slate-400 hover:text-white underline">{isRegister ? "Already have an account? Log In" : "Need account? Sign Up"}</button>
                     </div>
@@ -104,51 +98,54 @@
 
         const App = () => {
             const [user, setUser] = useState(null);
-            const [targets, setTargets] = useState(null);
+            const [view, setView] = useState("daily"); // 'daily' or 'trends'
+            const [targets, setTargets] = useState({ calories: 2000, protein: 150, carbs: 200, fat: 60 }); // Defaults
             const [query, setQuery] = useState("");
-            const [resultsList, setResultsList] = useState([]); // Fixed Variable Name
+            const [results, setResults] = useState([]);
             const [currentDate, setCurrentDate] = useState(new Date().toISOString().split('T')[0]);
             const [log, setLog] = useState([]);
             const [dailyWeight, setDailyWeight] = useState("");
-            
-            // Selection & Adjustment
             const [selectedFood, setSelectedFood] = useState(null);
             const [displayAmount, setDisplayAmount] = useState(100);
             const [measureUnit, setMeasureUnit] = useState('g');
-            
             const [isScanning, setIsScanning] = useState(false);
             const [loading, setLoading] = useState(false);
-            const [error, setError] = useState("");
             const scannerRef = useRef(null);
+            const chartRef = useRef(null); // Reference for Chart.js canvas
 
-            // 1. Auth Listener
+            // --- INIT ---
             useEffect(() => {
-                const checkFb = setInterval(() => {
+                const check = setInterval(() => {
                     if (window.fb) {
-                        clearInterval(checkFb);
+                        clearInterval(check);
                         window.fb.onAuthStateChanged(window.fb.auth, (u) => {
                             setUser(u);
-                            if (u) loadTargets(u.uid);
+                            if(u) loadTargets(u.uid);
                         });
                     }
                 }, 500);
-                return () => clearInterval(checkFb);
+                return () => clearInterval(check);
             }, []);
 
-            // 2. Fetch Data (Log + Weight)
+            const loadTargets = async (uid) => {
+                const docRef = window.fb.doc(window.fb.db, "users", uid, "data", "targets");
+                const snap = await window.fb.getDoc(docRef);
+                if (snap.exists()) setTargets(snap.data());
+            };
+
+            // --- DATA FETCHING ---
             useEffect(() => {
                 if (!user || !window.fb) return;
                 
-                // Fetch Log
+                // Real-time Daily Log
                 const q = window.fb.query(window.fb.collection(window.fb.db, "users", user.uid, "logs"), window.fb.where("date", "==", currentDate));
                 const unsub = window.fb.onSnapshot(q, (snap) => {
-                    const rawLogs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-                    // Client side sort to avoid Firestore index requirement
-                    rawLogs.sort((a,b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
-                    setLog(rawLogs);
+                    const raw = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                    raw.sort((a,b) => (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0)); // Ascending time
+                    setLog(raw);
                 });
                 
-                // Fetch Weight
+                // Daily Weight
                 const fetchWeight = async () => {
                     const docRef = window.fb.doc(window.fb.db, "users", user.uid, "daily_stats", currentDate);
                     const docSnap = await window.fb.getDoc(docRef);
@@ -158,152 +155,199 @@
                 return () => unsub();
             }, [user, currentDate]);
 
-            const loadTargets = async (uid) => {
-                const docRef = window.fb.doc(window.fb.db, "users", uid, "data", "targets");
-                const snap = await window.fb.getDoc(docRef);
-                if (snap.exists()) setTargets(snap.data());
+            // --- CHART RENDERING (Effect) ---
+            useEffect(() => {
+                if (view === 'trends' && user && chartRef.current) {
+                    renderTrendChart();
+                }
+            }, [view, user]);
+
+            const renderTrendChart = async () => {
+                // Fetch all history for chart
+                const logSnap = await window.fb.getDocs(window.fb.collection(window.fb.db, "users", user.uid, "logs"));
+                const weightSnap = await window.fb.getDocs(window.fb.collection(window.fb.db, "users", user.uid, "daily_stats"));
+                
+                const dataMap = {}; 
+
+                // Process Calories
+                logSnap.forEach(doc => {
+                    const d = doc.data();
+                    if(!dataMap[d.date]) dataMap[d.date] = { cals: 0, weight: null };
+                    dataMap[d.date].cals += d.calories;
+                });
+
+                // Process Weight
+                weightSnap.forEach(doc => {
+                    const d = doc.data();
+                    if(!dataMap[d.date]) dataMap[d.date] = { cals: 0, weight: null };
+                    dataMap[d.date].weight = parseFloat(d.weight);
+                });
+
+                // Group into Weeks
+                const sortedDates = Object.keys(dataMap).sort();
+                if(sortedDates.length === 0) return;
+
+                const weeks = [];
+                let currentWeek = { label: "Week 1", cals: [], weights: [], count: 0 };
+                let startDate = new Date(sortedDates[0]);
+
+                sortedDates.forEach(dateStr => {
+                    const d = new Date(dateStr);
+                    const diffTime = Math.abs(d - startDate);
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+                    
+                    if (diffDays > 7) {
+                        weeks.push(currentWeek);
+                        startDate = d;
+                        currentWeek = { label: `Week ${weeks.length + 1}`, cals: [], weights: [], count: 0 };
+                    }
+                    
+                    if (dataMap[dateStr].cals > 0) currentWeek.cals.push(dataMap[dateStr].cals);
+                    if (dataMap[dateStr].weight) currentWeek.weights.push(dataMap[dateStr].weight);
+                });
+                weeks.push(currentWeek);
+
+                // Prepare Chart Data
+                const labels = weeks.map(w => w.label);
+                const avgCals = weeks.map(w => w.cals.length ? w.cals.reduce((a,b)=>a+b,0)/w.cals.length : 0);
+                const avgWeight = weeks.map(w => w.weights.length ? w.weights.reduce((a,b)=>a+b,0)/w.weights.length : null);
+
+                // Destroy old chart if exists
+                if (window.myChart) window.myChart.destroy();
+
+                const ctx = chartRef.current.getContext('2d');
+                window.myChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [
+                            {
+                                label: 'Avg Calories',
+                                data: avgCals,
+                                borderColor: '#84cc16', // Brand Green
+                                yAxisID: 'y',
+                                tension: 0.3
+                            },
+                            {
+                                label: 'Avg Weight (lbs)',
+                                data: avgWeight,
+                                borderColor: '#22d3ee', // Brand Teal
+                                yAxisID: 'y1',
+                                tension: 0.3
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        interaction: { mode: 'index', intersect: false },
+                        scales: {
+                            y: { type: 'linear', display: true, position: 'left', title: {display: true, text:'Calories'} },
+                            y1: { type: 'linear', display: true, position: 'right', grid: { drawOnChartArea: false }, title: {display: true, text:'Weight'} }
+                        }
+                    }
+                });
             };
 
+            // --- ACTIONS ---
             const saveWeight = async () => {
                 if (!user) return;
                 await window.fb.setDoc(window.fb.doc(window.fb.db, "users", user.uid, "daily_stats", currentDate), { weight: dailyWeight, date: currentDate }, { merge: true });
             };
 
-            // 3. Search Logic
-            const parseInput = (inputString) => {
-                const weightRegex = /(\d+(\.\d+)?)\s*(g|gram|grams)\b/i;
-                const match = inputString.match(weightRegex);
-                let detectedWeight = null;
-                let cleanTerm = inputString;
-                if (match) {
-                    detectedWeight = parseFloat(match[1]);
-                    cleanTerm = inputString.replace(match[0], '').trim();
-                }
-                cleanTerm = cleanTerm.replace(/^\s*[-,\.]+\s*/, '').trim();
-                return { term: cleanTerm, weight: detectedWeight };
-            };
-
             const handleSearch = async (e, overrideQuery = null) => {
                 if (e) e.preventDefault();
-                const qRaw = overrideQuery || query;
-                if (!qRaw) return;
+                const qTerm = overrideQuery || query;
+                if (!qTerm) return;
+                setLoading(true); setResults([]); setSelectedFood(null);
 
-                const { term, weight } = parseInput(qRaw);
-                const startGrams = weight || 100;
-                
-                setLoading(true); setError(""); setSelectedFood(null); setResultsList([]);
-                
                 // Barcode
-                if (/^\d+$/.test(term)) {
+                if (/^\d+$/.test(qTerm)) {
                     try {
-                        let res = await fetch(`https://api.nal.usda.gov/fdc/v1/foods/search?api_key=${API_KEY}&query=${term}&pageSize=1&dataType=Branded,SR Legacy`);
+                        let res = await fetch(`https://api.nal.usda.gov/fdc/v1/foods/search?api_key=${API_KEY}&query=${qTerm}&pageSize=1&dataType=Branded,SR Legacy`);
                         let data = await res.json();
-                        if (data.foods && data.foods.length > 0) {
-                            selectFood(data.foods[0], startGrams);
-                            setLoading(false);
-                            return;
-                        } 
-                        // Fallback OpenFoodFacts
-                        res = await fetch(`https://world.openfoodfacts.org/api/v0/product/${term}.json`);
+                        if (data.foods && data.foods.length > 0) { selectFood(data.foods[0]); setLoading(false); return; }
+                        
+                        res = await fetch(`https://world.openfoodfacts.org/api/v0/product/${qTerm}.json`);
                         data = await res.json();
                         if(data.status === 1) {
                              const p = data.product;
                              const n = p.nutriments;
-                             const item = {
-                                name: p.product_name || "Unknown Product",
+                             setSelectedFood({
+                                name: p.product_name,
                                 calories: n['energy-kcal_100g'] || 0,
                                 protein: n.proteins_100g || 0,
                                 carbs: n.carbohydrates_100g || 0,
                                 fat: n.fat_100g || 0,
-                                userGrams: startGrams,
-                                dataType: 'OpenFoodFacts'
-                             };
-                             setSelectedFood(item);
-                             setMeasureUnit('g'); setDisplayAmount(startGrams);
-                             setQuery("");
-                             setLoading(false);
-                             return;
+                                fiber: n.fiber_100g || 0,
+                                o3: n['omega-3-fat_100g'] || 0,
+                                o6: n['omega-6-fat_100g'] || 0,
+                                userGrams: 100
+                             });
+                             setQuery(""); setLoading(false); return;
                         }
-                    } catch (err) { console.error(err); }
+                    } catch (e) {}
                 }
 
-                // Text Search
+                // Text
                 try {
-                    const res = await fetch(`https://api.nal.usda.gov/fdc/v1/foods/search?api_key=${API_KEY}&query=${term}&pageSize=10&dataType=Foundation,SR Legacy,Branded`);
+                    const res = await fetch(`https://api.nal.usda.gov/fdc/v1/foods/search?api_key=${API_KEY}&query=${qTerm}&pageSize=10&dataType=Foundation,SR Legacy,Branded`);
                     const data = await res.json();
-                    if(data.foods && data.foods.length > 0) {
-                        setResultsList(data.foods);
-                    } else {
-                        setError("No results found.");
-                    }
-                } catch (err) { setError("Error fetching foods."); }
+                    setResults(data.foods);
+                } catch (e) {}
                 setLoading(false);
             };
 
-            const selectFood = async (food, grams = 100) => {
-                if (food.dataType === 'OpenFoodFacts') return; // Handled in search
-
+            const selectFood = async (food) => {
+                if (food.userGrams) return; // Already formatted (OFF)
                 setLoading(true);
-                try {
-                    const detailRes = await fetch(`https://api.nal.usda.gov/fdc/v1/food/${food.fdcId}?api_key=${API_KEY}`);
-                    const detail = await detailRes.json();
-                    
-                    const getN = (id) => {
-                        const n = detail.foodNutrients.find(x => (x.nutrient?.id === id || x.nutrientId === id));
-                        return n ? (n.amount || n.value) : 0;
-                    };
+                const res = await fetch(`https://api.nal.usda.gov/fdc/v1/food/${food.fdcId}?api_key=${API_KEY}`);
+                const d = await res.json();
+                
+                const getN = (id) => {
+                    const n = d.foodNutrients.find(x => (x.nutrient?.id === id || x.nutrientId === id));
+                    return n ? (n.amount || n.value) : 0;
+                };
 
-                    const item = {
-                        name: detail.description,
-                        calories: getN(1008) || getN(208),
-                        protein: getN(1003) || getN(203),
-                        carbs: getN(1005) || getN(205),
-                        fat: getN(1004) || getN(204),
-                        userGrams: grams
-                    };
+                // Fallback Omega Logic (simplified)
+                let o3 = getN(1272) || 0;
+                let o6 = getN(1269) || 0;
 
-                    setSelectedFood(item);
-                    setResultsList([]); 
-                    setQuery("");
-                    setMeasureUnit('g'); 
-                    setDisplayAmount(grams);
-                } catch(e) { setError("Details failed load"); }
+                setSelectedFood({
+                    name: d.description,
+                    calories: getN(1008) || getN(208),
+                    protein: getN(1003) || getN(203),
+                    carbs: getN(1005) || getN(205),
+                    fat: getN(1004) || getN(204),
+                    fiber: getN(1079) || getN(291),
+                    o3: o3,
+                    o6: o6,
+                    userGrams: 100
+                });
+                setResults([]); setQuery("");
                 setLoading(false);
             };
 
-            // 4. Staging Adjustment
-            const updateAmount = (val) => {
-                setDisplayAmount(val);
-                let rawVal = parseFloat(val) || 0;
-                let calculatedGrams = measureUnit === 'oz' ? rawVal * 28.3495 : rawVal;
-                if (selectedFood) setSelectedFood({ ...selectedFood, userGrams: calculatedGrams });
-            };
-
-            const toggleUnit = () => {
-                let nextUnit = measureUnit === 'g' ? 'oz' : measureUnit === 'oz' ? 'ml' : 'g';
-                setMeasureUnit(nextUnit);
-                let rawVal = parseFloat(displayAmount) || 0;
-                let calculatedGrams = nextUnit === 'oz' ? rawVal * 28.3495 : rawVal;
-                if (selectedFood) setSelectedFood({ ...selectedFood, userGrams: calculatedGrams });
-            };
-
-            // 5. Add to Log (Database)
             const addToLog = async () => {
                 if(!selectedFood) return;
-                const factor = selectedFood.userGrams / 100;
+                const f = selectedFood.userGrams / 100;
+                const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                 
-                const finalItem = {
+                const item = {
                     name: selectedFood.name,
-                    calories: Math.round(selectedFood.calories * factor),
-                    protein: selectedFood.protein * factor,
-                    carbs: selectedFood.carbs * factor,
-                    fat: selectedFood.fat * factor,
                     grams: selectedFood.userGrams,
+                    calories: Math.round(selectedFood.calories * f),
+                    protein: parseFloat((selectedFood.protein * f).toFixed(1)),
+                    carbs: parseFloat((selectedFood.carbs * f).toFixed(1)),
+                    fat: parseFloat((selectedFood.fat * f).toFixed(1)),
+                    fiber: parseFloat((selectedFood.fiber * f).toFixed(1)),
+                    o3: parseFloat((selectedFood.o3 * f).toFixed(2)),
+                    o6: parseFloat((selectedFood.o6 * f).toFixed(2)),
                     date: currentDate,
+                    time: time,
                     createdAt: window.fb.serverTimestamp()
                 };
 
-                await window.fb.addDoc(window.fb.collection(window.fb.db, "users", user.uid, "logs"), finalItem);
+                await window.fb.addDoc(window.fb.collection(window.fb.db, "users", user.uid, "logs"), item);
                 setSelectedFood(null);
             };
 
@@ -311,209 +355,235 @@
                 if(confirm("Delete item?")) await window.fb.deleteDoc(window.fb.doc(window.fb.db, "users", user.uid, "logs", id));
             };
 
-            // 6. Extras (Scanner, Date, PDF)
-            const changeDate = (offset) => {
-                const d = new Date(currentDate);
-                d.setDate(d.getDate() + offset);
-                setCurrentDate(d.toISOString().split('T')[0]);
-                setSelectedFood(null);
-            };
-
-            useEffect(() => {
-                if (isScanning) {
-                    const html5QrCode = new Html5Qrcode("reader");
-                    scannerRef.current = html5QrCode;
-                    
-                    // FIXED: Strict back camera constraint
-                    const config = { 
-                        fps: 10, 
-                        qrbox: { width: 250, height: 250 }, 
-                        videoConstraints: { 
-                            facingMode: { exact: "environment" } 
-                        } 
-                    };
-                    
-                    // Fallback to simple constraint if 'exact' fails (e.g. laptop)
-                    const fallbackConfig = { 
-                         fps: 10, 
-                         qrbox: { width: 250, height: 250 }, 
-                         videoConstraints: { facingMode: "environment" } 
-                    };
-
-                    html5QrCode.start({ facingMode: { exact: "environment" } }, config, (decodedText) => { 
-                        // SUCCESS
-                        scannerRef.current.stop().then(() => {
-                            scannerRef.current.clear();
-                            setIsScanning(false);
-                            setQuery(decodedText);
-                            setTimeout(() => handleSearch(null, decodedText), 100);
-                        });
-                    }, (err) => {
-                        // Scan fail (keep scanning)
-                    }).catch(err => {
-                        // Camera fail - try fallback
-                        console.log("Primary camera failed, trying fallback...");
-                        html5QrCode.start({ facingMode: "environment" }, fallbackConfig, (decodedText) => {
-                             scannerRef.current.stop().then(() => {
-                                scannerRef.current.clear();
-                                setIsScanning(false);
-                                setQuery(decodedText);
-                                setTimeout(() => handleSearch(null, decodedText), 100);
-                            });
-                        }, () => {}).catch(err2 => {
-                            console.error("Camera completely failed", err2);
-                            setIsScanning(false);
-                            setError("Camera not available.");
-                        });
-                    });
-                }
-                return () => { if(scannerRef.current && scannerRef.current.isScanning) scannerRef.current.stop().catch(e=>console.error(e)); }
-            }, [isScanning]);
-
-            const exportPDF = () => {
+            const exportPDF = async () => {
+                // Ensure chart renders before capture
+                setView('trends'); 
+                await new Promise(r => setTimeout(r, 500)); // Wait for render
+                
                 const { jsPDF } = window.jspdf;
                 const doc = new jsPDF();
-                const navy = '#0f172a';
-                doc.setTextColor(navy); doc.setFontSize(18); doc.text("JOHN RUBEN SOLUTIONS", 20, 20);
-                doc.setFontSize(12); doc.text(`Food Log: ${currentDate}`, 20, 30);
-                if (dailyWeight) doc.text(`Weight: ${dailyWeight} lbs`, 20, 36);
-                
-                let y = 50;
-                log.forEach(item => {
-                    doc.setFontSize(10);
-                    doc.text(`${item.name.substring(0, 50)}`, 20, y);
-                    doc.text(`${Math.round(item.calories)} kcal | P:${Math.round(item.protein)}g C:${Math.round(item.carbs)}g F:${Math.round(item.fat)}g`, 20, y+5);
-                    y+=15;
-                    if(y > 270) { doc.addPage(); y = 20; }
+                const navy = [15, 23, 42]; 
+                const green = [132, 204, 22];
+
+                doc.setFontSize(18); doc.setTextColor(...navy); doc.text("JOHN RUBEN SOLUTIONS", 20, 20);
+                doc.setFontSize(12); doc.setTextColor(100); doc.text(`Comprehensive Nutrition Report`, 20, 30);
+                doc.text(`Date: ${currentDate}`, 20, 36);
+                if(dailyWeight) doc.text(`Recorded Weight: ${dailyWeight} lbs`, 20, 42);
+
+                // Add Graph
+                const canvas = document.getElementById('trendChart');
+                if (canvas) {
+                    const imgData = canvas.toDataURL("image/png");
+                    doc.addImage(imgData, 'PNG', 15, 50, 180, 80);
+                }
+
+                // Table
+                doc.autoTable({
+                    startY: 140,
+                    head: [['Time', 'Food', 'Weight', 'Cals', 'P', 'C', 'F', 'Fib', 'Ω3', 'Ω6']],
+                    body: log.map(i => [
+                        i.time || '-', 
+                        i.name.substring(0, 20), 
+                        Math.round(i.grams) + 'g', 
+                        i.calories, 
+                        i.protein, i.carbs, i.fat, i.fiber, i.o3, i.o6
+                    ]),
+                    theme: 'grid',
+                    headStyles: { fillColor: navy },
+                    styles: { fontSize: 8 },
+                    foot: [['TOTALS', '', '', 
+                        totals.cals, 
+                        totals.pro.toFixed(1), 
+                        totals.carb.toFixed(1), 
+                        totals.fat.toFixed(1), 
+                        totals.fib.toFixed(1), 
+                        totals.o3.toFixed(1), 
+                        totals.o6.toFixed(1)
+                    ]]
                 });
-                
-                const t = log.reduce((acc, item) => ({ cals: acc.cals + item.calories, pro: acc.pro + item.protein, carb: acc.carbs + item.carbs, fat: acc.fat + item.fat }), { cals: 0, pro: 0, carb: 0, fat: 0 });
-                y += 5; doc.line(20, y, 190, y); y += 10;
-                doc.setFontSize(12); doc.text(`TOTALS: ${Math.round(t.cals)} kcal`, 20, y);
-                doc.save(`Log_${currentDate}.pdf`);
+
+                doc.save(`NutritionReport_${currentDate}.pdf`);
             };
 
-            const totals = log.reduce((acc, item) => ({ cals: acc.cals + item.calories, pro: acc.pro + item.protein, carb: acc.carbs + item.carbs, fat: acc.fat + item.fat }), { cals: 0, pro: 0, carb: 0, fat: 0 });
+            const totals = log.reduce((acc, i) => ({
+                cals: acc.cals + i.calories,
+                pro: acc.pro + i.protein,
+                carb: acc.carb + i.carbs,
+                fat: acc.fat + i.fat,
+                fib: acc.fib + (i.fiber||0),
+                o3: acc.o3 + (i.o3||0),
+                o6: acc.o6 + (i.o6||0)
+            }), { cals: 0, pro: 0, carb: 0, fat: 0, fib: 0, o3: 0, o6: 0 });
 
             if (!user) return <AuthScreen />;
 
             return (
-                <div className="max-w-3xl mx-auto px-4 pt-8">
-                    {/* HEADER */}
-                    <div className="flex justify-between items-center mb-6">
-                        <h1 className="text-xl font-bold text-white">Food Tracker</h1>
-                        <button onClick={() => window.fb.signOut(window.fb.auth)} className="text-xs text-slate-400 hover:text-white transition-colors">Sign Out</button>
-                    </div>
-
-                    {/* TARGETS DASHBOARD */}
-                    {targets && (
-                        <div className="bg-brand-card p-4 rounded-2xl mb-6 border border-slate-700 flex justify-between text-center">
-                            <div><span className="text-[10px] text-slate-400 block uppercase">Calories</span><span className={`text-xl font-bold ${totals.cals > targets.calories ? 'text-red-400' : 'text-white'}`}>{Math.round(totals.cals)} / {targets.calories}</span></div>
-                            <div><span className="text-[10px] text-brand-teal block uppercase">Protein</span><span className="text-sm text-slate-300 font-bold">{Math.round(totals.pro)} / {targets.protein}g</span></div>
-                            <div><span className="text-[10px] text-brand-green block uppercase">Carbs</span><span className="text-sm text-slate-300 font-bold">{Math.round(totals.carb)} / {targets.carbs}g</span></div>
-                        </div>
-                    )}
-
-                    {/* DATE & WEIGHT NAV */}
-                    <div className="flex flex-col gap-3 bg-brand-card p-4 rounded-2xl mb-6 border border-slate-700">
-                        <div className="flex justify-between items-center w-full">
-                            <button onClick={() => changeDate(-1)} className="p-2 text-white bg-slate-700 rounded-lg">&lt;</button>
-                            <span className="text-white font-bold">{currentDate}</span>
-                            <button onClick={() => changeDate(1)} className="p-2 text-white bg-slate-700 rounded-lg">&gt;</button>
-                        </div>
-                        <div className="flex items-center justify-between bg-brand-input rounded-xl p-2 px-4 border border-slate-600">
-                             <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Today's Weight:</span>
-                             <div className="flex items-center">
-                                <input type="number" value={dailyWeight} onChange={(e) => setDailyWeight(e.target.value)} onBlur={saveWeight} placeholder="0.0" className="bg-transparent text-white font-bold text-right w-16 focus:outline-none focus:border-b border-brand-green" />
-                                <span className="text-xs text-brand-green font-bold ml-1">lbs</span>
-                             </div>
+                <div className="max-w-4xl mx-auto px-4 pt-6 pb-20 font-sans text-white">
+                    {/* TOP BAR */}
+                    <div className="flex justify-between items-center mb-6 border-b border-slate-700 pb-4">
+                        <h1 className="text-xl font-bold">Food Tracker</h1>
+                        <div className="flex gap-4">
+                            <button onClick={()=>setView('daily')} className={`text-xs px-3 py-1 rounded-full ${view==='daily' ? 'bg-brand-green text-brand-navy' : 'text-slate-400'}`}>Daily Log</button>
+                            <button onClick={()=>setView('trends')} className={`text-xs px-3 py-1 rounded-full ${view==='trends' ? 'bg-brand-green text-brand-navy' : 'text-slate-400'}`}>Analytics</button>
+                            <button onClick={() => window.fb.signOut(window.fb.auth)} className="text-xs text-red-400">Sign Out</button>
                         </div>
                     </div>
-                    
-                    {/* SCANNER OVERLAY */}
-                    {isScanning && (
-                        <div className="fixed inset-0 z-[60] bg-black/90 flex flex-col items-center justify-center p-4">
-                            <div className="bg-brand-card p-6 rounded-2xl w-full max-w-sm border border-slate-700 relative">
-                                <h3 className="text-center font-bold text-white mb-4">Scan Barcode</h3>
-                                <div id="reader" className="w-full bg-black rounded-xl overflow-hidden"></div>
-                                <button onClick={() => setIsScanning(false)} className="absolute top-2 right-2 text-slate-400 p-2">Close</button>
-                            </div>
-                        </div>
-                    )}
 
-                    {/* SEARCH */}
-                    <form onSubmit={handleSearch} className="flex gap-2 mb-6">
-                        <div className="flex-1 relative">
-                            <input type="text" value={query} onChange={e => setQuery(e.target.value)} placeholder="Search food or scan barcode..." className="w-full p-3 bg-brand-input rounded-xl text-white outline-none focus:border-brand-green border border-transparent pl-3 pr-10" />
-                            <button type="button" onClick={()=>{setResultsList([]); setIsScanning(true)}} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-brand-green p-2">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
-                            </button>
+                    {/* MACRO DASHBOARD */}
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mb-6 text-center">
+                        <div className="bg-brand-card p-3 rounded-xl border border-slate-700">
+                            <span className="text-[10px] text-slate-400 uppercase">Calories</span>
+                            <div className={`text-lg font-bold ${totals.cals > targets.calories ? 'text-red-400' : 'text-white'}`}>{Math.round(totals.cals)} / {targets.calories}</div>
                         </div>
-                        <button type="submit" className="bg-brand-green text-brand-navy px-6 rounded-xl font-bold">{loading ? "..." : "Find"}</button>
-                    </form>
-                    {error && <p className="text-red-500 text-xs text-center mb-2">{error}</p>}
+                        <div className="bg-brand-card p-3 rounded-xl border border-slate-700">
+                            <span className="text-[10px] text-brand-teal uppercase">Protein</span>
+                            <div className="text-sm font-bold">{Math.round(totals.pro)} / {targets.protein}g</div>
+                        </div>
+                        <div className="bg-brand-card p-3 rounded-xl border border-slate-700">
+                            <span className="text-[10px] text-brand-green uppercase">Carbs</span>
+                            <div className="text-sm font-bold">{Math.round(totals.carb)} / {targets.carbs}g</div>
+                        </div>
+                        <div className="bg-brand-card p-3 rounded-xl border border-slate-700">
+                            <span className="text-[10px] text-yellow-400 uppercase">Fat</span>
+                            <div className="text-sm font-bold">{Math.round(totals.fat)} / {targets.fat}g</div>
+                        </div>
+                        <div className="bg-brand-card p-3 rounded-xl border border-slate-700">
+                            <span className="text-[10px] text-purple-400 uppercase">Fiber</span>
+                            <div className="text-sm font-bold">{Math.round(totals.fib)} / 45g</div>
+                        </div>
+                    </div>
 
-                    {/* SEARCH RESULTS */}
-                    {resultsList.length > 0 && (
-                        <div className="bg-brand-card rounded-xl border border-slate-700 mb-6 max-h-60 overflow-y-auto">
-                            {resultsList.map(food => (
-                                <div key={food.fdcId} onClick={() => selectFood(food)} className="p-3 border-b border-slate-700 text-slate-300 hover:bg-slate-700 cursor-pointer transition-colors">
-                                    {food.description}
+                    {/* MAIN VIEW */}
+                    {view === 'daily' ? (
+                        <>
+                            {/* DATE & WEIGHT */}
+                            <div className="flex flex-col md:flex-row justify-between gap-4 mb-6">
+                                <div className="flex items-center bg-brand-card p-2 rounded-xl border border-slate-700">
+                                    <button onClick={()=>{const d=new Date(currentDate);d.setDate(d.getDate()-1);setCurrentDate(d.toISOString().split('T')[0])}} className="p-2 hover:text-brand-green">&lt;</button>
+                                    <span className="mx-4 font-bold min-w-[100px] text-center">{currentDate}</span>
+                                    <button onClick={()=>{const d=new Date(currentDate);d.setDate(d.getDate()+1);setCurrentDate(d.toISOString().split('T')[0])}} className="p-2 hover:text-brand-green">&gt;</button>
                                 </div>
-                            ))}
-                        </div>
-                    )}
-                    
-                    {/* SELECTED FOOD STAGING AREA */}
-                    {selectedFood && (
-                        <div className="bg-brand-card rounded-2xl border border-slate-700 p-4 mb-6 animate-fade">
-                            <div className="flex justify-between items-start mb-4">
-                                <h3 className="font-bold text-white text-lg flex-1 mr-2">{selectedFood.name}</h3>
-                                <button onClick={() => setSelectedFood(null)} className="text-slate-500 hover:text-white">x</button>
-                            </div>
-                            
-                            <div className="flex items-center justify-between mb-4 bg-brand-input rounded-xl p-2 border border-slate-600">
-                                 <div className="flex items-center gap-2">
-                                    <input type="number" value={displayAmount} onFocus={(e)=>setDisplayAmount('')} onChange={(e)=>updateAmount(e.target.value)} className="w-20 bg-transparent text-white font-bold text-2xl text-center focus:outline-none placeholder-slate-500" placeholder="0" />
-                                    <button onClick={toggleUnit} className="px-3 py-1 bg-brand-card text-brand-green border border-brand-green rounded-lg font-bold text-xs uppercase hover:bg-brand-green hover:text-brand-navy transition-colors">{measureUnit}</button>
-                                </div>
-                                <div className="text-right">
-                                    <span className="block text-2xl font-bold text-white">{Math.round(selectedFood.calories * (selectedFood.userGrams/100))}</span>
-                                    <span className="text-[10px] text-slate-400 uppercase tracking-wider">Calories</span>
+                                <div className="flex items-center bg-brand-input rounded-xl px-4 border border-slate-600">
+                                    <span className="text-xs text-slate-400 mr-2 uppercase">Weight:</span>
+                                    <input type="number" value={dailyWeight} onChange={(e)=>setDailyWeight(e.target.value)} onBlur={saveWeight} className="bg-transparent text-white font-bold w-16 text-right focus:outline-none" placeholder="0.0" />
+                                    <span className="text-xs text-brand-green ml-1">lbs</span>
                                 </div>
                             </div>
-                            
-                            <div className="grid grid-cols-3 gap-2 mb-4 text-center text-xs text-slate-300">
-                                <div className="bg-slate-800 p-2 rounded-lg">Pro: {(selectedFood.protein * (selectedFood.userGrams/100)).toFixed(1)}g</div>
-                                <div className="bg-slate-800 p-2 rounded-lg">Carb: {(selectedFood.carbs * (selectedFood.userGrams/100)).toFixed(1)}g</div>
-                                <div className="bg-slate-800 p-2 rounded-lg">Fat: {(selectedFood.fat * (selectedFood.userGrams/100)).toFixed(1)}g</div>
-                            </div>
 
-                            <button onClick={addToLog} className="w-full py-3 bg-brand-green text-brand-navy font-bold rounded-xl hover:bg-white transition-colors">Add to Daily Log</button>
-                        </div>
-                    )}
+                            {/* SEARCH */}
+                            <form onSubmit={handleSearch} className="flex gap-2 mb-6">
+                                <input type="text" value={query} onChange={e => setQuery(e.target.value)} placeholder="Search food..." className="flex-1 p-3 bg-brand-input rounded-xl text-white outline-none focus:border-brand-green border border-transparent" />
+                                <button type="submit" className="bg-brand-green text-brand-navy px-6 rounded-xl font-bold hover:bg-white transition-colors">Find</button>
+                            </form>
 
-                    {/* LOG */}
-                    <div className="bg-brand-card rounded-2xl border border-slate-700 overflow-hidden">
-                        <div className="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-800/50">
-                            <h3 className="font-bold text-white text-sm uppercase tracking-wide">Daily Log</h3>
-                            <button onClick={exportPDF} className="text-xs font-bold text-brand-navy bg-brand-green px-3 py-1 rounded-full hover:bg-white transition-colors">Download PDF</button>
-                        </div>
-                        <div className="max-h-[400px] overflow-y-auto">
-                            {log.map(item => (
-                                <div key={item.id} className="p-4 border-b border-slate-700 flex justify-between items-center hover:bg-slate-700/30 transition-colors">
-                                    <div className="flex-1 pr-2">
-                                        <div className="text-white text-sm font-bold leading-tight">{item.name}</div>
-                                        <div className="text-xs text-brand-teal mt-1">
-                                            {Math.round(item.grams)}g <span className="text-slate-500">|</span> {Math.round(item.calories)} kcal <span className="text-slate-500">|</span> P: {Math.round(item.protein)}g
+                            {/* RESULTS LIST */}
+                            {results.length > 0 && (
+                                <div className="bg-brand-card rounded-xl border border-slate-700 mb-6 max-h-60 overflow-y-auto">
+                                    {results.map(food => (
+                                        <div key={food.fdcId} onClick={() => selectFood(food)} className="p-3 border-b border-slate-700 text-slate-300 hover:bg-slate-700 cursor-pointer">
+                                            {food.description}
                                         </div>
-                                    </div>
-                                    <button onClick={() => deleteItem(item.id)} className="text-red-400 hover:text-red-300 p-2 transition-colors">x</button>
+                                    ))}
                                 </div>
-                            ))}
-                            {log.length === 0 && <div className="p-8 text-center text-slate-500 text-sm">No foods logged for {currentDate}.</div>}
+                            )}
+
+                            {/* STAGING AREA */}
+                            {selectedFood && (
+                                <div className="bg-brand-card rounded-2xl border border-slate-700 p-4 mb-6">
+                                    <div className="flex justify-between mb-4">
+                                        <h3 className="font-bold text-lg">{selectedFood.name}</h3>
+                                        <button onClick={()=>setSelectedFood(null)} className="text-slate-500">x</button>
+                                    </div>
+                                    <div className="flex items-center gap-4 mb-4">
+                                        <input type="number" value={displayAmount} onChange={e=>{
+                                            setDisplayAmount(e.target.value);
+                                            const val = parseFloat(e.target.value)||0;
+                                            const g = measureUnit === 'oz' ? val*28.35 : val;
+                                            setSelectedFood({...selectedFood, userGrams: g});
+                                        }} className="w-20 bg-brand-input text-center p-2 rounded-lg text-white" />
+                                        <button onClick={()=>{
+                                            const n = measureUnit === 'g' ? 'oz' : 'g';
+                                            setMeasureUnit(n);
+                                            const val = parseFloat(displayAmount)||0;
+                                            const g = n === 'oz' ? val*28.35 : val;
+                                            setSelectedFood({...selectedFood, userGrams: g});
+                                        }} className="text-brand-green font-bold uppercase">{measureUnit}</button>
+                                        <div className="ml-auto text-xl font-bold">{Math.round(selectedFood.calories * (selectedFood.userGrams/100))} <span className="text-xs font-normal">kcal</span></div>
+                                    </div>
+                                    <button onClick={addToLog} className="w-full py-3 bg-brand-green text-brand-navy font-bold rounded-xl hover:bg-white">Add to Log</button>
+                                </div>
+                            )}
+
+                            {/* DATA TABLE LOG */}
+                            <div className="bg-brand-card rounded-2xl border border-slate-700 overflow-hidden">
+                                <div className="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-800/50">
+                                    <h3 className="font-bold text-sm uppercase">Daily Entries</h3>
+                                    <button onClick={exportPDF} className="text-xs text-brand-teal hover:underline">Export Report</button>
+                                </div>
+                                <div className="overflow-x-auto table-scroll">
+                                    <table className="w-full text-xs text-left text-slate-300">
+                                        <thead className="text-xs text-slate-400 uppercase bg-slate-800">
+                                            <tr>
+                                                <th className="px-4 py-3">Time</th>
+                                                <th className="px-4 py-3">Food</th>
+                                                <th className="px-4 py-3">Grams</th>
+                                                <th className="px-4 py-3 text-brand-green">Cals</th>
+                                                <th className="px-4 py-3">Pro</th>
+                                                <th className="px-4 py-3">Carb</th>
+                                                <th className="px-4 py-3">Fat</th>
+                                                <th className="px-4 py-3">Fib</th>
+                                                <th className="px-4 py-3">Ω3</th>
+                                                <th className="px-4 py-3">Ω6</th>
+                                                <th className="px-4 py-3"></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {log.map(item => (
+                                                <tr key={item.id} className="border-b border-slate-700 hover:bg-slate-700/30">
+                                                    <td className="px-4 py-3 font-mono text-slate-500">{item.time}</td>
+                                                    <td className="px-4 py-3 font-medium text-white max-w-[150px] truncate">{item.name}</td>
+                                                    <td className="px-4 py-3">{Math.round(item.grams)}</td>
+                                                    <td className="px-4 py-3 font-bold text-white">{item.calories}</td>
+                                                    <td className="px-4 py-3 text-brand-teal">{Math.round(item.protein)}</td>
+                                                    <td className="px-4 py-3 text-brand-green">{Math.round(item.carbs)}</td>
+                                                    <td className="px-4 py-3 text-yellow-400">{Math.round(item.fat)}</td>
+                                                    <td className="px-4 py-3 text-purple-400">{Math.round(item.fiber || 0)}</td>
+                                                    <td className="px-4 py-3 text-sky-400">{(item.o3 || 0).toFixed(1)}</td>
+                                                    <td className="px-4 py-3 text-orange-400">{(item.o6 || 0).toFixed(1)}</td>
+                                                    <td className="px-4 py-3 text-right">
+                                                        <button onClick={() => deleteItem(item.id)} className="text-red-400 hover:text-red-300">x</button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                            {/* TOTALS ROW */}
+                                            <tr className="bg-slate-800 font-bold text-white">
+                                                <td colSpan="3" className="px-4 py-3 text-right uppercase text-slate-400">Totals</td>
+                                                <td className="px-4 py-3">{Math.round(totals.cals)}</td>
+                                                <td className="px-4 py-3">{Math.round(totals.pro)}</td>
+                                                <td className="px-4 py-3">{Math.round(totals.carb)}</td>
+                                                <td className="px-4 py-3">{Math.round(totals.fat)}</td>
+                                                <td className="px-4 py-3">{Math.round(totals.fib)}</td>
+                                                <td className="px-4 py-3">{totals.o3.toFixed(1)}</td>
+                                                <td className="px-4 py-3">{totals.o6.toFixed(1)}</td>
+                                                <td></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </>
+                    ) : (
+                        /* TRENDS VIEW */
+                        <div className="bg-brand-card p-4 rounded-2xl border border-slate-700">
+                            <h3 className="font-bold text-white mb-4">Weekly Trends (Weight vs. Calories)</h3>
+                            <div className="relative h-80 w-full">
+                                <canvas id="trendChart"></canvas>
+                            </div>
+                            <div className="mt-4 text-center text-xs text-slate-400">
+                                This chart visualizes your average caloric intake vs. recorded weight week over week.
+                            </div>
                         </div>
-                    </div>
+                    )}
                 </div>
             );
         };
