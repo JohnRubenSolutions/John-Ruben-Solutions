@@ -96,7 +96,7 @@
                 </div>
 
                 <div class="space-y-2">
-                    <label class="text-xs font-bold text-brand-muted uppercase tracking-wider">Weight</label>
+                    <label class="text-xs font-bold text-brand-muted uppercase tracking-wider">Current Weight</label>
                     <div class="flex items-center bg-brand-input rounded-xl p-1.5 border border-slate-600 focus-within:border-brand-green transition-colors shadow-inner">
                         <input type="number" id="weight" value="155" class="w-full bg-transparent text-white font-bold text-xl px-3 focus:outline-none placeholder-slate-500" placeholder="0">
                         <button type="button" id="weightUnitBtn" onclick="toggleWeightUnit()" class="h-10 px-4 bg-brand-card text-white rounded-lg font-bold text-sm uppercase tracking-wide border border-slate-600 hover:bg-brand-green hover:border-brand-green hover:text-white transition-all shadow-sm active:scale-95 flex-shrink-0">
@@ -107,6 +107,16 @@
                 </div>
 
                 <div class="space-y-2">
+                    <label class="text-xs font-bold text-brand-muted uppercase tracking-wider">Goal Weight</label>
+                    <div class="flex items-center bg-brand-input rounded-xl p-1.5 border border-slate-600 focus-within:border-brand-green transition-colors shadow-inner">
+                        <input type="number" id="goalWeight" value="145" class="w-full bg-transparent text-white font-bold text-xl px-3 focus:outline-none placeholder-slate-500" placeholder="0">
+                        <span id="goalUnitDisplay" class="h-10 px-4 flex items-center justify-center text-slate-400 font-bold text-sm uppercase tracking-wide">
+                            lbs
+                        </span>
+                    </div>
+                </div>
+
+                <div class="space-y-2 md:col-span-2">
                     <label class="text-xs font-bold text-brand-muted uppercase tracking-wider">Height</label>
                     <div class="flex items-center bg-brand-input rounded-xl p-1.5 border border-slate-600 focus-within:border-brand-green transition-colors shadow-inner">
                         <input type="number" id="height" value="66.5" class="w-full bg-transparent text-white font-bold text-xl px-3 focus:outline-none placeholder-slate-500" placeholder="0">
@@ -141,9 +151,11 @@
                 <div class="space-y-2">
                     <label class="text-xs font-bold text-brand-muted uppercase tracking-wider">Current Goal</label>
                     <select id="goal" class="w-full p-4 bg-brand-input border border-slate-600 rounded-xl font-bold text-white focus:outline-none focus:border-brand-green transition-colors cursor-pointer text-base">
-                        <option value="0">Maintain Weight</option>
-                        <option value="-500">Lose Weight</option>
-                        <option value="250">Build Muscle</option>
+                        <option value="-500" selected>Lose Weight Fast (-500 calories)</option>
+                        <option value="-250">Lose Weight Slow (-250 calories)</option>
+                        <option value="0">Maintain (No calorie adjustment)</option>
+                        <option value="250">Gain Weight Slow (+250 calories)</option>
+                        <option value="500">Gain Weight Fast (+500 calories)</option>
                     </select>
                 </div>
             </div>
@@ -159,8 +171,15 @@
                 <div class="absolute top-0 right-0 w-64 h-64 bg-brand-teal rounded-full blur-[100px] opacity-10"></div>
                 
                 <span class="text-xs font-bold text-brand-green uppercase tracking-[0.2em] mb-2 block">Your Daily Ceiling</span>
-                <div class="text-6xl md:text-7xl font-extrabold mb-1 tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white to-slate-400" id="target-cal">0</div>
+                <div class="text-6xl md:text-7xl font-extrabold mb-4 tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white to-slate-400" id="target-cal">0</div>
                 
+                <div id="timeline-container" class="bg-slate-800/50 rounded-xl p-4 border border-slate-600 mb-4 hidden">
+                    <p class="text-xs font-bold text-brand-teal uppercase tracking-widest mb-1">Projected Timeline</p>
+                    <p class="text-white text-sm mb-1">Reach your goal weight by:</p>
+                    <p class="text-xl font-extrabold text-white" id="goal-date">Loading...</p>
+                    <p class="text-[10px] text-slate-400 mt-1">(<span id="goal-weeks">0</span> weeks from today)</p>
+                </div>
+
                 <div class="flex justify-center gap-4 mt-2">
                     <div class="text-[10px] font-bold uppercase tracking-wider text-brand-muted">Base TDEE: <span id="tdee-base" class="text-white">0</span></div>
                     <div class="text-[10px] font-bold uppercase tracking-wider text-brand-teal">BMI: <span id="val-bmi" class="text-white">0</span></div>
@@ -304,12 +323,16 @@
         function toggleWeightUnit() {
             const btn = document.getElementById('weightUnitBtn');
             const input = document.getElementById('weightUnit');
+            const goalUnitDisplay = document.getElementById('goalUnitDisplay');
+            
             if (input.value === 'lbs') {
                 input.value = 'kg';
                 btn.innerText = 'kg';
+                goalUnitDisplay.innerText = 'kg';
             } else {
                 input.value = 'lbs';
                 btn.innerText = 'lbs';
+                goalUnitDisplay.innerText = 'lbs';
             }
         }
 
@@ -330,25 +353,28 @@
             const gender = document.getElementById('gender').value;
             const wInput = parseFloat(document.getElementById('weight').value);
             const wUnit = document.getElementById('weightUnit').value;
+            const goalWeightInput = parseFloat(document.getElementById('goalWeight').value);
             
             const hInput = parseFloat(document.getElementById('height').value);
             const hUnit = document.getElementById('heightUnit').value;
 
             const a = parseFloat(document.getElementById('age').value);
             const act = parseFloat(document.getElementById('activity').value);
-            const goal = parseFloat(document.getElementById('goal').value);
+            const goalCalorieAdjustment = parseFloat(document.getElementById('goal').value);
             const bodyType = document.getElementById('bodyType').value;
 
             // Unit Normalization
-            let kg, lbs, cm, heightM;
+            let kg, lbs, cm, heightM, goalWeightLbs;
 
             // Weight Normalization
             if (wUnit === 'lbs') {
                 lbs = wInput;
                 kg = wInput * 0.453592;
+                goalWeightLbs = goalWeightInput;
             } else {
                 kg = wInput;
                 lbs = wInput * 2.20462;
+                goalWeightLbs = goalWeightInput * 2.20462;
             }
 
             // Height Normalization
@@ -382,7 +408,59 @@
 
             // Calories
             const tdee = Math.round(bmr * act);
-            const targetCal = tdee + goal;
+            const targetCal = tdee + goalCalorieAdjustment;
+
+            // --- TIMELINE CALCULATION START ---
+            const timelineContainer = document.getElementById('timeline-container');
+            const goalDateEl = document.getElementById('goal-date');
+            const goalWeeksEl = document.getElementById('goal-weeks');
+            
+            // Determine weight difference
+            const weightDiff = currentWeightLbs = lbs - goalWeightLbs;
+            
+            // Logic: 
+            // 1 lb fat approx 3500 kcal. 
+            // Daily deficit/surplus is absolute value of goalCalorieAdjustment.
+            // If goal is 0 (maintenance), no date.
+            
+            if (goalCalorieAdjustment !== 0) {
+                const isWeightLoss = goalCalorieAdjustment < 0;
+                const isWeightGain = goalCalorieAdjustment > 0;
+                
+                // Validate direction
+                // If trying to lose weight (adj < 0) but goal weight > current, that's an error in user logic, but we can handle gracefully or hide.
+                // For simplicity, we calculate raw math.
+                
+                // We need to lose/gain this many lbs
+                const lbsChangeNeeded = Math.abs(lbs - goalWeightLbs);
+                
+                // Total calories to burn/consume to reach goal
+                const totalCaloriesGap = lbsChangeNeeded * 3500;
+                
+                // Days required
+                const daysRequired = totalCaloriesGap / Math.abs(goalCalorieAdjustment);
+                
+                // Check for logical consistency (e.g. don't show date if trying to lose weight but goal is heavier)
+                let isValidDir = true;
+                if (isWeightLoss && goalWeightLbs > lbs) isValidDir = false;
+                if (isWeightGain && goalWeightLbs < lbs) isValidDir = false;
+
+                if (isValidDir && daysRequired > 0) {
+                    const today = new Date();
+                    const targetDate = new Date(today);
+                    targetDate.setDate(today.getDate() + Math.round(daysRequired));
+                    
+                    const options = { weekday: 'short', year: 'numeric', month: 'long', day: 'numeric' };
+                    goalDateEl.innerText = targetDate.toLocaleDateString('en-US', options);
+                    goalWeeksEl.innerText = (daysRequired / 7).toFixed(1);
+                    timelineContainer.classList.remove('hidden');
+                } else {
+                    timelineContainer.classList.add('hidden');
+                }
+            } else {
+                timelineContainer.classList.add('hidden'); // Maintenance mode
+            }
+            // --- TIMELINE CALCULATION END ---
 
             // Minimum Protein Threshold (1.6g/kg)
             const minProteinGrams = Math.round(1.6 * kg);
