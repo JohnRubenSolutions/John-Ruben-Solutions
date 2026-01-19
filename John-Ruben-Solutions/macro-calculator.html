@@ -18,6 +18,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
 <script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
 <script>
     tailwind.config = {
         theme: {
@@ -60,7 +62,6 @@
         background-size: 1em; 
     }
     
-    /* Remove default arrow from number inputs */
     input[type=number]::-webkit-inner-spin-button, 
     input[type=number]::-webkit-outer-spin-button { 
         -webkit-appearance: none; 
@@ -222,6 +223,11 @@
                 <div class="p-4 bg-orange-900/20 text-orange-200 border border-orange-900/50 rounded-xl text-xs leading-relaxed">
                     <strong>⚠️ Kidney Health:</strong> If you have pre-existing diabetes or kidney disease, consult your physician before following a high-protein diet.
                 </div>
+
+                <button onclick="downloadPDF()" class="w-full mt-6 flex justify-center items-center gap-2 px-6 py-4 bg-brand-green text-brand-navy rounded-xl font-extrabold text-sm hover:bg-white transition-all shadow-lg active:scale-95 border-2 border-transparent hover:border-brand-green">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                    Download PDF Report
+                </button>
             </div>
 
             <div class="bg-brand-card rounded-[2rem] border border-slate-700 shadow-xl p-6 mb-8">
@@ -320,6 +326,7 @@
         </div>
 
         <div class="text-center border-t border-slate-800 pt-8 pb-8 flex flex-col items-center">
+            
             <a href="https://johnrubensolutions.github.io/John-Ruben-Solutions/John-Ruben-Solutions/home.html" class="mb-6 inline-flex items-center gap-2 px-6 py-2.5 bg-slate-800 border border-slate-600 rounded-full text-sm font-bold text-white hover:bg-slate-700 hover:border-brand-teal transition-all group">
                 <span class="group-hover:-translate-x-1 transition-transform">←</span> Back to Home
             </a>
@@ -334,6 +341,17 @@
     </div>
 
     <script>
+        // NAVIGATION GUARD
+        let hasCalculated = false;
+        
+        window.addEventListener('beforeunload', function (e) {
+            if (hasCalculated) {
+                e.preventDefault();
+                e.returnValue = ''; // Required for Chrome
+                return "You have unsaved results. Download your PDF before leaving?";
+            }
+        });
+
         function toggleWeightUnit() {
             const btn = document.getElementById('weightUnitBtn');
             const input = document.getElementById('weightUnit');
@@ -363,6 +381,8 @@
         }
 
         function calculate() {
+            hasCalculated = true; // Enable Nav Guard
+
             // Inputs
             const gender = document.getElementById('gender').value;
             const wInput = parseFloat(document.getElementById('weight').value);
@@ -424,30 +444,18 @@
             const tdee = Math.round(bmr * act);
             const targetCal = tdee + goalCalorieAdjustment;
 
-            // --- TIMELINE CALCULATION START ---
+            // --- TIMELINE CALCULATION ---
             const timelineContainer = document.getElementById('timeline-container');
             const goalDateEl = document.getElementById('goal-date');
             const goalWeeksEl = document.getElementById('goal-weeks');
             
-            // Logic: 
-            // 1 lb fat approx 3500 kcal. 
-            // Daily deficit/surplus is absolute value of goalCalorieAdjustment.
-            // If goal is 0 (maintenance), no date.
-            
             if (goalCalorieAdjustment !== 0) {
                 const isWeightLoss = goalCalorieAdjustment < 0;
                 const isWeightGain = goalCalorieAdjustment > 0;
-                
-                // We need to lose/gain this many lbs
                 const lbsChangeNeeded = Math.abs(lbs - goalWeightLbs);
-                
-                // Total calories to burn/consume to reach goal
                 const totalCaloriesGap = lbsChangeNeeded * 3500;
-                
-                // Days required
                 const daysRequired = totalCaloriesGap / Math.abs(goalCalorieAdjustment);
                 
-                // Check for logical consistency
                 let isValidDir = true;
                 if (isWeightLoss && goalWeightLbs > lbs) isValidDir = false;
                 if (isWeightGain && goalWeightLbs < lbs) isValidDir = false;
@@ -465,9 +473,8 @@
                     timelineContainer.classList.add('hidden');
                 }
             } else {
-                timelineContainer.classList.add('hidden'); // Maintenance mode
+                timelineContainer.classList.add('hidden');
             }
-            // --- TIMELINE CALCULATION END ---
 
             // Minimum Protein Threshold (1.6g/kg)
             const minProteinGrams = Math.round(1.6 * kg);
@@ -547,6 +554,113 @@
             // Update BMI and Zone 2 HR
             document.getElementById('val-bmi').innerText = bmi;
             document.getElementById('val-zone2').innerText = `${zone2Low}-${zone2High}`;
+        }
+
+        function downloadPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            // Colors
+            const navy = '#0f172a';
+            const green = '#84cc16';
+
+            // --- USER INPUTS ---
+            const gender = document.getElementById('gender').options[document.getElementById('gender').selectedIndex].text;
+            const age = document.getElementById('age').value;
+            const weight = document.getElementById('weight').value + " " + document.getElementById('weightUnit').value;
+            const goalWeight = document.getElementById('goalWeight').value + " " + document.getElementById('weightUnit').value;
+            const height = document.getElementById('height').value + " " + document.getElementById('heightUnit').value;
+            const activity = document.getElementById('activity').options[document.getElementById('activity').selectedIndex].text;
+            
+            // --- OUTPUTS ---
+            const date = new Date().toLocaleDateString();
+            const cals = document.getElementById('target-cal').innerText;
+            const pro = document.getElementById('val-pro').innerText;
+            const carb = document.getElementById('val-carb').innerText;
+            const fat = document.getElementById('val-fat').innerText;
+            const water = document.getElementById('val-water-oz').innerText;
+            const fiber = document.getElementById('val-fiber').innerText;
+            const hr = document.getElementById('val-zone2').innerText;
+            const goalDate = document.getElementById('goal-date').innerText;
+
+            // --- PDF CONTENT ---
+            
+            // Header
+            doc.setFontSize(22);
+            doc.setTextColor(navy);
+            doc.text("JOHN RUBEN SOLUTIONS", 20, 20);
+            
+            doc.setFontSize(12);
+            doc.setTextColor(100);
+            doc.text("Macronutrient Strategy Report", 20, 28);
+            doc.text(`Generated: ${date}`, 20, 34);
+
+            // Section: Profile
+            doc.setDrawColor(green);
+            doc.setLineWidth(1);
+            doc.line(20, 40, 190, 40);
+            
+            doc.setFontSize(14);
+            doc.setTextColor(navy);
+            doc.text("YOUR PROFILE", 20, 50);
+            
+            doc.setFontSize(10);
+            doc.setTextColor(60);
+            doc.text(`Gender: ${gender}`, 20, 60);
+            doc.text(`Age: ${age}`, 80, 60);
+            doc.text(`Current Weight: ${weight}`, 20, 66);
+            doc.text(`Goal Weight: ${goalWeight}`, 80, 66);
+            doc.text(`Height: ${height}`, 140, 66);
+            doc.text(`Activity Level: ${activity}`, 20, 72);
+
+            // Section: Daily Targets
+            doc.line(20, 80, 190, 80);
+            doc.setFontSize(14);
+            doc.setTextColor(navy);
+            doc.text("DAILY MACRO TARGETS", 20, 90);
+
+            doc.setFontSize(16);
+            doc.setTextColor(green);
+            doc.text(`Calories: ${cals}`, 20, 100);
+
+            doc.setFontSize(12);
+            doc.setTextColor(navy);
+            doc.text(`Protein: ${pro}`, 20, 110);
+            doc.text(`Carbs:   ${carb}`, 80, 110);
+            doc.text(`Fat:     ${fat}`, 140, 110);
+
+            // Section: Protocol
+            doc.line(20, 120, 190, 120);
+            doc.setFontSize(14);
+            doc.text("DAILY PROTOCOL", 20, 130);
+
+            doc.setFontSize(10);
+            doc.setTextColor(60);
+            doc.text(`• Hydration: ${water} (${document.getElementById('val-water-glasses').innerText} glasses)`, 20, 140);
+            doc.text(`• Fiber Target: ${fiber}g per day`, 20, 146);
+            doc.text(`• Zone 2 Cardio Heart Rate: ${hr} bpm`, 20, 152);
+            doc.text(`• Sleep Goal: 8 Hours`, 20, 158);
+            doc.text(`• Eating Window: 10:00 AM - 6:00 PM (Recommended)`, 20, 164);
+
+            // Section: Timeline (Conditional)
+            if (goalDate !== "Loading..." && !document.getElementById('timeline-container').classList.contains('hidden')) {
+                doc.line(20, 175, 190, 175);
+                doc.setFontSize(14);
+                doc.setTextColor(navy);
+                doc.text("PROJECTED TIMELINE", 20, 185);
+                doc.setFontSize(12);
+                doc.setTextColor(green);
+                doc.text(`Projected Goal Weight Date: ${goalDate}`, 20, 195);
+            }
+
+            // Footer
+            doc.setFontSize(8);
+            doc.setTextColor(150);
+            doc.text("Disclaimer: Educational purposes only. Not medical advice. Consult a physician before starting any diet.", 20, 280);
+            doc.text("© 2026 John Ruben Solutions, LLC.", 20, 285);
+
+            // Save
+            doc.save("JohnRuben_Macro_Plan.pdf");
         }
     </script>
 </body>
