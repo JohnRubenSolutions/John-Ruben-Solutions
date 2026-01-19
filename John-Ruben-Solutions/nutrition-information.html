@@ -121,12 +121,22 @@
                 };
             }, [dropdownRef]);
 
-            // --- SCANNER LOGIC ---
+            // --- SCANNER LOGIC (UPDATED FOR AUTOFOCUS) ---
             useEffect(() => {
                 if (isScanning) {
                     const html5QrCode = new Html5Qrcode("reader");
                     scannerRef.current = html5QrCode;
-                    const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+                    
+                    // Config with AutoFocus support
+                    const config = { 
+                        fps: 10, 
+                        qrbox: { width: 250, height: 250 },
+                        videoConstraints: {
+                            facingMode: "environment",
+                            focusMode: "continuous" // Attempt to force continuous focus
+                        }
+                    };
+
                     html5QrCode.start({ facingMode: "environment" }, config, (decodedText) => {
                         stopScanner(decodedText); 
                     }, (errorMessage) => {}).catch(err => {
