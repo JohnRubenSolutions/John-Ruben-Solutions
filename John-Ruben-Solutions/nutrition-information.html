@@ -96,12 +96,9 @@
             const [currentDate, setCurrentDate] = useState(new Date().toISOString().split('T')[0]);
             const [log, setLog] = useState([]);
             const [dailyWeight, setDailyWeight] = useState("");
-            
-            // Selection & Adjustment State
             const [selectedFood, setSelectedFood] = useState(null);
             const [displayAmount, setDisplayAmount] = useState(100);
-            const [measureUnit, setMeasureUnit] = useState('g'); // 'g', 'oz', 'ml'
-            
+            const [measureUnit, setMeasureUnit] = useState('g');
             const [isScanning, setIsScanning] = useState(false);
             const [loading, setLoading] = useState(false);
             const [error, setError] = useState("");
@@ -115,21 +112,42 @@
                 return () => unsub();
             }, []);
 
+            const loadTargets = async (uid) => {
+                const docRef = window.fb.doc(window.fb.db, "users", uid, "data", "targets");
+                const snap = await window.fb.getDoc(docRef);
+                if (snap.exists()) setTargets(snap.data());
+            };
+
+            // FIRESTORE LISTENER (NO ORDERBY to prevent index error)
+            useEffect(() => {
+                if (!user) return;
+                const q = window.fb.query(window.fb.collection(window.fb.db, "users", user.uid, "logs"), window.fb.where("date", "==", currentDate));
+                const unsub = window.fb.onSnapshot(q, (snap) => {
+                    const rawLogs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                    // Client-side Sort
+                    rawLogs.sort((a,b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+                    setLog(rawLogs);
+                });
+                
+                const fetchWeight = async () => {
+                    const docRef = window.fb.doc(window.fb.db, "users", user.uid, "daily_stats", currentDate);
+                    const docSnap = await window.fb.getDoc(docRef);
+                    setDailyWeight(docSnap.exists() ? docSnap.data().weight : "");
+                };
+                fetchWeight();
+                return () => unsub();
+            }, [user, currentDate]);
+
+            // SCANNER
             useEffect(() => {
                 if (isScanning) {
                     const html5QrCode = new Html5Qrcode("reader");
                     scannerRef.current = html5QrCode;
                     const config = { 
-                        fps: 10, 
-                        qrbox: { width: 250, height: 250 }, 
-                        videoConstraints: { 
-                            facingMode: "environment", 
-                            focusMode: "continuous",
-                            advanced: [{ focusMode: "continuous" }] 
-                        } 
+                        fps: 10, qrbox: { width: 250, height: 250 }, 
+                        videoConstraints: { facingMode: "environment", focusMode: "continuous", advanced: [{ focusMode: "continuous" }] } 
                     };
-                    html5QrCode.start({ facingMode: "environment" }, config, (decodedText) => { stopScanner(decodedText); }, (err) => {})
-                    .catch(err => { console.error(err); setIsScanning(false); });
+                    html5QrCode.start({ facingMode: "environment" }, config, (decodedText) => { stopScanner(decodedText); }, (err) => {}).catch(err => { console.error(err); setIsScanning(false); });
                 }
                 return () => { if(scannerRef.current) scannerRef.current.stop().catch(e=>console.error(e)); }
             }, [isScanning]);
@@ -140,33 +158,10 @@
                     scannerRef.current.stop().then(() => {
                         scannerRef.current.clear();
                         setIsScanning(false);
-                        if (foundCode) {
-                            setQuery(foundCode);
-                            setTimeout(() => { handleSearch(null, foundCode); }, 100);
-                        }
+                        if (foundCode) { setQuery(foundCode); setTimeout(() => { handleSearch(null, foundCode); }, 100); }
                     }).catch(err => setIsScanning(false));
                 } else setIsScanning(false);
             };
-
-            const loadTargets = async (uid) => {
-                const docRef = window.fb.doc(window.fb.db, "users", uid, "data", "targets");
-                const snap = await window.fb.getDoc(docRef);
-                if (snap.exists()) setTargets(snap.data());
-            };
-
-            useEffect(() => {
-                if (!user) return;
-                const q = window.fb.query(window.fb.collection(window.fb.db, "users", user.uid, "logs"), window.fb.where("date", "==", currentDate), window.fb.orderBy("createdAt", "desc"));
-                const unsub = window.fb.onSnapshot(q, (snap) => setLog(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
-                
-                const fetchWeight = async () => {
-                    const docRef = window.fb.doc(window.fb.db, "users", user.uid, "daily_stats", currentDate);
-                    const docSnap = await window.fb.getDoc(docRef);
-                    setDailyWeight(docSnap.exists() ? docSnap.data().weight : "");
-                };
-                fetchWeight();
-                return () => unsub();
-            }, [user, currentDate]);
 
             const saveWeight = async () => {
                 if (!user) return;
@@ -180,33 +175,18 @@
                 setSelectedFood(null);
             };
 
-            // --- UNIT LOGIC ---
             const updateAmount = (val) => {
                 setDisplayAmount(val);
                 let rawVal = parseFloat(val) || 0;
-                let calculatedGrams = rawVal;
-                
-                if (measureUnit === 'oz') calculatedGrams = rawVal * 28.3495;
-                // ml is treated as 1:1 with grams for simplicity
-                
+                let calculatedGrams = measureUnit === 'oz' ? rawVal * 28.3495 : rawVal;
                 if (selectedFood) setSelectedFood({ ...selectedFood, userGrams: calculatedGrams });
             };
 
             const toggleUnit = () => {
-                // Cycle: g -> oz -> ml -> g
-                let nextUnit = 'g';
-                if (measureUnit === 'g') nextUnit = 'oz';
-                else if (measureUnit === 'oz') nextUnit = 'ml';
-                
+                let nextUnit = measureUnit === 'g' ? 'oz' : measureUnit === 'oz' ? 'ml' : 'g';
                 setMeasureUnit(nextUnit);
-                
-                // Recalculate grams based on current display value and NEW unit
                 let rawVal = parseFloat(displayAmount) || 0;
-                let calculatedGrams = rawVal;
-                
-                if (nextUnit === 'oz') calculatedGrams = rawVal * 28.3495;
-                // ml stays 1:1
-                
+                let calculatedGrams = nextUnit === 'oz' ? rawVal * 28.3495 : rawVal;
                 if (selectedFood) setSelectedFood({ ...selectedFood, userGrams: calculatedGrams });
             };
 
@@ -214,9 +194,9 @@
                 if (e) e.preventDefault();
                 const qTerm = overrideQuery || query;
                 if (!qTerm) return;
-
                 setLoading(true); setError(""); setSelectedFood(null);
                 
+                // BARCODE LOGIC
                 if (/^\d+$/.test(qTerm)) {
                     try {
                         let res = await fetch(`https://api.nal.usda.gov/fdc/v1/foods/search?api_key=${API_KEY}&query=${qTerm}&pageSize=1&dataType=Branded,SR Legacy`);
@@ -226,6 +206,7 @@
                             setLoading(false);
                             return;
                         } 
+                        // Fallback OpenFoodFacts
                         res = await fetch(`https://world.openfoodfacts.org/api/v0/product/${qTerm}.json`);
                         data = await res.json();
                         if(data.status === 1) {
@@ -237,7 +218,7 @@
                                 protein: n.proteins_100g || 0,
                                 carbs: n.carbohydrates_100g || 0,
                                 fat: n.fat_100g || 0,
-                                userGrams: 100, // Default for staging
+                                userGrams: 100, // Staging Weight
                                 dataType: 'OpenFoodFacts'
                              };
                              setSelectedFood(item);
@@ -249,6 +230,7 @@
                     } catch (err) { console.error(err); }
                 }
 
+                // TEXT SEARCH
                 try {
                     const res = await fetch(`https://api.nal.usda.gov/fdc/v1/foods/search?api_key=${API_KEY}&query=${qTerm}&pageSize=10&dataType=Foundation,SR Legacy,Branded`);
                     const data = await res.json();
@@ -258,27 +240,23 @@
             };
 
             const selectFood = async (food) => {
-                if (food.dataType === 'OpenFoodFacts') {
-                    // Logic handled in search for OpenFoodFacts directly
-                    return; 
-                }
+                // If OpenFoodFacts (Barcode fallback), it's already structured
+                if (food.dataType === 'OpenFoodFacts') return; 
+
                 const detailRes = await fetch(`https://api.nal.usda.gov/fdc/v1/food/${food.fdcId}?api_key=${API_KEY}`);
                 const detail = await detailRes.json();
-                
                 const getN = (id) => {
                     const n = detail.foodNutrients.find(x => (x.nutrient?.id === id || x.nutrientId === id));
                     return n ? (n.amount || n.value) : 0;
                 };
-
                 const item = {
                     name: detail.description,
                     calories: getN(1008) || getN(208),
                     protein: getN(1003) || getN(203),
                     carbs: getN(1005) || getN(205),
                     fat: getN(1004) || getN(204),
-                    userGrams: 100, // Default Staging Weight
+                    userGrams: 100,
                 };
-
                 setSelectedFood(item);
                 setResults([]); setQuery("");
                 setMeasureUnit('g'); setDisplayAmount(100);
@@ -286,10 +264,7 @@
             
             const addToLog = async () => {
                 if(!selectedFood) return;
-                
-                // Calculate values based on userGrams vs 100g baseline
                 const factor = selectedFood.userGrams / 100;
-                
                 const finalItem = {
                     name: selectedFood.name,
                     calories: Math.round(selectedFood.calories * factor),
@@ -300,9 +275,8 @@
                     date: currentDate,
                     createdAt: window.fb.serverTimestamp()
                 };
-
                 await window.fb.addDoc(window.fb.collection(window.fb.db, "users", user.uid, "logs"), finalItem);
-                setSelectedFood(null); // Clear selection
+                setSelectedFood(null);
             };
 
             const deleteItem = async (id) => {
@@ -410,7 +384,7 @@
                     {/* SEARCH */}
                     <form onSubmit={handleSearch} className="flex gap-2 mb-6">
                         <div className="flex-1 relative">
-                            <input type="text" value={query} onChange={e => setQuery(e.target.value)} placeholder="Search food or scan barcode..." className="w-full p-3 bg-brand-input rounded-xl text-white outline-none focus:border-brand-green border border-transparent pl-3 pr-10" />
+                            <input type="text" value={query} onChange={e => setQuery(e.target.value)} placeholder="Search food..." className="w-full p-3 bg-brand-input rounded-xl text-white outline-none focus:border-brand-green border border-transparent pl-3 pr-10" />
                             <button type="button" onClick={startScanner} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-brand-green p-2" title="Scan Barcode">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
                             </button>
