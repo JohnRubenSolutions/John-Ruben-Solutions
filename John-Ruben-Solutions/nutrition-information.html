@@ -20,7 +20,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, query, where, onSnapshot, deleteDoc, doc, setDoc, getDoc, orderBy, serverTimestamp, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, query, where, onSnapshot, deleteDoc, doc, setDoc, getDoc, getDocs, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         
         const firebaseConfig = {
             apiKey: "AIzaSyD2h_sejv6lB8sFC15xHSgqxfdD2hLd5Kg",
@@ -119,18 +119,17 @@
             const [log, setLog] = useState([]);
             const [dailyWeight, setDailyWeight] = useState("");
             
-            // --- NEW STATES FOR GAMIFICATION & MANUAL ---
+            // --- NEW STATES ---
             const [scores, setScores] = useState({ adherence: 0, consistency: 0 });
             const [showManual, setShowManual] = useState(false);
             const [manualForm, setManualForm] = useState({ name: "", p: "", c: "", f: "", fib: "" });
 
-            // Selection & Adjustment
             const [selectedFood, setSelectedFood] = useState(null);
             const [displayAmount, setDisplayAmount] = useState(100);
             const [measureUnit, setMeasureUnit] = useState('g');
-            
             const [isScanning, setIsScanning] = useState(false);
             const [loading, setLoading] = useState(false);
+            
             const scannerRef = useRef(null);
             const chartRef = useRef(null); 
 
@@ -153,12 +152,15 @@
                 if (snap.exists()) setTargets(snap.data());
             };
 
-            // DATA FETCHING (Single Day)
+            // --- DATA FETCHING (Single Day) ---
             useEffect(() => {
                 if (!user || !window.fb) return;
+                
+                // Real-time Daily Log
                 const q = window.fb.query(window.fb.collection(window.fb.db, "users", user.uid, "logs"), window.fb.where("date", "==", currentDate));
                 const unsub = window.fb.onSnapshot(q, (snap) => {
                     const raw = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                    // Client-side sort to avoid index issues
                     raw.sort((a,b) => (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0)); 
                     setLog(raw);
                 });
@@ -172,14 +174,18 @@
                 return () => unsub();
             }, [user, currentDate]);
 
-            // --- ANALYTICS ENGINE (Chart + Scores) ---
+            // --- ANALYTICS ENGINE ---
             useEffect(() => {
-                if (view === 'trends' && user && chartRef.current) {
-                    calculateAnalytics();
+                if (view === 'trends' && user) {
+                    // Small delay to ensure canvas is mounted
+                    setTimeout(calculateAnalytics, 100);
                 }
             }, [view, user]);
 
             const calculateAnalytics = async () => {
+                if(!chartRef.current) return;
+
+                // Fetch ALL logs without complex OrderBy to avoid index errors
                 const logSnap = await window.fb.getDocs(window.fb.collection(window.fb.db, "users", user.uid, "logs"));
                 const weightSnap = await window.fb.getDocs(window.fb.collection(window.fb.db, "users", user.uid, "daily_stats"));
                 
@@ -195,21 +201,19 @@
                     dailyData[d.date].weight = parseFloat(d.weight);
                 });
 
-                // --- 1. GAMIFICATION MATH ---
+                // --- SCORES ---
                 const dates = Object.keys(dailyData).sort();
                 if (dates.length > 0) {
-                    // Consistency
                     const firstDate = new Date(dates[0]);
                     const lastDate = new Date(dates[dates.length - 1]);
                     const diffTime = Math.abs(lastDate - firstDate);
                     const totalDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; 
                     const loggedDays = dates.length;
-                    const consistencyScore = Math.round((loggedDays / totalDays) * 100);
+                    const consistencyScore = totalDays > 0 ? Math.round((loggedDays / totalDays) * 100) : 0;
 
-                    // Adherence (Option C: +/- 10% of Target)
                     let adherenceDays = 0;
-                    const target = targets.calories;
-                    const range = target * 0.10; // 10%
+                    const target = targets.calories || 2000;
+                    const range = target * 0.10; 
                     const minCal = target - range;
                     const maxCal = target + range;
 
@@ -218,11 +222,11 @@
                         if (intake >= minCal && intake <= maxCal) adherenceDays++;
                     });
                     
-                    const adherenceScore = Math.round((adherenceDays / loggedDays) * 100);
+                    const adherenceScore = loggedDays > 0 ? Math.round((adherenceDays / loggedDays) * 100) : 0;
                     setScores({ adherence: adherenceScore, consistency: consistencyScore });
                 }
 
-                // --- 2. CHART DATA PREP ---
+                // --- CHART DATA ---
                 const weeklyData = {};
                 Object.keys(dailyData).forEach(dateStr => {
                     const weekKey = getWeekNumber(new Date(dateStr));
@@ -256,6 +260,7 @@
                     },
                     options: {
                         responsive: true,
+                        maintainAspectRatio: false,
                         interaction: { mode: 'index', intersect: false },
                         scales: {
                             y: { type: 'linear', display: true, position: 'left', title: {display: true, text:'Calories'} },
@@ -265,36 +270,46 @@
                 });
             };
 
+            // --- EXPORT FUNCTION ---
             const exportFullHistory = async () => {
+                // 1. Force Render Graph
                 setView('trends');
-                await new Promise(r => setTimeout(r, 1000)); 
+                await new Promise(r => setTimeout(r, 1500)); // Wait for render
 
                 const { jsPDF } = window.jspdf;
                 const doc = new jsPDF();
                 const navy = [15, 23, 42]; 
                 
+                // Header
                 doc.setFontSize(18); doc.setTextColor(...navy); doc.text("JOHN RUBEN SOLUTIONS", 14, 20);
                 doc.setFontSize(12); doc.setTextColor(100); doc.text(`Full Nutrition & Performance Report`, 14, 28);
                 
-                // Add Scores
-                doc.setFontSize(10);
-                doc.setTextColor(0);
+                // Scores
+                doc.setFontSize(10); doc.setTextColor(0);
                 doc.text(`Adherence Score: ${scores.adherence}%`, 14, 35);
                 doc.text(`Consistency Score: ${scores.consistency}%`, 70, 35);
 
+                // Image
                 const canvas = document.getElementById('trendChart');
                 if (canvas) {
                     const imgData = canvas.toDataURL("image/png");
                     doc.addImage(imgData, 'PNG', 14, 40, 180, 80);
                 }
 
-                const logSnap = await window.fb.getDocs(window.fb.query(window.fb.collection(window.fb.db, "users", user.uid, "logs"), window.fb.orderBy("date", "desc"), window.fb.orderBy("createdAt", "asc")));
+                // FETCH RAW DATA (Client side sorting to avoid index errors)
+                const logSnap = await window.fb.getDocs(window.fb.collection(window.fb.db, "users", user.uid, "logs"));
                 const weightSnap = await window.fb.getDocs(window.fb.collection(window.fb.db, "users", user.uid, "daily_stats"));
+                
                 const weights = {}; weightSnap.forEach(d => weights[d.id] = d.data().weight);
 
+                const rawLogs = [];
+                logSnap.forEach(doc => rawLogs.push(doc.data()));
+                
+                // Sort by Date Descending
+                rawLogs.sort((a, b) => new Date(b.date) - new Date(a.date));
+
                 const grouped = {};
-                logSnap.forEach(doc => {
-                    const d = doc.data();
+                rawLogs.forEach(d => {
                     if(!grouped[d.date]) grouped[d.date] = [];
                     grouped[d.date].push(d);
                 });
@@ -305,6 +320,9 @@
                 Object.keys(grouped).forEach(date => {
                     if (finalY > 250) { doc.addPage(); finalY = 20; }
                     const items = grouped[date];
+                    // Sort items by time inside the day
+                    items.sort((a,b) => (a.time > b.time) ? 1 : -1);
+
                     const dayTotal = items.reduce((acc, i) => ({ cals: acc.cals + i.calories, pro: acc.pro + i.protein, carbs: acc.carbs + i.carbs, fat: acc.fat + i.fat }), { cals: 0, pro: 0, carbs: 0, fat: 0 });
                     
                     doc.setFontSize(10); doc.setTextColor(...navy); doc.setFont("helvetica", "bold");
@@ -313,7 +331,7 @@
                     const tableBody = items.map(i => [
                         i.time || '--',
                         i.name.substring(0, 30),
-                        (i.grams > 0 ? Math.round(i.grams) + 'g' : '-'),
+                        (i.grams > 0 ? parseFloat(i.grams).toFixed(1) + 'g' : '-'),
                         parseFloat(i.calories).toFixed(1),
                         parseFloat(i.protein).toFixed(1),
                         parseFloat(i.carbs).toFixed(1),
@@ -344,6 +362,7 @@
 
                 if (finalY > 230) { doc.addPage(); finalY = 20; }
                 
+                // WEEKLY SUMMARY
                 doc.setFontSize(14);
                 doc.text("Weekly Averages Summary", 14, finalY);
                 
@@ -473,10 +492,10 @@
                         name: item.name,
                         grams: item.userGrams,
                         calories: item.calories * f,
-                        protein: item.protein * f,
-                        carbs: item.carbs * f,
-                        fat: item.fat * f,
-                        fiber: item.fiber * f,
+                        protein: parseFloat((item.protein * f).toFixed(1)),
+                        carbs: parseFloat((item.carbs * f).toFixed(1)),
+                        fat: parseFloat((item.fat * f).toFixed(1)),
+                        fiber: parseFloat((item.fiber * f).toFixed(1)),
                         date: currentDate,
                         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
                         createdAt: window.fb.serverTimestamp()
@@ -716,7 +735,7 @@
                             <div className="bg-brand-card p-4 rounded-2xl border border-slate-700">
                                 <h3 className="font-bold text-white mb-4">Weekly Trends</h3>
                                 <div className="relative h-80 w-full">
-                                    <canvas id="trendChart"></canvas>
+                                    <canvas ref={chartRef} id="trendChart"></canvas>
                                 </div>
                             </div>
                         </div>
