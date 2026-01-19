@@ -36,10 +36,8 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        // Expose to window for vanilla JS calls
         window.fb = { auth, db, doc, setDoc, getDoc, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword };
 
-        // Auth Listener
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 document.getElementById('auth-screen').classList.add('hidden');
@@ -64,9 +62,6 @@
                 if(data.activity) document.getElementById('activity').value = data.activity;
                 if(data.goal) document.getElementById('goal').value = data.goal;
                 if(data.bodyType) document.getElementById('bodyType').value = data.bodyType;
-                
-                // Optional: Auto-calculate on load if profile exists
-                // calculate(); 
             }
         }
     </script>
@@ -125,7 +120,6 @@
                     <label class="text-xs font-bold text-slate-400 uppercase tracking-wider">Age</label>
                     <input type="number" id="age" value="35" class="w-full p-4 bg-brand-input rounded-xl text-white outline-none mt-1 border border-transparent focus:border-brand-green transition-colors">
                 </div>
-                
                 <div>
                     <label class="text-xs font-bold text-slate-400 uppercase tracking-wider">Current Weight</label>
                     <div class="flex items-center bg-brand-input rounded-xl mt-1 border border-transparent focus-within:border-brand-green transition-colors">
@@ -134,7 +128,6 @@
                         <input type="hidden" id="weightUnit" value="lbs">
                     </div>
                 </div>
-
                 <div>
                     <label class="text-xs font-bold text-slate-400 uppercase tracking-wider">Goal Weight</label>
                     <div class="flex items-center bg-brand-input rounded-xl mt-1 border border-transparent focus-within:border-brand-green transition-colors">
@@ -142,7 +135,6 @@
                         <span id="goalUnitDisplay" class="px-4 py-2 text-xs font-bold text-slate-500 uppercase">lbs</span>
                     </div>
                 </div>
-                
                 <div class="md:col-span-2">
                     <label class="text-xs font-bold text-slate-400 uppercase tracking-wider">Height</label>
                     <div class="flex items-center bg-brand-input rounded-xl mt-1 border border-transparent focus-within:border-brand-green transition-colors">
@@ -172,7 +164,6 @@
                         <option value="1.725">Active (6+ hours/week)</option>
                     </select>
                 </div>
-
                 <div>
                     <label class="text-xs font-bold text-slate-400 uppercase tracking-wider">Current Goal</label>
                     <select id="goal" class="w-full p-4 bg-brand-input rounded-xl text-white outline-none mt-1 border border-transparent focus:border-brand-green transition-colors cursor-pointer">
@@ -193,17 +184,14 @@
         <div id="results" class="hidden animate-up">
             <div class="bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 text-white rounded-[2rem] p-8 text-center shadow-2xl mb-6 relative overflow-hidden">
                 <div class="absolute top-0 right-0 w-64 h-64 bg-brand-teal rounded-full blur-[100px] opacity-10"></div>
-                
                 <span class="text-xs font-bold text-brand-green uppercase tracking-[0.2em] mb-2 block">Your Daily Ceiling</span>
                 <div class="text-6xl md:text-7xl font-extrabold mb-4 tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white to-slate-400" id="target-cal">0</div>
-                
                 <div id="timeline-container" class="bg-slate-800/50 rounded-xl p-4 border border-slate-600 mb-4 hidden">
                     <p class="text-xs font-bold text-brand-teal uppercase tracking-widest mb-1">Projected Timeline</p>
                     <p class="text-white text-sm mb-1">Reach your goal weight by:</p>
                     <p class="text-xl font-extrabold text-white" id="goal-date">Loading...</p>
                     <p class="text-[10px] text-slate-400 mt-1">(<span id="goal-weeks">0</span> weeks from today)</p>
                 </div>
-
                 <div class="flex justify-center gap-4 mt-2">
                     <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Base TDEE: <span id="tdee-base" class="text-white">0</span></div>
                     <div class="text-[10px] font-bold uppercase tracking-wider text-brand-teal">BMI: <span id="val-bmi" class="text-white">0</span></div>
@@ -228,8 +216,8 @@
                 </div>
 
                 <div class="flex flex-col gap-3 mb-6">
-                    <a href="nutrition-information.html" class="block w-full py-3 text-center bg-brand-navy border border-brand-teal/30 rounded-xl hover:bg-brand-teal/10 text-brand-teal font-bold text-sm transition-all">🥗 Go to Nutrition Tracker</a>
-                    <a href="drug-info.html" class="block w-full py-2 text-center text-xs text-slate-400 hover:text-white transition-colors">💊 Check Drug Interactions</a>
+                    <a href="nutrition-information.html" class="block w-full py-3 text-center bg-brand-navy border border-brand-teal/30 rounded-xl hover:bg-brand-teal/10 text-brand-teal font-bold text-sm transition-all">🥗 Start Nutrition Look Up</a>
+                    <a href="drug-info.html" class="block w-full py-2 text-center text-xs text-slate-400 hover:text-white transition-colors">💊 Taking medications? <span class="underline">Check Drug Information</span></a>
                 </div>
 
                 <div id="protein-alert" class="p-4 rounded-xl text-xs leading-relaxed mb-4 border-l-4 bg-slate-800">
@@ -276,7 +264,6 @@
                          <span class="font-bold text-sm text-brand-green"><span id="val-fiber">0</span>g / day</span>
                     </div>
                 </div>
-                
                  <div class="mt-8">
                     <div class="flex justify-between items-center mb-4"><strong class="text-slate-200 text-sm">🏋️ Weekly Training Split</strong></div>
                     <div class="grid grid-cols-2 gap-3">
@@ -310,7 +297,6 @@
     </div>
 
     <script>
-        // Auth Handlers
         function handleLogin() {
             const e = document.getElementById('email').value;
             const p = document.getElementById('password').value;
@@ -322,7 +308,6 @@
             window.fb.createUserWithEmailAndPassword(window.fb.auth, e, p).catch(err => document.getElementById('auth-error').innerText = err.message);
         }
         
-        // Navigation Guard
         let hasCalculated = false;
         window.addEventListener('beforeunload', function (e) {
             if (hasCalculated) {
@@ -332,7 +317,6 @@
             }
         });
 
-        // Unit Toggles
         function toggleWeightUnit() {
             const btn = document.getElementById('weightUnitBtn');
             const input = document.getElementById('weightUnit');
@@ -347,11 +331,9 @@
             else { input.value = 'in'; btn.innerText = 'in'; }
         }
 
-        // CORE CALCULATION LOGIC
         async function calculate() {
-            hasCalculated = true; // Enable nav guard
+            hasCalculated = true;
             
-            // Inputs
             const gender = document.getElementById('gender').value;
             const wInput = parseFloat(document.getElementById('weight').value);
             const wUnit = document.getElementById('weightUnit').value;
@@ -363,7 +345,6 @@
             const goalCalorieAdjustment = parseFloat(document.getElementById('goal').value);
             const bodyType = document.getElementById('bodyType').value;
 
-            // Unit Normalization
             let kg, lbs, cm, heightM, goalWeightLbs;
             if (wUnit === 'lbs') {
                 lbs = wInput; kg = wInput * 0.453592; goalWeightLbs = goalWeightInput;
@@ -377,30 +358,22 @@
                 cm = hInput; heightM = hInput / 100;
             }
 
-            // BMI & HR
             const bmi = (kg / (heightM * heightM)).toFixed(1);
             const maxHeartRate = 220 - a;
             const zone2Low = Math.round(maxHeartRate * 0.60);
             const zone2High = Math.round(maxHeartRate * 0.70);
-
-            // Hydration
             const waterOz = Math.round(lbs * 0.75);
             const waterMl = Math.round(waterOz * 29.5735);
             const glasses = (waterOz / 8).toFixed(1);
-
-            // Fiber
             let fiberTarget = (gender === 'male') ? 45 : 30;
 
-            // BMR (Mifflin-St Jeor)
             let bmr = (10 * kg) + (6.25 * cm) - (5 * a);
             bmr = (gender === 'male') ? bmr + 5 : bmr - 161;
 
-            // Calories & Macros
             const tdee = Math.round(bmr * act);
             const targetCal = tdee + goalCalorieAdjustment;
-            const minProteinGrams = Math.round(1.6 * kg); // Safety threshold
+            const minProteinGrams = Math.round(1.6 * kg); 
 
-            // Macro Ratios
             let pRatio, cRatio, fRatio;
             if (bodyType === 'ecto') { pRatio = 0.30; cRatio = 0.50; fRatio = 0.20; }
             else if (bodyType === 'endo') { pRatio = 0.40; cRatio = 0.20; fRatio = 0.40; }
@@ -410,11 +383,9 @@
             let cGrams = Math.round((targetCal * cRatio) / 4);
             let fGrams = Math.round((targetCal * fRatio) / 9);
 
-            // Safety Adjustments
             const alertBox = document.getElementById('protein-alert');
             const alertMsg = document.getElementById('protein-msg');
             const alertTitle = alertBox.querySelector('.alert-title');
-            const macroHeader = document.getElementById('macro-header');
 
             if (pGrams < minProteinGrams) {
                 pGrams = minProteinGrams;
@@ -437,7 +408,6 @@
                 alertMsg.className = "text-green-100";
             }
 
-            // Timeline Calculation
             const timelineContainer = document.getElementById('timeline-container');
             const goalDateEl = document.getElementById('goal-date');
             const goalWeeksEl = document.getElementById('goal-weeks');
@@ -447,10 +417,9 @@
                 const totalDeficit = lbsDiff * 3500;
                 const days = totalDeficit / Math.abs(goalCalorieAdjustment);
                 
-                // Logic Check: Direction vs Goal
                 let valid = true;
-                if (goalCalorieAdjustment < 0 && goalWeightLbs > lbs) valid = false; // Losing but goal is higher
-                if (goalCalorieAdjustment > 0 && goalWeightLbs < lbs) valid = false; // Gaining but goal is lower
+                if (goalCalorieAdjustment < 0 && goalWeightLbs > lbs) valid = false; 
+                if (goalCalorieAdjustment > 0 && goalWeightLbs < lbs) valid = false; 
 
                 if (valid && days > 0) {
                     const d = new Date();
@@ -465,7 +434,6 @@
                 timelineContainer.classList.add('hidden');
             }
 
-            // Render Results
             document.getElementById('tdee-base').innerText = tdee;
             document.getElementById('target-cal').innerText = targetCal;
             document.getElementById('val-pro').innerText = pGrams + "g";
@@ -482,12 +450,10 @@
             resultsDiv.classList.remove('hidden');
             resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
             
-            // Show Download Button
             const dlBtn = document.getElementById('downloadBtn');
             dlBtn.classList.remove('hidden');
-            dlBtn.classList.add('flex'); // Ensure flex is applied when visible
+            dlBtn.classList.add('flex');
 
-            // Save to Firebase
             const user = window.fb.auth.currentUser;
             if (user) {
                 try {
@@ -509,7 +475,6 @@
             const green = '#84cc16';
             const date = new Date().toLocaleDateString();
 
-            // Values
             const cals = document.getElementById('target-cal').innerText;
             const pro = document.getElementById('val-pro').innerText;
             const carb = document.getElementById('val-carb').innerText;
@@ -524,7 +489,6 @@
             doc.text(`Generated: ${date}`, 20, 34);
 
             doc.setDrawColor(green); doc.setLineWidth(1); doc.line(20, 40, 190, 40);
-            
             doc.setFontSize(14); doc.setTextColor(navy); doc.text("DAILY TARGETS", 20, 50);
             doc.setFontSize(16); doc.setTextColor(green); doc.text(`Calories: ${cals}`, 20, 60);
             doc.setFontSize(12); doc.setTextColor(navy); doc.text(`P: ${pro}  |  C: ${carb}  |  F: ${fat}`, 20, 70);
@@ -547,4 +511,3 @@
     </script>
 </body>
 </html>
-
