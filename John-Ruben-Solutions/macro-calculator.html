@@ -60,13 +60,12 @@
         background-size: 1em; 
     }
     
-    /* Remove default arrow from number inputs in Chrome, Safari, Edge, Opera */
+    /* Remove default arrow from number inputs */
     input[type=number]::-webkit-inner-spin-button, 
     input[type=number]::-webkit-outer-spin-button { 
         -webkit-appearance: none; 
         margin: 0; 
     }
-    /* Firefox */
     input[type=number] {
         -moz-appearance: textfield;
     }
@@ -93,14 +92,14 @@
                 
                 <div class="space-y-2">
                     <label class="text-xs font-bold text-brand-muted uppercase tracking-wider">Age</label>
-                    <input type="number" id="age" value="38" class="w-full p-4 bg-brand-input border border-slate-600 rounded-xl font-bold text-white focus:outline-none focus:border-brand-green transition-colors text-base">
+                    <input type="number" id="age" value="35" class="w-full p-4 bg-brand-input border border-slate-600 rounded-xl font-bold text-white focus:outline-none focus:border-brand-green transition-colors text-base">
                 </div>
 
                 <div class="space-y-2">
                     <label class="text-xs font-bold text-brand-muted uppercase tracking-wider">Weight</label>
-                    <div class="flex items-center bg-brand-input rounded-xl p-1.5 border border-slate-600 focus-within:border-brand-green transition-colors">
-                        <input type="number" id="weight" value="163" class="w-full bg-transparent text-white font-bold text-xl px-3 focus:outline-none placeholder-slate-500" placeholder="0">
-                        <button type="button" id="weightUnitBtn" onclick="toggleWeightUnit()" class="h-10 px-4 bg-brand-card text-white rounded-lg font-bold text-sm uppercase tracking-wide border border-slate-600 hover:bg-brand-green hover:border-brand-green hover:text-white transition-all shadow-sm active:scale-95">
+                    <div class="flex items-center bg-brand-input rounded-xl p-1.5 border border-slate-600 focus-within:border-brand-green transition-colors shadow-inner">
+                        <input type="number" id="weight" value="155" class="w-full bg-transparent text-white font-bold text-xl px-3 focus:outline-none placeholder-slate-500" placeholder="0">
+                        <button type="button" id="weightUnitBtn" onclick="toggleWeightUnit()" class="h-10 px-4 bg-brand-card text-white rounded-lg font-bold text-sm uppercase tracking-wide border border-slate-600 hover:bg-brand-green hover:border-brand-green hover:text-white transition-all shadow-sm active:scale-95 flex-shrink-0">
                             lbs
                         </button>
                         <input type="hidden" id="weightUnit" value="lbs">
@@ -109,9 +108,9 @@
 
                 <div class="space-y-2">
                     <label class="text-xs font-bold text-brand-muted uppercase tracking-wider">Height</label>
-                    <div class="flex items-center bg-brand-input rounded-xl p-1.5 border border-slate-600 focus-within:border-brand-green transition-colors">
+                    <div class="flex items-center bg-brand-input rounded-xl p-1.5 border border-slate-600 focus-within:border-brand-green transition-colors shadow-inner">
                         <input type="number" id="height" value="66.5" class="w-full bg-transparent text-white font-bold text-xl px-3 focus:outline-none placeholder-slate-500" placeholder="0">
-                        <button type="button" id="heightUnitBtn" onclick="toggleHeightUnit()" class="h-10 px-4 bg-brand-card text-white rounded-lg font-bold text-sm uppercase tracking-wide border border-slate-600 hover:bg-brand-green hover:border-brand-green hover:text-white transition-all shadow-sm active:scale-95">
+                        <button type="button" id="heightUnitBtn" onclick="toggleHeightUnit()" class="h-10 px-4 bg-brand-card text-white rounded-lg font-bold text-sm uppercase tracking-wide border border-slate-600 hover:bg-brand-green hover:border-brand-green hover:text-white transition-all shadow-sm active:scale-95 flex-shrink-0">
                             in
                         </button>
                         <input type="hidden" id="heightUnit" value="in">
@@ -120,31 +119,31 @@
             </div>
 
             <div class="space-y-2 mb-6">
-                <label class="text-xs font-bold text-brand-muted uppercase tracking-wider">Metabolic Chassis (Body Type)</label>
+                <label class="text-xs font-bold text-brand-muted uppercase tracking-wider">Body Type (Metabolism)</label>
                 <select id="bodyType" class="w-full p-4 bg-brand-input border border-slate-600 rounded-xl font-bold text-white focus:outline-none focus:border-brand-green transition-colors cursor-pointer text-base">
-                    <option value="endo" selected>🐻 The Bear (Easy Gainer)</option>
-                    <option value="ecto">🏎️ The Greyhound (Hard Gainer)</option>
-                    <option value="meso">🦍 The Gorilla (Athletic/Balanced)</option>
+                    <option value="meso" selected>Mesomorph (Naturally Muscular)</option>
+                    <option value="ecto">Ectomorph (Naturally Thin)</option>
+                    <option value="endo">Endomorph (Naturally Broad)</option>
                 </select>
-                <p class="text-[11px] text-brand-muted ml-1">Select the frame that represents your natural baseline.</p>
+                <p class="text-[11px] text-brand-muted ml-1">Select the frame that best matches your natural build.</p>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                 <div class="space-y-2">
-                    <label class="text-xs font-bold text-brand-muted uppercase tracking-wider">Activity Level</label>
+                    <label class="text-xs font-bold text-brand-muted uppercase tracking-wider">Weekly Activity</label>
                     <select id="activity" class="w-full p-4 bg-brand-input border border-slate-600 rounded-xl font-bold text-white focus:outline-none focus:border-brand-green transition-colors cursor-pointer text-base">
-                        <option value="1.2">🪑 Desk Jockey (Sedentary)</option>
-                        <option value="1.55" selected>🏃 Mover & Shaker (Moderate)</option>
-                        <option value="1.725">🔥 Human Machine (Very Active)</option>
+                        <option value="1.2">Sedentary (0-2 hours exercise)</option>
+                        <option value="1.55" selected>Moderate (3-5 hours exercise)</option>
+                        <option value="1.725">Active (6+ hours exercise)</option>
                     </select>
                 </div>
 
                 <div class="space-y-2">
                     <label class="text-xs font-bold text-brand-muted uppercase tracking-wider">Current Goal</label>
                     <select id="goal" class="w-full p-4 bg-brand-input border border-slate-600 rounded-xl font-bold text-white focus:outline-none focus:border-brand-green transition-colors cursor-pointer text-base">
-                        <option value="-500">✂️ Shred Mode (Lose Fat)</option>
-                        <option value="0">⚓ Cruise Control (Maintain)</option>
-                        <option value="250">💪 Gains Train (Build Muscle)</option>
+                        <option value="0">Maintain Weight</option>
+                        <option value="-500">Lose Weight</option>
+                        <option value="250">Build Muscle</option>
                     </select>
                 </div>
             </div>
