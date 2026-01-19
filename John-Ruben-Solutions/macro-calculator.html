@@ -21,6 +21,7 @@
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+        // --- YOUR FIREBASE CONFIG ---
         const firebaseConfig = {
             apiKey: "AIzaSyD2h_sejv6lB8sFC15xHSgqxfdD2hLd5Kg",
             authDomain: "john-ruben-solutions.firebaseapp.com",
@@ -55,13 +56,16 @@
             const docSnap = await getDoc(docRef);
             if (docSnap.exists()) {
                 const data = docSnap.data();
-                document.getElementById('gender').value = data.gender;
-                document.getElementById('age').value = data.age;
-                document.getElementById('weight').value = data.weight;
-                document.getElementById('height').value = data.height;
-                document.getElementById('activity').value = data.activity;
-                document.getElementById('goal').value = data.goal;
-                // Auto calculate visually
+                if(data.gender) document.getElementById('gender').value = data.gender;
+                if(data.age) document.getElementById('age').value = data.age;
+                if(data.weight) document.getElementById('weight').value = data.weight;
+                if(data.goalWeight) document.getElementById('goalWeight').value = data.goalWeight;
+                if(data.height) document.getElementById('height').value = data.height;
+                if(data.activity) document.getElementById('activity').value = data.activity;
+                if(data.goal) document.getElementById('goal').value = data.goal;
+                if(data.bodyType) document.getElementById('bodyType').value = data.bodyType;
+                
+                // Optional: Auto-calculate on load if profile exists
                 // calculate(); 
             }
         }
@@ -74,7 +78,8 @@
                     colors: {
                         brand: { navy: '#0f172a', card: '#1e293b', green: '#84cc16', teal: '#22d3ee', input: '#334155' }
                     },
-                    fontFamily: { sans: ['"Plus Jakarta Sans"', 'sans-serif'] }
+                    fontFamily: { sans: ['"Plus Jakarta Sans"', 'sans-serif'] },
+                    boxShadow: { 'glow': '0 0 20px rgba(132, 204, 22, 0.15)' }
                 }
             }
         }
@@ -82,9 +87,10 @@
     
     <style>
         body { background-color: #0f172a; color: #f8fafc; }
-        /* Hide arrows in number inputs */
         input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
         input[type=number] { -moz-appearance: textfield; }
+        .animate-up { animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body class="antialiased pb-20">
@@ -106,11 +112,14 @@
             <button onclick="window.fb.signOut(window.fb.auth)" class="text-xs text-slate-400 hover:text-white">Sign Out</button>
         </div>
 
-        <div class="bg-brand-card rounded-[2rem] border border-slate-700 p-6 mb-8 shadow-xl">
+        <div class="bg-brand-card rounded-[2rem] border border-slate-700 p-6 md:p-8 mb-8 shadow-xl">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 <div>
                     <label class="text-xs font-bold text-slate-400 uppercase tracking-wider">Gender</label>
-                    <select id="gender" class="w-full p-4 bg-brand-input rounded-xl text-white outline-none mt-1 border border-transparent focus:border-brand-green transition-colors cursor-pointer"><option value="male">Male</option><option value="female">Female</option></select>
+                    <select id="gender" class="w-full p-4 bg-brand-input rounded-xl text-white outline-none mt-1 border border-transparent focus:border-brand-green transition-colors cursor-pointer">
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                    </select>
                 </div>
                 <div>
                     <label class="text-xs font-bold text-slate-400 uppercase tracking-wider">Age</label>
@@ -120,8 +129,8 @@
                 <div>
                     <label class="text-xs font-bold text-slate-400 uppercase tracking-wider">Current Weight</label>
                     <div class="flex items-center bg-brand-input rounded-xl mt-1 border border-transparent focus-within:border-brand-green transition-colors">
-                        <input type="number" id="weight" value="155" class="w-full p-4 bg-transparent text-white outline-none">
-                        <button id="weightUnitBtn" onclick="toggleWeightUnit()" class="px-4 py-2 mr-2 bg-brand-card rounded-lg text-xs font-bold text-slate-300 hover:text-white uppercase">lbs</button>
+                        <input type="number" id="weight" value="155" class="w-full p-4 bg-transparent text-white outline-none placeholder-slate-500">
+                        <button id="weightUnitBtn" onclick="toggleWeightUnit()" class="px-4 py-2 mr-2 bg-brand-card rounded-lg text-xs font-bold text-slate-300 hover:text-white uppercase border border-slate-600">lbs</button>
                         <input type="hidden" id="weightUnit" value="lbs">
                     </div>
                 </div>
@@ -129,7 +138,7 @@
                 <div>
                     <label class="text-xs font-bold text-slate-400 uppercase tracking-wider">Goal Weight</label>
                     <div class="flex items-center bg-brand-input rounded-xl mt-1 border border-transparent focus-within:border-brand-green transition-colors">
-                        <input type="number" id="goalWeight" value="145" class="w-full p-4 bg-transparent text-white outline-none">
+                        <input type="number" id="goalWeight" value="145" class="w-full p-4 bg-transparent text-white outline-none placeholder-slate-500">
                         <span id="goalUnitDisplay" class="px-4 py-2 text-xs font-bold text-slate-500 uppercase">lbs</span>
                     </div>
                 </div>
@@ -137,8 +146,8 @@
                 <div class="md:col-span-2">
                     <label class="text-xs font-bold text-slate-400 uppercase tracking-wider">Height</label>
                     <div class="flex items-center bg-brand-input rounded-xl mt-1 border border-transparent focus-within:border-brand-green transition-colors">
-                        <input type="number" id="height" value="66.5" class="w-full p-4 bg-transparent text-white outline-none">
-                        <button id="heightUnitBtn" onclick="toggleHeightUnit()" class="px-4 py-2 mr-2 bg-brand-card rounded-lg text-xs font-bold text-slate-300 hover:text-white uppercase">in</button>
+                        <input type="number" id="height" value="66.5" class="w-full p-4 bg-transparent text-white outline-none placeholder-slate-500">
+                        <button id="heightUnitBtn" onclick="toggleHeightUnit()" class="px-4 py-2 mr-2 bg-brand-card rounded-lg text-xs font-bold text-slate-300 hover:text-white uppercase border border-slate-600">in</button>
                         <input type="hidden" id="heightUnit" value="in">
                     </div>
                 </div>
@@ -151,29 +160,34 @@
                     <option value="ecto">Ectomorph (Lean / Fast Metabolism)</option>
                     <option value="endo">Endomorph (Broad / Slow Metabolism)</option>
                 </select>
+                <p class="text-[10px] text-slate-500 mt-1 ml-1">Select the option that best describes your natural build.</p>
             </div>
 
-            <div class="mb-6">
-                <label class="text-xs font-bold text-slate-400 uppercase tracking-wider">Activity Level</label>
-                <select id="activity" class="w-full p-4 bg-brand-input rounded-xl text-white outline-none mt-1 border border-transparent focus:border-brand-green transition-colors cursor-pointer">
-                    <option value="1.2">Sedentary (0-1 hours/week)</option>
-                    <option value="1.55" selected>Moderate (3-5 hours/week)</option>
-                    <option value="1.725">Active (6+ hours/week)</option>
-                </select>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <div>
+                    <label class="text-xs font-bold text-slate-400 uppercase tracking-wider">Weekly Activity</label>
+                    <select id="activity" class="w-full p-4 bg-brand-input rounded-xl text-white outline-none mt-1 border border-transparent focus:border-brand-green transition-colors cursor-pointer">
+                        <option value="1.2">Sedentary (0-1 hours/week)</option>
+                        <option value="1.55" selected>Moderate (3-5 hours/week)</option>
+                        <option value="1.725">Active (6+ hours/week)</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="text-xs font-bold text-slate-400 uppercase tracking-wider">Current Goal</label>
+                    <select id="goal" class="w-full p-4 bg-brand-input rounded-xl text-white outline-none mt-1 border border-transparent focus:border-brand-green transition-colors cursor-pointer">
+                        <option value="-500" selected>Lose Weight Fast (-500 calories)</option>
+                        <option value="-250">Lose Weight Slow (-250 calories)</option>
+                        <option value="0">Maintain (No calorie adjustment)</option>
+                        <option value="250">Gain Weight Slow (+250 calories)</option>
+                        <option value="500">Gain Weight Fast (+500 calories)</option>
+                    </select>
+                </div>
             </div>
 
-            <div class="mb-8">
-                <label class="text-xs font-bold text-slate-400 uppercase tracking-wider">Goal</label>
-                <select id="goal" class="w-full p-4 bg-brand-input rounded-xl text-white outline-none mt-1 border border-transparent focus:border-brand-green transition-colors cursor-pointer">
-                    <option value="-500" selected>Lose Weight Fast (-500 cal)</option>
-                    <option value="-250">Lose Weight Slow (-250 cal)</option>
-                    <option value="0">Maintain (No Adjustment)</option>
-                    <option value="250">Gain Weight Slow (+250 cal)</option>
-                    <option value="500">Gain Weight Fast (+500 cal)</option>
-                </select>
-            </div>
-
-            <button onclick="calculate()" class="w-full py-4 bg-brand-green text-brand-navy font-extrabold rounded-xl text-lg shadow-glow hover:bg-white transition-all active:scale-[0.98]">GENERATE TARGETS</button>
+            <button onclick="calculate()" class="w-full py-4 bg-gradient-to-r from-brand-green to-lime-600 hover:to-brand-green text-brand-navy font-extrabold rounded-xl text-lg shadow-glow transition-all active:scale-[0.98]">
+                GENERATE TARGETS
+            </button>
         </div>
 
         <div id="results" class="hidden animate-up">
@@ -191,26 +205,35 @@
                 </div>
 
                 <div class="flex justify-center gap-4 mt-2">
-                    <div class="text-[10px] font-bold uppercase tracking-wider text-brand-muted">Base TDEE: <span id="tdee-base" class="text-white">0</span></div>
+                    <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Base TDEE: <span id="tdee-base" class="text-white">0</span></div>
                     <div class="text-[10px] font-bold uppercase tracking-wider text-brand-teal">BMI: <span id="val-bmi" class="text-white">0</span></div>
                 </div>
             </div>
 
             <div class="bg-brand-card rounded-[2rem] border border-slate-700 shadow-xl p-6 mb-6">
-                <h3 class="text-lg font-bold text-white mb-6 text-center">Macro Split</h3>
+                <h3 id="macro-header" class="text-lg font-bold text-white mb-6 text-center">Macro Split</h3>
                 <div class="grid grid-cols-3 gap-3 mb-6">
-                    <div class="bg-brand-navy border border-slate-700 rounded-2xl p-4 text-center"><span class="block text-2xl font-bold text-white" id="val-pro">0g</span><span class="text-[10px] text-brand-green uppercase font-bold tracking-wider">Protein</span></div>
-                    <div class="bg-brand-navy border border-slate-700 rounded-2xl p-4 text-center"><span class="block text-2xl font-bold text-white" id="val-carb">0g</span><span class="text-[10px] text-brand-teal uppercase font-bold tracking-wider">Carbs</span></div>
-                    <div class="bg-brand-navy border border-slate-700 rounded-2xl p-4 text-center"><span class="block text-2xl font-bold text-white" id="val-fat">0g</span><span class="text-[10px] text-yellow-400 uppercase font-bold tracking-wider">Fat</span></div>
+                    <div class="bg-brand-navy border border-slate-700 rounded-2xl p-4 text-center">
+                        <span class="block text-2xl font-extrabold text-white" id="val-pro">0g</span>
+                        <span class="text-[10px] font-bold text-brand-green uppercase tracking-wider">Protein</span>
+                    </div>
+                    <div class="bg-brand-navy border border-slate-700 rounded-2xl p-4 text-center">
+                        <span class="block text-2xl font-extrabold text-white" id="val-carb">0g</span>
+                        <span class="text-[10px] font-bold text-brand-teal uppercase tracking-wider">Carbs</span>
+                    </div>
+                    <div class="bg-brand-navy border border-slate-700 rounded-2xl p-4 text-center">
+                        <span class="block text-2xl font-extrabold text-white" id="val-fat">0g</span>
+                        <span class="text-[10px] font-bold text-yellow-400 uppercase tracking-wider">Fat</span>
+                    </div>
                 </div>
 
                 <div class="flex flex-col gap-3 mb-6">
-                    <a href="nutrition-tracker.html" class="block w-full py-3 text-center bg-brand-navy border border-brand-teal/30 rounded-xl hover:bg-brand-teal/10 text-brand-teal font-bold text-sm transition-all">🥗 Start Nutrition Look Up</a>
-                    <a href="drug-info.html" class="block w-full py-2 text-center text-xs text-slate-400 hover:text-white transition-colors">💊 Taking medications? <span class="underline">Check Drug Information</span></a>
+                    <a href="nutrition-tracker.html" class="block w-full py-3 text-center bg-brand-navy border border-brand-teal/30 rounded-xl hover:bg-brand-teal/10 text-brand-teal font-bold text-sm transition-all">🥗 Go to Nutrition Tracker</a>
+                    <a href="drug-info.html" class="block w-full py-2 text-center text-xs text-slate-400 hover:text-white transition-colors">💊 Check Drug Interactions</a>
                 </div>
 
                 <div id="protein-alert" class="p-4 rounded-xl text-xs leading-relaxed mb-4 border-l-4 bg-slate-800">
-                    <strong class="block mb-1 text-sm text-white">Status</strong>
+                    <strong class="block mb-1 text-sm text-white alert-title">Status</strong>
                     <span id="protein-msg" class="text-slate-300">Calculating...</span>
                 </div>
                 
@@ -235,7 +258,10 @@
                         <div class="text-sm text-slate-400">Sleep <strong>8 hours</strong> every night. Recovery is where the growth happens.</div>
                     </div>
                     <div class="flex justify-between items-center pb-4 border-b border-slate-700">
-                        <div class="max-w-[70%]"><span class="font-bold text-sm text-slate-300 block">Hydration Goal</span><span class="text-[10px] text-slate-500">0.75oz per lb</span></div>
+                        <div class="max-w-[70%]">
+                            <span class="font-bold text-sm text-slate-300 block">Hydration Goal</span>
+                            <span class="text-[10px] text-slate-500">0.75oz per lb</span>
+                        </div>
                         <div class="text-right">
                             <span class="font-bold text-sm text-blue-400 block" id="val-water-oz">0 oz</span>
                             <span class="text-[10px] text-slate-500 block" id="val-water-ml">0 ml</span>
@@ -387,6 +413,9 @@
             // Safety Adjustments
             const alertBox = document.getElementById('protein-alert');
             const alertMsg = document.getElementById('protein-msg');
+            const alertTitle = alertBox.querySelector('.alert-title');
+            const macroHeader = document.getElementById('macro-header');
+
             if (pGrams < minProteinGrams) {
                 pGrams = minProteinGrams;
                 const pCals = pGrams * 4;
@@ -396,14 +425,23 @@
                 fGrams = (fCals < 0) ? 0 : Math.round(fCals / 9);
                 
                 alertBox.className = "p-4 bg-red-900/20 text-red-200 border border-red-800 rounded-xl text-xs leading-relaxed mb-4 border-l-4 border-red-500";
+                alertTitle.innerText = "⚠️ Auto-Adjustment Active";
+                alertTitle.className = "block mb-1 text-sm font-bold text-red-400";
                 alertMsg.innerText = `Protein adjusted to meet clinical minimum (${pGrams}g). Fats/Carbs balanced.`;
+                alertMsg.className = "text-red-100";
             } else {
                 alertBox.className = "p-4 bg-green-900/20 text-green-200 border border-green-800 rounded-xl text-xs leading-relaxed mb-4 border-l-4 border-brand-green";
-                alertMsg.innerText = `Target protein (${pGrams}g) is safe and optimized.`;
+                alertTitle.innerText = "✅ Protein Optimized";
+                alertTitle.className = "block mb-1 text-sm font-bold text-brand-green";
+                alertMsg.innerText = `Target protein (${pGrams}g) is safely above the 1.6g/kg minimum.`;
+                alertMsg.className = "text-green-100";
             }
 
             // Timeline Calculation
             const timelineContainer = document.getElementById('timeline-container');
+            const goalDateEl = document.getElementById('goal-date');
+            const goalWeeksEl = document.getElementById('goal-weeks');
+
             if (goalCalorieAdjustment !== 0) {
                 const lbsDiff = Math.abs(lbs - goalWeightLbs);
                 const totalDeficit = lbsDiff * 3500;
@@ -417,8 +455,8 @@
                 if (valid && days > 0) {
                     const d = new Date();
                     d.setDate(d.getDate() + Math.round(days));
-                    document.getElementById('goal-date').innerText = d.toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'long', day: 'numeric' });
-                    document.getElementById('goal-weeks').innerText = (days / 7).toFixed(1);
+                    goalDateEl.innerText = d.toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'long', day: 'numeric' });
+                    goalWeeksEl.innerText = (days / 7).toFixed(1);
                     timelineContainer.classList.remove('hidden');
                 } else {
                     timelineContainer.classList.add('hidden');
@@ -440,8 +478,9 @@
             document.getElementById('val-bmi').innerText = bmi;
             document.getElementById('val-zone2').innerText = `${zone2Low}-${zone2High}`;
 
-            document.getElementById('results').classList.remove('hidden');
-            document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.classList.remove('hidden');
+            resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
             
             // Show Download Button
             const dlBtn = document.getElementById('downloadBtn');
@@ -454,7 +493,7 @@
                 try {
                     await window.fb.setDoc(window.fb.doc(window.fb.db, "users", user.uid, "data", "profile"), {
                         gender, weight: wInput, goalWeight: goalWeightInput, height: hInput, age: a, activity: act, goal: goalCalorieAdjustment,
-                        lastCalculated: new Date().toISOString()
+                        lastCalculated: new Date().toISOString(), bodyType: bodyType
                     });
                      await window.fb.setDoc(window.fb.doc(window.fb.db, "users", user.uid, "data", "targets"), {
                         calories: targetCal, protein: pGrams, carbs: cGrams, fat: fGrams
