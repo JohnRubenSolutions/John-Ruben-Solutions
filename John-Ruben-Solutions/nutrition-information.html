@@ -20,7 +20,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, query, where, onSnapshot, deleteDoc, doc, setDoc, getDoc, getDocs, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, query, where, onSnapshot, deleteDoc, doc, setDoc, getDoc, orderBy, serverTimestamp, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         
         const firebaseConfig = {
             apiKey: "AIzaSyD2h_sejv6lB8sFC15xHSgqxfdD2hLd5Kg",
@@ -79,7 +79,6 @@
              return `Week ${parts[1]}, ${parts[0]}`;
         };
 
-        // --- AUTH COMPONENT ---
         const AuthScreen = () => {
             const [isRegister, setIsRegister] = useState(false);
             const [email, setEmail] = useState("");
@@ -111,25 +110,21 @@
 
         const App = () => {
             const [user, setUser] = useState(null);
-            const [view, setView] = useState("daily"); // 'daily' or 'trends'
+            const [view, setView] = useState("daily");
             const [targets, setTargets] = useState({ calories: 2000, protein: 150, carbs: 200, fat: 60 });
             const [query, setQuery] = useState("");
             const [results, setResults] = useState([]);
             const [currentDate, setCurrentDate] = useState(new Date().toISOString().split('T')[0]);
             const [log, setLog] = useState([]);
             const [dailyWeight, setDailyWeight] = useState("");
-            
-            // --- NEW STATES ---
             const [scores, setScores] = useState({ adherence: 0, consistency: 0 });
             const [showManual, setShowManual] = useState(false);
             const [manualForm, setManualForm] = useState({ name: "", p: "", c: "", f: "", fib: "" });
-
             const [selectedFood, setSelectedFood] = useState(null);
             const [displayAmount, setDisplayAmount] = useState(100);
             const [measureUnit, setMeasureUnit] = useState('g');
             const [isScanning, setIsScanning] = useState(false);
             const [loading, setLoading] = useState(false);
-            
             const scannerRef = useRef(null);
             const chartRef = useRef(null); 
 
@@ -152,15 +147,11 @@
                 if (snap.exists()) setTargets(snap.data());
             };
 
-            // --- DATA FETCHING (Single Day) ---
             useEffect(() => {
                 if (!user || !window.fb) return;
-                
-                // Real-time Daily Log
                 const q = window.fb.query(window.fb.collection(window.fb.db, "users", user.uid, "logs"), window.fb.where("date", "==", currentDate));
                 const unsub = window.fb.onSnapshot(q, (snap) => {
                     const raw = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-                    // Client-side sort to avoid index issues
                     raw.sort((a,b) => (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0)); 
                     setLog(raw);
                 });
@@ -174,18 +165,14 @@
                 return () => unsub();
             }, [user, currentDate]);
 
-            // --- ANALYTICS ENGINE ---
             useEffect(() => {
                 if (view === 'trends' && user) {
-                    // Small delay to ensure canvas is mounted
                     setTimeout(calculateAnalytics, 100);
                 }
             }, [view, user]);
 
             const calculateAnalytics = async () => {
                 if(!chartRef.current) return;
-
-                // Fetch ALL logs without complex OrderBy to avoid index errors
                 const logSnap = await window.fb.getDocs(window.fb.collection(window.fb.db, "users", user.uid, "logs"));
                 const weightSnap = await window.fb.getDocs(window.fb.collection(window.fb.db, "users", user.uid, "daily_stats"));
                 
@@ -201,7 +188,6 @@
                     dailyData[d.date].weight = parseFloat(d.weight);
                 });
 
-                // --- SCORES ---
                 const dates = Object.keys(dailyData).sort();
                 if (dates.length > 0) {
                     const firstDate = new Date(dates[0]);
@@ -226,7 +212,6 @@
                     setScores({ adherence: adherenceScore, consistency: consistencyScore });
                 }
 
-                // --- CHART DATA ---
                 const weeklyData = {};
                 Object.keys(dailyData).forEach(dateStr => {
                     const weekKey = getWeekNumber(new Date(dateStr));
@@ -270,42 +255,33 @@
                 });
             };
 
-            // --- EXPORT FUNCTION ---
             const exportFullHistory = async () => {
-                // 1. Force Render Graph
                 setView('trends');
-                await new Promise(r => setTimeout(r, 1500)); // Wait for render
+                await new Promise(r => setTimeout(r, 1500)); 
 
                 const { jsPDF } = window.jspdf;
                 const doc = new jsPDF();
                 const navy = [15, 23, 42]; 
                 
-                // Header
                 doc.setFontSize(18); doc.setTextColor(...navy); doc.text("JOHN RUBEN SOLUTIONS", 14, 20);
                 doc.setFontSize(12); doc.setTextColor(100); doc.text(`Full Nutrition & Performance Report`, 14, 28);
                 
-                // Scores
                 doc.setFontSize(10); doc.setTextColor(0);
                 doc.text(`Adherence Score: ${scores.adherence}%`, 14, 35);
                 doc.text(`Consistency Score: ${scores.consistency}%`, 70, 35);
 
-                // Image
                 const canvas = document.getElementById('trendChart');
                 if (canvas) {
                     const imgData = canvas.toDataURL("image/png");
                     doc.addImage(imgData, 'PNG', 14, 40, 180, 80);
                 }
 
-                // FETCH RAW DATA (Client side sorting to avoid index errors)
                 const logSnap = await window.fb.getDocs(window.fb.collection(window.fb.db, "users", user.uid, "logs"));
                 const weightSnap = await window.fb.getDocs(window.fb.collection(window.fb.db, "users", user.uid, "daily_stats"));
-                
                 const weights = {}; weightSnap.forEach(d => weights[d.id] = d.data().weight);
 
                 const rawLogs = [];
                 logSnap.forEach(doc => rawLogs.push(doc.data()));
-                
-                // Sort by Date Descending
                 rawLogs.sort((a, b) => new Date(b.date) - new Date(a.date));
 
                 const grouped = {};
@@ -316,11 +292,9 @@
 
                 let finalY = 130; 
 
-                // DAILY TABLES
                 Object.keys(grouped).forEach(date => {
                     if (finalY > 250) { doc.addPage(); finalY = 20; }
                     const items = grouped[date];
-                    // Sort items by time inside the day
                     items.sort((a,b) => (a.time > b.time) ? 1 : -1);
 
                     const dayTotal = items.reduce((acc, i) => ({ cals: acc.cals + i.calories, pro: acc.pro + i.protein, carbs: acc.carbs + i.carbs, fat: acc.fat + i.fat }), { cals: 0, pro: 0, carbs: 0, fat: 0 });
@@ -362,14 +336,13 @@
 
                 if (finalY > 230) { doc.addPage(); finalY = 20; }
                 
-                // WEEKLY SUMMARY
                 doc.setFontSize(14);
                 doc.text("Weekly Averages Summary", 14, finalY);
                 
                 const weeklyAgg = {};
                 Object.keys(grouped).forEach(date => {
                     const week = getWeekNumber(new Date(date));
-                    if(!weeklyAgg[week]) weeklyAgg[week] = { days: 0, cals: 0, pro: 0, carb: 0, fat: 0, weight: 0, wDays: 0 };
+                    if(!weeklyAgg[week]) weeklyAgg[week] = { days: 0, cals: 0, pro: 0, carb: 0, fat: 0, fib: 0, weight: 0, wDays: 0 };
                     const items = grouped[date];
                     weeklyAgg[week].days++;
                     items.forEach(i => {
@@ -377,29 +350,34 @@
                         weeklyAgg[week].pro += i.protein;
                         weeklyAgg[week].carb += i.carbs;
                         weeklyAgg[week].fat += i.fat;
+                        weeklyAgg[week].fib += (i.fiber||0);
                     });
                     if(weights[date]) { weeklyAgg[week].weight += parseFloat(weights[date]); weeklyAgg[week].wDays++; }
                 });
 
                 const summaryBody = Object.keys(weeklyAgg).sort().map(w => {
                     const d = weeklyAgg[w];
+                    // Format: Actual / Goal
+                    const fmt = (val, target) => `${(val / d.days).toFixed(0)} / ${target}`;
+                    
                     return [
                         formatWeekLabel(w),
-                        (d.cals / d.days).toFixed(1),
-                        (d.pro / d.days).toFixed(1),
-                        (d.carb / d.days).toFixed(1),
-                        (d.fat / d.days).toFixed(1),
+                        fmt(d.cals, targets.calories),
+                        fmt(d.pro, targets.protein + 'g'),
+                        fmt(d.carb, targets.carbs + 'g'),
+                        fmt(d.fat, targets.fat + 'g'),
+                        fmt(d.fib, '45g'),
                         d.wDays ? (d.weight / d.wDays).toFixed(1) + ' lbs' : '-'
                     ];
                 });
 
                 doc.autoTable({
                     startY: finalY + 5,
-                    head: [['Week', 'Avg Cals', 'Avg Pro', 'Avg Carb', 'Avg Fat', 'Avg Weight']],
+                    head: [['Week', 'Cals (Act/Goal)', 'Pro (Act/Goal)', 'Carb (Act/Goal)', 'Fat (Act/Goal)', 'Fib (Act/Goal)', 'Avg Weight']],
                     body: summaryBody,
                     theme: 'striped',
                     headStyles: { fillColor: [132, 204, 22] }, 
-                    styles: { fontSize: 9 }
+                    styles: { fontSize: 8, cellPadding: 2 }
                 });
 
                 doc.save("Full_History_Report.pdf");
@@ -512,7 +490,6 @@
                 if(confirm("Delete item?")) await window.fb.deleteDoc(window.fb.doc(window.fb.db, "users", user.uid, "logs", id));
             };
 
-            // Manual Entry Handler
             const submitManual = (e) => {
                 e.preventDefault();
                 const p = parseFloat(manualForm.p)||0;
@@ -735,7 +712,7 @@
                             <div className="bg-brand-card p-4 rounded-2xl border border-slate-700">
                                 <h3 className="font-bold text-white mb-4">Weekly Trends</h3>
                                 <div className="relative h-80 w-full">
-                                    <canvas ref={chartRef} id="trendChart"></canvas>
+                                    <canvas id="trendChart"></canvas>
                                 </div>
                             </div>
                         </div>
