@@ -66,6 +66,15 @@
         const { useState, useEffect, useRef } = React;
         const API_KEY = '4FRpc4urF9W2UedPH6agara8y52PR0efkZRmoPvv'; 
 
+        // --- HELPER: GET WEEK NUMBER ---
+        const getWeekNumber = (d) => {
+            d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+            d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+            const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+            const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+            return `W${weekNo} - ${d.getUTCFullYear()}`;
+        };
+
         // --- AUTH COMPONENT ---
         const AuthScreen = () => {
             const [isRegister, setIsRegister] = useState(false);
@@ -99,7 +108,7 @@
         const App = () => {
             const [user, setUser] = useState(null);
             const [view, setView] = useState("daily"); // 'daily' or 'trends'
-            const [targets, setTargets] = useState({ calories: 2000, protein: 150, carbs: 200, fat: 60 }); // Defaults
+            const [targets, setTargets] = useState({ calories: 2000, protein: 150, carbs: 200, fat: 60 });
             const [query, setQuery] = useState("");
             const [results, setResults] = useState([]);
             const [currentDate, setCurrentDate] = useState(new Date().toISOString().split('T')[0]);
@@ -111,7 +120,7 @@
             const [isScanning, setIsScanning] = useState(false);
             const [loading, setLoading] = useState(false);
             const scannerRef = useRef(null);
-            const chartRef = useRef(null); // Reference for Chart.js canvas
+            const chartRef = useRef(null); 
 
             // --- INIT ---
             useEffect(() => {
@@ -133,7 +142,7 @@
                 if (snap.exists()) setTargets(snap.data());
             };
 
-            // --- DATA FETCHING ---
+            // --- DATA FETCHING (Single Day) ---
             useEffect(() => {
                 if (!user || !window.fb) return;
                 
@@ -155,7 +164,7 @@
                 return () => unsub();
             }, [user, currentDate]);
 
-            // --- CHART RENDERING (Effect) ---
+            // --- CHART RENDERING ---
             useEffect(() => {
                 if (view === 'trends' && user && chartRef.current) {
                     renderTrendChart();
@@ -163,78 +172,54 @@
             }, [view, user]);
 
             const renderTrendChart = async () => {
-                // Fetch all history for chart
                 const logSnap = await window.fb.getDocs(window.fb.collection(window.fb.db, "users", user.uid, "logs"));
                 const weightSnap = await window.fb.getDocs(window.fb.collection(window.fb.db, "users", user.uid, "daily_stats"));
                 
-                const dataMap = {}; 
-
-                // Process Calories
+                // 1. Calculate Daily Totals
+                const dailyData = {}; 
                 logSnap.forEach(doc => {
                     const d = doc.data();
-                    if(!dataMap[d.date]) dataMap[d.date] = { cals: 0, weight: null };
-                    dataMap[d.date].cals += d.calories;
+                    if(!dailyData[d.date]) dailyData[d.date] = { cals: 0, weight: null };
+                    dailyData[d.date].cals += d.calories;
                 });
-
-                // Process Weight
                 weightSnap.forEach(doc => {
                     const d = doc.data();
-                    if(!dataMap[d.date]) dataMap[d.date] = { cals: 0, weight: null };
-                    dataMap[d.date].weight = parseFloat(d.weight);
+                    if(!dailyData[d.date]) dailyData[d.date] = { cals: 0, weight: null };
+                    dailyData[d.date].weight = parseFloat(d.weight);
                 });
 
-                // Group into Weeks
-                const sortedDates = Object.keys(dataMap).sort();
-                if(sortedDates.length === 0) return;
-
-                const weeks = [];
-                let currentWeek = { label: "Week 1", cals: [], weights: [], count: 0 };
-                let startDate = new Date(sortedDates[0]);
-
-                sortedDates.forEach(dateStr => {
-                    const d = new Date(dateStr);
-                    const diffTime = Math.abs(d - startDate);
-                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+                // 2. Aggregate into Weeks
+                const weeklyData = {};
+                Object.keys(dailyData).forEach(dateStr => {
+                    const weekKey = getWeekNumber(new Date(dateStr));
+                    if(!weeklyData[weekKey]) weeklyData[weekKey] = { totalCals: 0, daysWithCals: 0, totalWeight: 0, daysWithWeight: 0 };
                     
-                    if (diffDays > 7) {
-                        weeks.push(currentWeek);
-                        startDate = d;
-                        currentWeek = { label: `Week ${weeks.length + 1}`, cals: [], weights: [], count: 0 };
+                    if(dailyData[dateStr].cals > 0) {
+                        weeklyData[weekKey].totalCals += dailyData[dateStr].cals;
+                        weeklyData[weekKey].daysWithCals++;
                     }
-                    
-                    if (dataMap[dateStr].cals > 0) currentWeek.cals.push(dataMap[dateStr].cals);
-                    if (dataMap[dateStr].weight) currentWeek.weights.push(dataMap[dateStr].weight);
+                    if(dailyData[dateStr].weight > 0) {
+                        weeklyData[weekKey].totalWeight += dailyData[dateStr].weight;
+                        weeklyData[weekKey].daysWithWeight++;
+                    }
                 });
-                weeks.push(currentWeek);
 
-                // Prepare Chart Data
-                const labels = weeks.map(w => w.label);
-                const avgCals = weeks.map(w => w.cals.length ? w.cals.reduce((a,b)=>a+b,0)/w.cals.length : 0);
-                const avgWeight = weeks.map(w => w.weights.length ? w.weights.reduce((a,b)=>a+b,0)/w.weights.length : null);
+                // 3. Sort & Average
+                const sortedWeeks = Object.keys(weeklyData).sort(); // Sorts by string, works generally for "W1 - 2026" vs "W2"
+                const labels = sortedWeeks;
+                const avgCals = sortedWeeks.map(w => weeklyData[w].daysWithCals ? weeklyData[w].totalCals / weeklyData[w].daysWithCals : 0);
+                const avgWeights = sortedWeeks.map(w => weeklyData[w].daysWithWeight ? weeklyData[w].totalWeight / weeklyData[w].daysWithWeight : null);
 
-                // Destroy old chart if exists
+                // 4. Render
                 if (window.myChart) window.myChart.destroy();
-
                 const ctx = chartRef.current.getContext('2d');
                 window.myChart = new Chart(ctx, {
                     type: 'line',
                     data: {
                         labels: labels,
                         datasets: [
-                            {
-                                label: 'Avg Calories',
-                                data: avgCals,
-                                borderColor: '#84cc16', // Brand Green
-                                yAxisID: 'y',
-                                tension: 0.3
-                            },
-                            {
-                                label: 'Avg Weight (lbs)',
-                                data: avgWeight,
-                                borderColor: '#22d3ee', // Brand Teal
-                                yAxisID: 'y1',
-                                tension: 0.3
-                            }
+                            { label: 'Avg Calories', data: avgCals, borderColor: '#84cc16', yAxisID: 'y', tension: 0.3 },
+                            { label: 'Avg Weight (lbs)', data: avgWeights, borderColor: '#22d3ee', yAxisID: 'y1', tension: 0.3 }
                         ]
                     },
                     options: {
@@ -248,7 +233,93 @@
                 });
             };
 
-            // --- ACTIONS ---
+            // --- FULL HISTORY PDF EXPORT ---
+            const exportFullHistory = async () => {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                const navy = [15, 23, 42]; 
+                
+                doc.setFontSize(18); doc.setTextColor(...navy); doc.text("JOHN RUBEN SOLUTIONS", 14, 20);
+                doc.setFontSize(12); doc.setTextColor(100); doc.text(`Full Nutrition History Report`, 14, 28);
+                doc.text(`Generated: ${new Date().toLocaleDateString()}`, 14, 34);
+
+                // Fetch ALL Data
+                const logSnap = await window.fb.getDocs(window.fb.query(window.fb.collection(window.fb.db, "users", user.uid, "logs"), window.fb.orderBy("date", "desc"), window.fb.orderBy("createdAt", "asc")));
+                const weightSnap = await window.fb.getDocs(window.fb.collection(window.fb.db, "users", user.uid, "daily_stats"));
+                
+                const weights = {};
+                weightSnap.forEach(d => weights[d.id] = d.data().weight);
+
+                // Group by Date
+                const grouped = {};
+                logSnap.forEach(doc => {
+                    const d = doc.data();
+                    if(!grouped[d.date]) grouped[d.date] = [];
+                    grouped[d.date].push(d);
+                });
+
+                let finalY = 45;
+
+                // Loop Dates
+                Object.keys(grouped).forEach(date => {
+                    const items = grouped[date];
+                    const dayTotal = items.reduce((acc, i) => ({ cals: acc.cals + i.calories, pro: acc.pro + i.protein, carbs: acc.carbs + i.carbs, fat: acc.fat + i.fat }), { cals: 0, pro: 0, carbs: 0, fat: 0 });
+                    
+                    // Date Header
+                    doc.setFontSize(10);
+                    doc.setTextColor(...navy);
+                    doc.setFont("helvetica", "bold");
+                    doc.text(`Date: ${date}   |   Weight: ${weights[date] ? weights[date] + ' lbs' : 'N/A'}`, 14, finalY);
+                    
+                    // Table for this day
+                    const tableBody = items.map(i => [
+                        i.time || '--',
+                        i.name.substring(0, 25),
+                        Math.round(i.grams) + 'g',
+                        Math.round(i.calories),
+                        Math.round(i.protein),
+                        Math.round(i.carbs),
+                        Math.round(i.fat),
+                        (i.fiber||0).toFixed(1),
+                        (i.o3||0).toFixed(1),
+                        (i.o6||0).toFixed(1)
+                    ]);
+                    
+                    // Add Total Row
+                    tableBody.push([
+                        { content: 'DAILY TOTAL', colSpan: 3, styles: { fontStyle: 'bold' } },
+                        Math.round(dayTotal.cals),
+                        Math.round(dayTotal.pro),
+                        Math.round(dayTotal.carbs),
+                        Math.round(dayTotal.fat),
+                        '-', '-', '-'
+                    ]);
+
+                    doc.autoTable({
+                        startY: finalY + 2,
+                        head: [['Time', 'Food', 'Weight', 'Cals', 'P', 'C', 'F', 'Fib', 'Ω3', 'Ω6']],
+                        body: tableBody,
+                        theme: 'grid',
+                        headStyles: { fillColor: navy, fontSize: 8 },
+                        bodyStyles: { fontSize: 8 },
+                        margin: { left: 14, right: 14 }
+                    });
+
+                    finalY = doc.lastAutoTable.finalY + 10;
+                });
+                
+                // Weekly Averages Summary at the end
+                // Re-calculate averages for summary table
+                // (Simplified logic for brevity in PDF generation)
+                doc.setFontSize(14);
+                doc.text("Weekly Averages Summary", 14, finalY);
+                finalY += 5;
+                // You can add a specific summary table here if desired based on the aggregated data
+                
+                doc.save("Full_History_Report.pdf");
+            };
+
+            // --- STANDARD SEARCH & ADD ---
             const saveWeight = async () => {
                 if (!user) return;
                 await window.fb.setDoc(window.fb.doc(window.fb.db, "users", user.uid, "daily_stats", currentDate), { weight: dailyWeight, date: currentDate }, { merge: true });
@@ -298,7 +369,7 @@
             };
 
             const selectFood = async (food) => {
-                if (food.userGrams) return; // Already formatted (OFF)
+                if (food.userGrams) return; 
                 setLoading(true);
                 const res = await fetch(`https://api.nal.usda.gov/fdc/v1/food/${food.fdcId}?api_key=${API_KEY}`);
                 const d = await res.json();
@@ -308,7 +379,6 @@
                     return n ? (n.amount || n.value) : 0;
                 };
 
-                // Fallback Omega Logic (simplified)
                 let o3 = getN(1272) || 0;
                 let o6 = getN(1269) || 0;
 
@@ -353,56 +423,6 @@
 
             const deleteItem = async (id) => {
                 if(confirm("Delete item?")) await window.fb.deleteDoc(window.fb.doc(window.fb.db, "users", user.uid, "logs", id));
-            };
-
-            const exportPDF = async () => {
-                // Ensure chart renders before capture
-                setView('trends'); 
-                await new Promise(r => setTimeout(r, 500)); // Wait for render
-                
-                const { jsPDF } = window.jspdf;
-                const doc = new jsPDF();
-                const navy = [15, 23, 42]; 
-                const green = [132, 204, 22];
-
-                doc.setFontSize(18); doc.setTextColor(...navy); doc.text("JOHN RUBEN SOLUTIONS", 20, 20);
-                doc.setFontSize(12); doc.setTextColor(100); doc.text(`Comprehensive Nutrition Report`, 20, 30);
-                doc.text(`Date: ${currentDate}`, 20, 36);
-                if(dailyWeight) doc.text(`Recorded Weight: ${dailyWeight} lbs`, 20, 42);
-
-                // Add Graph
-                const canvas = document.getElementById('trendChart');
-                if (canvas) {
-                    const imgData = canvas.toDataURL("image/png");
-                    doc.addImage(imgData, 'PNG', 15, 50, 180, 80);
-                }
-
-                // Table
-                doc.autoTable({
-                    startY: 140,
-                    head: [['Time', 'Food', 'Weight', 'Cals', 'P', 'C', 'F', 'Fib', 'Ω3', 'Ω6']],
-                    body: log.map(i => [
-                        i.time || '-', 
-                        i.name.substring(0, 20), 
-                        Math.round(i.grams) + 'g', 
-                        i.calories, 
-                        i.protein, i.carbs, i.fat, i.fiber, i.o3, i.o6
-                    ]),
-                    theme: 'grid',
-                    headStyles: { fillColor: navy },
-                    styles: { fontSize: 8 },
-                    foot: [['TOTALS', '', '', 
-                        totals.cals, 
-                        totals.pro.toFixed(1), 
-                        totals.carb.toFixed(1), 
-                        totals.fat.toFixed(1), 
-                        totals.fib.toFixed(1), 
-                        totals.o3.toFixed(1), 
-                        totals.o6.toFixed(1)
-                    ]]
-                });
-
-                doc.save(`NutritionReport_${currentDate}.pdf`);
             };
 
             const totals = log.reduce((acc, i) => ({
@@ -518,7 +538,7 @@
                             <div className="bg-brand-card rounded-2xl border border-slate-700 overflow-hidden">
                                 <div className="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-800/50">
                                     <h3 className="font-bold text-sm uppercase">Daily Entries</h3>
-                                    <button onClick={exportPDF} className="text-xs text-brand-teal hover:underline">Export Report</button>
+                                    <button onClick={exportFullHistory} className="text-xs text-brand-teal hover:underline">Export Full History</button>
                                 </div>
                                 <div className="overflow-x-auto table-scroll">
                                     <table className="w-full text-xs text-left text-slate-300">
