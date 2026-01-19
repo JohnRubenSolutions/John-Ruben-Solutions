@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-J25PL1Z8SW"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-J25PL1Z8SW');
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>John Ruben Solutions - Weight Management Tools</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+    tailwind.config = {
+        theme: {
+            extend: {
+                colors: {
+                    brand: { 
+                        navy: '#0f172a', 
+                        dark: '#020617',
+                        card: '#1e293b',
+                        input: '#334155',
+                        green: '#84cc16', 
+                        teal: '#22d3ee',
+                        text: '#f8fafc',
+                        muted: '#94a3b8'
+                    }
+                },
+                fontFamily: { 
+                    sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                    comfortaa: ['"Comfortaa"', 'cursive'] 
+                },
+                boxShadow: {
+                    'glow': '0 0 20px rgba(132, 204, 22, 0.15)',
+                    'glow-teal': '0 0 20px rgba(34, 211, 238, 0.15)'
+                }
+            }
+        }
+    }
+</script>
+
+<style>
+    body { background-color: #0f172a; color: #f8fafc; }
+    .animate-up { animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
+    @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    
+    /* PULSE ANIMATION */
+    @keyframes pulse-dot {
+        0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+        70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+        100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+    }
+    .animate-pulse-dot {
+        animation: pulse-dot 2s infinite;
+    }
+</style>
+</head>
+<body class="antialiased pb-20 selection:bg-brand-green selection:text-brand-navy">
+
+    <div class="max-w-3xl mx-auto px-4 pt-10">
+
+        <div class="text-center mb-10">
+            <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight text-white mb-2">JOHN RUBEN</h1>
+            <p class="text-xs font-bold text-brand-green uppercase tracking-[0.3em] mb-6">Weight Management Tools</p>
+            
+            <div class="max-w-xl mx-auto space-y-4">
+                <h2 class="text-2xl font-bold text-white">Take Control of Your Daily Diet</h2>
+                
+                <p class="text-brand-muted text-sm leading-relaxed">
+                    Whether you want to <strong class="text-white">lose weight</strong>, <strong class="text-white">gain muscle</strong>, or simply <strong class="text-white">live healthier</strong>, our <strong class="text-white">free tools</strong> are here to help you calculate <strong class="text-white">metabolic targets</strong>, check <strong class="text-white">nutrition information</strong>, and check <strong class="text-white">medication</strong> information.
+                </p>
+
+                <p class="text-brand-muted text-sm leading-relaxed">
+                <p class="text-brand-green/90 italic font-medium text-xs md:text-sm border-l-2 border-brand-green pl-3 mx-auto max-w-md">
+                    "For God gave us a spirit not of fear but of power and love and self-control." — 2 Timothy 1:7
+                </p>
+            </div>
+        </div>
+
+        <div class="mb-6 animate-up">
+            <a href="https://www.johnrubensolutions.com/macronutrient-target-calculator" target="_top" class="group relative block w-full">
+                <div class="absolute inset-0 bg-gradient-to-r from-brand-green to-lime-500 rounded-2xl blur opacity-40 group-hover:opacity-60 transition-opacity"></div>
+                <div class="relative bg-gradient-to-r from-brand-card to-slate-800 border border-brand-green/50 p-6 rounded-2xl flex items-center justify-between hover:scale-[1.01] transition-transform">
+                    <div class="flex items-center gap-4">
+                        <div class="bg-brand-green/20 p-3 rounded-xl text-brand-green text-2xl">
+                            📊
+                        </div>
+                        <div class="text-left">
+                            <h3 class="text-lg font-extrabold text-white group-hover:text-brand-green transition-colors">Macro Target Calculator</h3>
+                            <p class="text-xs text-brand-muted">Calculate your daily metabolic ceiling & protein needs.</p>
+                        </div>
+                    </div>
+                    <div class="bg-brand-navy p-2 rounded-full text-brand-green group-hover:bg-brand-green group-hover:text-brand-navy transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-10">
+            <a href="https://johnrubensolutions.github.io/Nutrition-Information-Scanner/Food-Scanner/" target="_top" class="p-4 bg-brand-card border border-slate-700 hover:border-brand-green hover:shadow-glow rounded-2xl text-center transition-all group">
+                <div class="text-2xl mb-2 group-hover:scale-110 transition-transform">🥗</div>
+                <div class="text-xs font-bold text-white">Food Search</div>
+            </a>
+            <a href="https://www.johnrubensolutions.com/medication-information" target="_top" class="p-4 bg-brand-card border border-slate-700 hover:border-brand-teal hover:shadow-glow-teal rounded-2xl text-center transition-all group">
+                <div class="text-2xl mb-2 group-hover:scale-110 transition-transform">💊</div>
+                <div class="text-xs font-bold text-white">Drug Info</div>
+            </a>
+            <a href="https://www.johnrubensolutions.com/learn-more" target="_top" class="p-4 bg-brand-card border border-slate-700 hover:border-white rounded-2xl text-center transition-all group">
+                <div class="text-2xl mb-2 group-hover:scale-110 transition-transform">📚</div>
+                <div class="text-xs font-bold text-white">Protocols</div>
+            </a>
+            <a href="https://www.johnrubensolutions.com/about-me" target="_top" class="p-4 bg-brand-card border border-slate-700 hover:border-white rounded-2xl text-center transition-all group">
+                <div class="text-2xl mb-2 group-hover:scale-110 transition-transform">👤</div>
+                <div class="text-xs font-bold text-white">About Me</div>
+            </a>
+        </div>
+
+        <div class="flex justify-center mb-10 w-full">
+            <a href="https://www.johnrubensolutions.com/apply-for-a-live-strategy-call" target="_top" class="group relative w-full"> 
+                <div class="absolute inset-0 bg-brand-green blur-lg opacity-20 group-hover:opacity-40 transition-opacity rounded-full"></div>
+                
+                <div class="relative flex items-center justify-between bg-gradient-to-r from-brand-card to-slate-800 border border-brand-green/30 p-3 pr-5 rounded-full shadow-2xl hover:scale-[1.01] transition-transform cursor-pointer">
+                    
+                    <div class="flex items-center gap-3 w-full"> 
+                        <div class="bg-brand-navy p-2.5 rounded-full relative flex-shrink-0">
+                            <div class="w-3 h-3 bg-red-500 rounded-full animate-pulse-dot"></div>
+                        </div>
+                        
+                        <div class="flex flex-col text-left flex-grow">
+                            <span class="text-[11px] md:text-xs font-bold uppercase tracking-wide text-brand-green leading-tight">Limited Spots Available</span>
+                            <span class="font-extrabold text-[13px] md:text-sm text-white leading-tight whitespace-nowrap">APPLY FOR A LIVE CALL TODAY!</span>
+                        </div>
+                    </div>
+
+                    <svg xmlns="http://www.w3.org/2000/svg" class="text-white/50 w-5 h-5 flex-shrink-0 group-hover:translate-x-1 transition-transform ml-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                </div>
+            </a>
+        </div>
+
+        <div class="text-center border-t border-slate-800 pt-8 pb-4">
+            <p class="text-[10px] font-bold text-slate-500 mb-2">© 2026 John Ruben Solutions, LLC.</p>
+            <p class="text-[10px] text-slate-600 leading-relaxed max-w-lg mx-auto">
+                <strong>Disclaimer:</strong> Educational purposes only. Not medical advice. Always seek the advice of your physician regarding medical conditions. John Ruben Rajendran is a licensed pharmacist, but he is not YOUR pharmacist.
+            </p>
+            <a href="https://www.johnrubensolutions.com/disclaimer" class="text-[10px] text-brand-teal underline mt-2 block">View Full Disclaimer</a>
+        </div>
+
+    </div>
+
+</body>
+</html>
