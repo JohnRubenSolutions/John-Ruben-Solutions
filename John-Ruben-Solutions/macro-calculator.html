@@ -20,7 +20,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, query, where, onSnapshot, deleteDoc, doc, setDoc, getDoc, orderBy, serverTimestamp, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, query, where, onSnapshot, deleteDoc, doc, setDoc, getDoc, getDocs, orderBy, serverTimestamp, writeBatch } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         
         const firebaseConfig = {
             apiKey: "AIzaSyD2h_sejv6lB8sFC15xHSgqxfdD2hLd5Kg",
@@ -100,7 +100,7 @@
                             <input type="email" placeholder="Email" className="w-full p-3 mb-4 bg-brand-input rounded-xl text-white outline-none focus:border-brand-green border border-transparent" value={email} onChange={e=>setEmail(e.target.value)} />
                             <input type="password" placeholder="Password" className="w-full p-3 mb-6 bg-brand-input rounded-xl text-white outline-none focus:border-brand-green border border-transparent" value={password} onChange={e=>setPassword(e.target.value)} />
                             {error && <p className="text-red-500 text-xs mb-4 text-center">{error}</p>}
-                            <button type="submit" className="w-full py-3 bg-brand-green text-brand-navy font-bold rounded-xl">{isRegister ? "Sign Up" : "Log In"}</button>
+                            <button type="submit" className="w-full py-3 bg-brand-green text-brand-navy font-bold rounded-xl">{isRegister ? "Sign Up" : "Log In"} </button>
                         </form>
                         <button onClick={()=>setIsRegister(!isRegister)} className="w-full mt-4 text-xs text-slate-400 hover:text-white underline">{isRegister ? "Already have an account? Log In" : "Need account? Sign Up"}</button>
                     </div>
@@ -149,7 +149,6 @@
                 if (snap.exists()) setTargets(snap.data());
             };
 
-            // DATA FETCHING
             useEffect(() => {
                 if (!user || !window.fb) return;
                 const q = window.fb.query(window.fb.collection(window.fb.db, "users", user.uid, "logs"), window.fb.where("date", "==", currentDate));
@@ -168,7 +167,6 @@
                 return () => unsub();
             }, [user, currentDate]);
 
-            // ANALYTICS & GRAPH
             useEffect(() => {
                 if (view === 'trends' && user) {
                     setTimeout(calculateAnalytics, 200); 
@@ -177,7 +175,6 @@
 
             const calculateAnalytics = async () => {
                 if(!chartRef.current) return;
-
                 const logSnap = await window.fb.getDocs(window.fb.collection(window.fb.db, "users", user.uid, "logs"));
                 const weightSnap = await window.fb.getDocs(window.fb.collection(window.fb.db, "users", user.uid, "daily_stats"));
                 
@@ -193,7 +190,6 @@
                     dailyData[d.date].weight = parseFloat(d.weight);
                 });
 
-                // --- SCORES ---
                 const dates = Object.keys(dailyData).sort();
                 if (dates.length > 0) {
                     const firstDate = new Date(dates[0]);
@@ -218,7 +214,6 @@
                     setScores({ adherence: adherenceScore, consistency: consistencyScore });
                 }
 
-                // --- CHART DATA ---
                 const weeklyData = {};
                 Object.keys(dailyData).forEach(dateStr => {
                     const weekKey = getWeekNumber(new Date(dateStr));
@@ -239,11 +234,7 @@
                 const avgCals = sortedWeeks.map(w => weeklyData[w].daysWithCals ? weeklyData[w].totalCals / weeklyData[w].daysWithCals : 0);
                 const avgWeights = sortedWeeks.map(w => weeklyData[w].daysWithWeight ? weeklyData[w].totalWeight / weeklyData[w].daysWithWeight : null);
 
-                // --- DESTROY & RE-RENDER ---
-                if (chartInstance.current) {
-                    chartInstance.current.destroy();
-                }
-
+                if (chartInstance.current) chartInstance.current.destroy();
                 const ctx = chartRef.current.getContext('2d');
                 chartInstance.current = new Chart(ctx, {
                     type: 'line',
@@ -267,7 +258,7 @@
             };
 
             const exportFullHistory = async () => {
-                // Force Render Graph
+                // 1. Force Render Graph
                 setView('trends');
                 await new Promise(r => setTimeout(r, 1500)); 
 
@@ -286,25 +277,58 @@
                     }
                 };
 
-                // Header
-                doc.setFontSize(22); doc.setTextColor(...navy); doc.text("JOHN RUBEN SOLUTIONS", 14, 20);
+                doc.setFontSize(18); doc.setTextColor(...navy); doc.text("JOHN RUBEN SOLUTIONS", 14, 20);
                 doc.setFontSize(12); doc.setTextColor(100); doc.text(`Full Nutrition & Performance Report`, 14, 28);
                 
-                doc.setFontSize(10); doc.setTextColor(0);
-                doc.text(`Adherence Score: ${scores.adherence}%`, 14, 38);
-                doc.text(`Consistency Score: ${scores.consistency}%`, 70, 38);
-
                 const canvas = document.getElementById('trendChart');
                 if (canvas) {
                     const imgData = canvas.toDataURL("image/png");
                     doc.addImage(imgData, 'PNG', 14, 45, 180, 80);
                 }
 
-                // DATA PREP
+                // DATA PREP (Recalculate Scores Locally for PDF accuracy)
                 const logSnap = await window.fb.getDocs(window.fb.collection(window.fb.db, "users", user.uid, "logs"));
                 const weightSnap = await window.fb.getDocs(window.fb.collection(window.fb.db, "users", user.uid, "daily_stats"));
-                const weights = {}; weightSnap.forEach(d => weights[d.id] = d.data().weight);
+                
+                // Recalculate Scores locally
+                let localAdherence = 0;
+                let localConsistency = 0;
+                
+                const dailyData = {}; 
+                logSnap.forEach(doc => {
+                    const d = doc.data();
+                    if(!dailyData[d.date]) dailyData[d.date] = { cals: 0 };
+                    dailyData[d.date].cals += d.calories;
+                });
+                
+                const dates = Object.keys(dailyData).sort();
+                if (dates.length > 0) {
+                    const firstDate = new Date(dates[0]);
+                    const lastDate = new Date(dates[dates.length - 1]);
+                    const diffTime = Math.abs(lastDate - firstDate);
+                    const totalDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; 
+                    const loggedDays = dates.length;
+                    localConsistency = totalDays > 0 ? Math.round((loggedDays / totalDays) * 100) : 0;
 
+                    let adherenceDays = 0;
+                    const target = targets.calories || 2000;
+                    const range = target * 0.10; 
+                    const minCal = target - range;
+                    const maxCal = target + range;
+
+                    dates.forEach(d => {
+                        const intake = dailyData[d].cals;
+                        if (intake >= minCal && intake <= maxCal) adherenceDays++;
+                    });
+                    localAdherence = loggedDays > 0 ? Math.round((adherenceDays / loggedDays) * 100) : 0;
+                }
+
+                // Add Scores
+                doc.setFontSize(10); doc.setTextColor(0);
+                doc.text(`Adherence Score: ${localAdherence}%`, 14, 38);
+                doc.text(`Consistency Score: ${localConsistency}%`, 70, 38);
+
+                const weights = {}; weightSnap.forEach(d => weights[d.id] = d.data().weight);
                 const rawLogs = [];
                 logSnap.forEach(doc => rawLogs.push(doc.data()));
                 rawLogs.sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -317,21 +341,10 @@
 
                 let finalY = 135; 
 
-                // --- COLUMNS DEFINITION ---
-                const tableColumns = [
-                    { title: "Time", dataKey: "time" },
-                    { title: "Food", dataKey: "food" },
-                    { title: "Weight", dataKey: "grams" },
-                    { title: "Cals", dataKey: "cals" },
-                    { title: "P (g)", dataKey: "p" },
-                    { title: "C (g)", dataKey: "c" },
-                    { title: "F (g)", dataKey: "f" },
-                    { title: "Fib (g)", dataKey: "fib" }
-                ];
-
+                // --- COLUMNS ---
                 const columnStyles = {
-                    0: { cellWidth: 20 }, // Time
-                    1: { cellWidth: 'auto' }, // Food
+                    0: { cellWidth: 20 }, 
+                    1: { cellWidth: 'auto' }, 
                     2: { cellWidth: 20, halign: 'right' },
                     3: { cellWidth: 15, halign: 'right', fontStyle: 'bold' },
                     4: { cellWidth: 15, halign: 'right' },
@@ -340,7 +353,6 @@
                     7: { cellWidth: 15, halign: 'right' }
                 };
 
-                // GENERATE DAILY TABLES
                 Object.keys(grouped).forEach(date => {
                     if (finalY > 250) { doc.addPage(); finalY = 20; }
                     const items = grouped[date];
@@ -378,7 +390,7 @@
                         theme: 'grid',
                         headStyles: { fillColor: navy, fontSize: 8 },
                         bodyStyles: { fontSize: 8 },
-                        columnStyles: columnStyles, // Apply fixed widths
+                        columnStyles: columnStyles,
                         margin: { left: 14, right: 14 }
                     });
                     finalY = doc.lastAutoTable.finalY + 10;
@@ -386,7 +398,6 @@
 
                 if (finalY > 230) { doc.addPage(); finalY = 20; }
                 
-                // WEEKLY SUMMARY
                 doc.setFontSize(14);
                 doc.text("Weekly Averages Summary", 14, finalY);
                 
@@ -431,15 +442,36 @@
                     headStyles: { halign: 'center', fillColor: [132, 204, 22] }
                 });
 
-                // Apply Footer to all pages
                 addFooter(doc);
-
                 doc.save("Full_History_Report.pdf");
             };
 
             const saveWeight = async () => {
                 if (!user) return;
                 await window.fb.setDoc(window.fb.doc(window.fb.db, "users", user.uid, "daily_stats", currentDate), { weight: dailyWeight, date: currentDate }, { merge: true });
+            };
+            
+            const hardReset = async () => {
+                if(!confirm("Nutrition Information Says:\n\n⚠️ DANGER: Are you sure you want to delete ALL data? This action cannot be undone.")) return;
+                if(!confirm("Final Confirmation: Do you want to wipe your entire history and start fresh?")) return;
+                try {
+                    setLoading(true);
+                    const logsQ = window.fb.query(window.fb.collection(window.fb.db, "users", user.uid, "logs"));
+                    const logsSnap = await window.fb.getDocs(logsQ);
+                    const batch1 = window.fb.writeBatch(window.fb.db);
+                    logsSnap.forEach(d => batch1.delete(d.ref));
+                    await batch1.commit();
+
+                    const statsQ = window.fb.query(window.fb.collection(window.fb.db, "users", user.uid, "daily_stats"));
+                    const statsSnap = await window.fb.getDocs(statsQ);
+                    const batch2 = window.fb.writeBatch(window.fb.db);
+                    statsSnap.forEach(d => batch2.delete(d.ref));
+                    await batch2.commit();
+
+                    alert("All data has been cleared.");
+                    setLog([]); setDailyWeight(""); setScores({ adherence: 0, consistency: 0 });
+                    if(chartInstance.current) chartInstance.current.destroy();
+                } catch(e) { console.error(e); alert("Error clearing data."); } finally { setLoading(false); }
             };
 
             const handleSearch = async (e, overrideQuery = null) => {
@@ -486,12 +518,10 @@
                 setLoading(true);
                 const res = await fetch(`https://api.nal.usda.gov/fdc/v1/food/${food.fdcId}?api_key=${API_KEY}`);
                 const d = await res.json();
-                
                 const getN = (id) => {
                     const n = d.foodNutrients.find(x => (x.nutrient?.id === id || x.nutrientId === id));
                     return n ? (n.amount || n.value) : 0;
                 };
-
                 setSelectedFood({
                     name: d.description,
                     calories: getN(1008) || getN(208),
@@ -561,39 +591,6 @@
                     fat: f,
                     fiber: fib
                 });
-            };
-
-            const hardReset = async () => {
-                if(!confirm("Nutrition Information Says:\n\n⚠️ DANGER: Are you sure you want to delete ALL data? This action cannot be undone.")) return;
-                if(!confirm("Final Confirmation: Do you want to wipe your entire history and start fresh?")) return;
-                
-                try {
-                    setLoading(true);
-                    
-                    const logsQ = window.fb.query(window.fb.collection(window.fb.db, "users", user.uid, "logs"));
-                    const logsSnap = await window.fb.getDocs(logsQ);
-                    const batch1 = window.fb.writeBatch(window.fb.db);
-                    logsSnap.forEach(d => batch1.delete(d.ref));
-                    await batch1.commit();
-
-                    const statsQ = window.fb.query(window.fb.collection(window.fb.db, "users", user.uid, "daily_stats"));
-                    const statsSnap = await window.fb.getDocs(statsQ);
-                    const batch2 = window.fb.writeBatch(window.fb.db);
-                    statsSnap.forEach(d => batch2.delete(d.ref));
-                    await batch2.commit();
-
-                    alert("All data has been cleared.");
-                    setLog([]);
-                    setDailyWeight("");
-                    setScores({ adherence: 0, consistency: 0 });
-                    if(chartInstance.current) chartInstance.current.destroy();
-                    
-                } catch(e) {
-                    console.error(e);
-                    alert("Error clearing data. Please try again.");
-                } finally {
-                    setLoading(false);
-                }
             };
 
             const totals = log.reduce((acc, i) => ({
