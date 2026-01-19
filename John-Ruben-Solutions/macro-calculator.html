@@ -1,671 +1,263 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-J25PL1Z8SW"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-J25PL1Z8SW"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-J25PL1Z8SW');
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>John Ruben Solutions - Macro Calculator</title>
 
-  gtag('config', 'G-J25PL1Z8SW');
-</script>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>John Ruben Solutions - Macronutrient Target Calculator</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyD2h_sejv6lB8sFC15xHSgqxfdD2hLd5Kg",
+            authDomain: "john-ruben-solutions.firebaseapp.com",
+            projectId: "john-ruben-solutions",
+            storageBucket: "john-ruben-solutions.firebasestorage.app",
+            messagingSenderId: "761855596159",
+            appId: "1:761855596159:web:a4bbe805663c2304c5d14a",
+            measurementId: "G-1T2J8VR066"
+        };
 
-<script>
-    tailwind.config = {
-        theme: {
-            extend: {
-                colors: {
-                    brand: { 
-                        navy: '#0f172a', 
-                        dark: '#020617',
-                        card: '#1e293b',
-                        input: '#334155',
-                        green: '#84cc16', 
-                        teal: '#22d3ee',
-                        text: '#f8fafc',
-                        muted: '#94a3b8'
-                    }
-                },
-                fontFamily: { 
-                    sans: ['"Plus Jakarta Sans"', 'sans-serif']
-                },
-                boxShadow: {
-                    'glow': '0 0 20px rgba(132, 204, 22, 0.15)',
-                    'glow-teal': '0 0 20px rgba(34, 211, 238, 0.15)'
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // Expose to window for vanilla JS calls
+        window.fb = { auth, db, doc, setDoc, getDoc, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword };
+
+        // Auth Listener
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                document.getElementById('auth-screen').classList.add('hidden');
+                document.getElementById('app-screen').classList.remove('hidden');
+                loadUserProfile(user.uid);
+            } else {
+                document.getElementById('auth-screen').classList.remove('hidden');
+                document.getElementById('app-screen').classList.add('hidden');
+            }
+        });
+
+        async function loadUserProfile(uid) {
+            const docRef = doc(db, "users", uid, "data", "profile");
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                document.getElementById('gender').value = data.gender;
+                document.getElementById('age').value = data.age;
+                document.getElementById('weight').value = data.weight;
+                document.getElementById('height').value = data.height;
+                document.getElementById('activity').value = data.activity;
+                document.getElementById('goal').value = data.goal;
+                // Auto calculate visually
+                // calculate(); 
+            }
+        }
+    </script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: { navy: '#0f172a', card: '#1e293b', green: '#84cc16', teal: '#22d3ee', input: '#334155' }
+                    },
+                    fontFamily: { sans: ['"Plus Jakarta Sans"', 'sans-serif'] }
                 }
             }
         }
-    }
-</script>
-
-<style>
-    body { background-color: #0f172a; color: #f8fafc; }
-    .animate-up { animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
-    @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    </script>
     
-    select { 
-        -webkit-appearance: none; 
-        appearance: none; 
-        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"); 
-        background-repeat: no-repeat; 
-        background-position: right 1rem center; 
-        background-size: 1em; 
-    }
-    
-    input[type=number]::-webkit-inner-spin-button, 
-    input[type=number]::-webkit-outer-spin-button { 
-        -webkit-appearance: none; 
-        margin: 0; 
-    }
-    input[type=number] {
-        -moz-appearance: textfield;
-    }
-</style>
+    <style>body { background-color: #0f172a; color: #f8fafc; }</style>
 </head>
-<body class="antialiased pb-20 selection:bg-brand-green selection:text-brand-navy">
+<body class="antialiased pb-20">
 
-    <div class="max-w-3xl mx-auto px-4 pt-10">
+    <div id="auth-screen" class="min-h-screen flex flex-col items-center justify-center p-4">
+        <div class="bg-brand-card p-8 rounded-3xl shadow-2xl w-full max-w-sm border border-slate-700">
+            <h1 class="text-2xl font-bold text-white text-center mb-6">Macro Calculator Login</h1>
+            <input type="email" id="email" placeholder="Email" class="w-full p-3 mb-4 bg-brand-input rounded-xl text-white outline-none focus:border-brand-green border border-transparent">
+            <input type="password" id="password" placeholder="Password" class="w-full p-3 mb-6 bg-brand-input rounded-xl text-white outline-none focus:border-brand-green border border-transparent">
+            <button onclick="handleLogin()" class="w-full py-3 bg-brand-green text-brand-navy font-bold rounded-xl mb-3">Log In</button>
+            <button onclick="handleSignup()" class="w-full py-3 bg-brand-navy border border-slate-600 text-white font-bold rounded-xl">Sign Up</button>
+            <p id="auth-error" class="text-red-500 text-xs text-center mt-4"></p>
+        </div>
+    </div>
 
-        <div class="text-center mb-8">
-            <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight text-white mb-2">JOHN RUBEN</h1>
-            <h2 class="text-xl md:text-2xl font-bold text-brand-green tracking-tight">Macronutrient Target Calculator</h2>
+    <div id="app-screen" class="hidden max-w-3xl mx-auto px-4 pt-10">
+        <div class="flex justify-between items-center mb-8">
+            <h1 class="text-2xl font-bold text-white">JOHN RUBEN</h1>
+            <button onclick="window.fb.signOut(window.fb.auth)" class="text-xs text-slate-400 hover:text-white">Sign Out</button>
         </div>
 
-        <div class="bg-brand-card rounded-[2rem] border border-slate-700 shadow-2xl p-6 md:p-8 mb-8">
+        <div class="bg-brand-card rounded-[2rem] border border-slate-700 p-6 mb-8">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                <div class="space-y-2">
-                    <label class="text-xs font-bold text-brand-muted uppercase tracking-wider">Gender</label>
-                    <select id="gender" class="w-full p-4 bg-brand-input border border-slate-600 rounded-xl font-bold text-white focus:outline-none focus:border-brand-green transition-colors cursor-pointer text-base">
-                        <option value="male" selected>Male</option>
-                        <option value="female">Female</option>
-                    </select>
+                <div>
+                    <label class="text-xs font-bold text-slate-400 uppercase">Gender</label>
+                    <select id="gender" class="w-full p-4 bg-brand-input rounded-xl text-white outline-none"><option value="male">Male</option><option value="female">Female</option></select>
                 </div>
-                
-                <div class="space-y-2">
-                    <label class="text-xs font-bold text-brand-muted uppercase tracking-wider">Age</label>
-                    <input type="number" id="age" value="35" class="w-full p-4 bg-brand-input border border-slate-600 rounded-xl font-bold text-white focus:outline-none focus:border-brand-green transition-colors text-base">
+                <div>
+                    <label class="text-xs font-bold text-slate-400 uppercase">Age</label>
+                    <input type="number" id="age" value="35" class="w-full p-4 bg-brand-input rounded-xl text-white outline-none">
                 </div>
-
-                <div class="space-y-2">
-                    <label class="text-xs font-bold text-brand-muted uppercase tracking-wider">Current Weight</label>
-                    <div class="flex items-center bg-brand-input rounded-xl p-1.5 border border-slate-600 focus-within:border-brand-green transition-colors shadow-inner">
-                        <input type="number" id="weight" value="155" class="w-full bg-transparent text-white font-bold text-xl px-3 focus:outline-none placeholder-slate-500" placeholder="0">
-                        <button type="button" id="weightUnitBtn" onclick="toggleWeightUnit()" class="h-10 px-4 bg-brand-card text-white rounded-lg font-bold text-sm uppercase tracking-wide border border-slate-600 hover:bg-brand-green hover:border-brand-green hover:text-white transition-all shadow-sm active:scale-95 flex-shrink-0">
-                            lbs
-                        </button>
-                        <input type="hidden" id="weightUnit" value="lbs">
-                    </div>
+                <div>
+                    <label class="text-xs font-bold text-slate-400 uppercase">Weight (lbs)</label>
+                    <input type="number" id="weight" value="155" class="w-full p-4 bg-brand-input rounded-xl text-white outline-none">
                 </div>
-
-                <div class="space-y-2">
-                    <label class="text-xs font-bold text-brand-muted uppercase tracking-wider">Goal Weight</label>
-                    <div class="flex items-center bg-brand-input rounded-xl p-1.5 border border-slate-600 focus-within:border-brand-green transition-colors shadow-inner">
-                        <input type="number" id="goalWeight" value="145" class="w-full bg-transparent text-white font-bold text-xl px-3 focus:outline-none placeholder-slate-500" placeholder="0">
-                        <span id="goalUnitDisplay" class="h-10 px-4 flex items-center justify-center text-slate-400 font-bold text-sm uppercase tracking-wide">
-                            lbs
-                        </span>
-                    </div>
+                <div>
+                    <label class="text-xs font-bold text-slate-400 uppercase">Goal Weight (lbs)</label>
+                    <input type="number" id="goalWeight" value="145" class="w-full p-4 bg-brand-input rounded-xl text-white outline-none">
                 </div>
-
-                <div class="space-y-2 md:col-span-2">
-                    <label class="text-xs font-bold text-brand-muted uppercase tracking-wider">Height</label>
-                    <div class="flex items-center bg-brand-input rounded-xl p-1.5 border border-slate-600 focus-within:border-brand-green transition-colors shadow-inner">
-                        <input type="number" id="height" value="66.5" class="w-full bg-transparent text-white font-bold text-xl px-3 focus:outline-none placeholder-slate-500" placeholder="0">
-                        <button type="button" id="heightUnitBtn" onclick="toggleHeightUnit()" class="h-10 px-4 bg-brand-card text-white rounded-lg font-bold text-sm uppercase tracking-wide border border-slate-600 hover:bg-brand-green hover:border-brand-green hover:text-white transition-all shadow-sm active:scale-95 flex-shrink-0">
-                            in
-                        </button>
-                        <input type="hidden" id="heightUnit" value="in">
-                    </div>
+                <div>
+                    <label class="text-xs font-bold text-slate-400 uppercase">Height (in)</label>
+                    <input type="number" id="height" value="66.5" class="w-full p-4 bg-brand-input rounded-xl text-white outline-none">
                 </div>
             </div>
 
-            <div class="space-y-2 mb-6">
-                <label class="text-xs font-bold text-brand-muted uppercase tracking-wider">Metabolism (Body Type)</label>
-                <select id="bodyType" class="w-full p-4 bg-brand-input border border-slate-600 rounded-xl font-bold text-white focus:outline-none focus:border-brand-green transition-colors cursor-pointer text-base">
-                    <option value="meso" selected>Mesomorph (Athletic / Balanced)</option>
-                    <option value="ecto">Ectomorph (Lean / Fast Metabolism)</option>
-                    <option value="endo">Endomorph (Broad / Slow Metabolism)</option>
+            <div class="mb-6">
+                <label class="text-xs font-bold text-slate-400 uppercase">Activity</label>
+                <select id="activity" class="w-full p-4 bg-brand-input rounded-xl text-white outline-none">
+                    <option value="1.2">Sedentary</option><option value="1.55" selected>Moderate</option><option value="1.725">Active</option>
                 </select>
-                <p class="text-[11px] text-brand-muted ml-1">Select the option that best describes your natural build.</p>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                <div class="space-y-2">
-                    <label class="text-xs font-bold text-brand-muted uppercase tracking-wider">Weekly Activity</label>
-                    <select id="activity" class="w-full p-4 bg-brand-input border border-slate-600 rounded-xl font-bold text-white focus:outline-none focus:border-brand-green transition-colors cursor-pointer text-base">
-                        <option value="1.2">Sedentary (0-1 hours/week)</option>
-                        <option value="1.55" selected>Moderate (3-5 hours/week)</option>
-                        <option value="1.725">Active (6+ hours/week)</option>
-                    </select>
-                </div>
-
-                <div class="space-y-2">
-                    <label class="text-xs font-bold text-brand-muted uppercase tracking-wider">Current Goal</label>
-                    <select id="goal" class="w-full p-4 bg-brand-input border border-slate-600 rounded-xl font-bold text-white focus:outline-none focus:border-brand-green transition-colors cursor-pointer text-base">
-                        <option value="-500" selected>Lose Weight Fast (-500 calories)</option>
-                        <option value="-250">Lose Weight Slow (-250 calories)</option>
-                        <option value="0">Maintain (No calorie adjustment)</option>
-                        <option value="250">Gain Weight Slow (+250 calories)</option>
-                        <option value="500">Gain Weight Fast (+500 calories)</option>
-                    </select>
-                </div>
+            <div class="mb-8">
+                <label class="text-xs font-bold text-slate-400 uppercase">Goal</label>
+                <select id="goal" class="w-full p-4 bg-brand-input rounded-xl text-white outline-none">
+                    <option value="-500" selected>Lose Fast (-500)</option>
+                    <option value="-250">Lose Slow (-250)</option>
+                    <option value="0">Maintain</option>
+                    <option value="250">Gain Slow (+250)</option>
+                    <option value="500">Gain Fast (+500)</option>
+                </select>
             </div>
 
-            <button onclick="calculate()" class="w-full py-4 bg-gradient-to-r from-brand-green to-lime-600 hover:to-brand-green text-brand-navy rounded-xl font-extrabold text-lg shadow-glow transition-all active:scale-[0.98]">
-                GENERATE TARGETS
-            </button>
+            <button onclick="calculate()" class="w-full py-4 bg-brand-green text-brand-navy font-bold rounded-xl text-lg shadow-glow">GENERATE TARGETS</button>
         </div>
 
         <div id="results" class="hidden animate-up">
-            
             <div class="bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 text-white rounded-[2rem] p-8 text-center shadow-2xl mb-6 relative overflow-hidden">
                 <div class="absolute top-0 right-0 w-64 h-64 bg-brand-teal rounded-full blur-[100px] opacity-10"></div>
-                
-                <span class="text-xs font-bold text-brand-green uppercase tracking-[0.2em] mb-2 block">Your Daily Ceiling</span>
-                <div class="text-6xl md:text-7xl font-extrabold mb-4 tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white to-slate-400" id="target-cal">0</div>
+                <span class="text-xs font-bold text-brand-green uppercase tracking-widest mb-2 block">Daily Ceiling</span>
+                <div class="text-6xl font-extrabold mb-4" id="target-cal">0</div>
                 
                 <div id="timeline-container" class="bg-slate-800/50 rounded-xl p-4 border border-slate-600 mb-4 hidden">
                     <p class="text-xs font-bold text-brand-teal uppercase tracking-widest mb-1">Projected Timeline</p>
-                    <p class="text-white text-sm mb-1">Reach your goal weight by:</p>
                     <p class="text-xl font-extrabold text-white" id="goal-date">Loading...</p>
-                    <p class="text-[10px] text-slate-400 mt-1">(<span id="goal-weeks">0</span> weeks from today)</p>
-                </div>
-
-                <div class="flex justify-center gap-4 mt-2">
-                    <div class="text-[10px] font-bold uppercase tracking-wider text-brand-muted">Base TDEE: <span id="tdee-base" class="text-white">0</span></div>
-                    <div class="text-[10px] font-bold uppercase tracking-wider text-brand-teal">BMI: <span id="val-bmi" class="text-white">0</span></div>
                 </div>
             </div>
 
             <div class="bg-brand-card rounded-[2rem] border border-slate-700 shadow-xl p-6 mb-6">
-                <h3 id="macro-header" class="text-lg font-bold text-white mb-6 text-center">Macro Split</h3>
-                
+                <h3 class="text-lg font-bold text-white mb-6 text-center">Macro Split</h3>
                 <div class="grid grid-cols-3 gap-3 mb-6">
-                    <div class="bg-brand-navy border border-slate-700 rounded-2xl p-4 text-center">
-                        <span class="block text-2xl font-extrabold text-white" id="val-pro">0g</span>
-                        <span class="text-[10px] font-bold text-brand-green uppercase tracking-wider">Protein</span>
-                    </div>
-                    <div class="bg-brand-navy border border-slate-700 rounded-2xl p-4 text-center">
-                        <span class="block text-2xl font-extrabold text-white" id="val-carb">0g</span>
-                        <span class="text-[10px] font-bold text-brand-teal uppercase tracking-wider">Carbs</span>
-                    </div>
-                    <div class="bg-brand-navy border border-slate-700 rounded-2xl p-4 text-center">
-                        <span class="block text-2xl font-extrabold text-white" id="val-fat">0g</span>
-                        <span class="text-[10px] font-bold text-yellow-400 uppercase tracking-wider">Fat</span>
-                    </div>
+                    <div class="bg-brand-navy border border-slate-700 rounded-2xl p-4 text-center"><span class="block text-2xl font-bold text-white" id="val-pro">0g</span><span class="text-[10px] text-brand-green uppercase">Protein</span></div>
+                    <div class="bg-brand-navy border border-slate-700 rounded-2xl p-4 text-center"><span class="block text-2xl font-bold text-white" id="val-carb">0g</span><span class="text-[10px] text-brand-teal uppercase">Carbs</span></div>
+                    <div class="bg-brand-navy border border-slate-700 rounded-2xl p-4 text-center"><span class="block text-2xl font-bold text-white" id="val-fat">0g</span><span class="text-[10px] text-yellow-400 uppercase">Fat</span></div>
                 </div>
 
                 <div class="flex flex-col gap-3 mb-6">
-                    <a href="https://johnrubensolutions.github.io/John-Ruben-Solutions/John-Ruben-Solutions/nutrition-information.html" target="_blank" class="block w-full py-3 text-center bg-brand-navy border border-brand-teal/30 rounded-xl hover:bg-brand-teal/10 hover:border-brand-teal transition-all group">
-                        <span class="text-brand-teal font-bold text-sm group-hover:underline">🥗 Start Nutrition Look Up</span>
-                    </a>
-                    
-                    <a href="https://johnrubensolutions.github.io/John-Ruben-Solutions/John-Ruben-Solutions/drug-information.html" target="_blank" class="block w-full py-2 text-center text-xs text-brand-muted hover:text-white transition-colors">
-                        💊 Taking medications? <span class="underline">Check Drug Information</span>
-                    </a>
+                    <a href="nutrition-tracker.html" class="block w-full py-3 text-center bg-brand-navy border border-brand-teal/30 rounded-xl hover:bg-brand-teal/10 text-brand-teal font-bold text-sm">🥗 Go to Nutrition Tracker</a>
+                    <a href="drug-info.html" class="block w-full py-2 text-center text-xs text-slate-400 hover:text-white">💊 Check Drug Interactions</a>
                 </div>
 
-                <div id="protein-alert" class="p-4 rounded-xl text-xs leading-relaxed mb-4 border-l-4 bg-slate-800">
-                    <strong class="block mb-1 text-sm alert-title text-white">Status</strong>
-                    <span id="protein-msg" class="text-slate-300">Calculating...</span>
-                </div>
-
-                <div class="p-4 bg-orange-900/20 text-orange-200 border border-orange-900/50 rounded-xl text-xs leading-relaxed">
-                    <strong>⚠️ Kidney Health:</strong> If you have pre-existing diabetes or kidney disease, consult your physician before following a high-protein diet.
-                </div>
-
-                <button onclick="downloadPDF()" class="w-full mt-6 flex justify-center items-center gap-2 px-6 py-4 bg-brand-green text-brand-navy rounded-xl font-extrabold text-sm hover:bg-white transition-all shadow-lg active:scale-95 border-2 border-transparent hover:border-brand-green">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
-                    Download PDF Report
-                </button>
+                <button onclick="downloadPDF()" class="w-full mt-4 flex justify-center items-center gap-2 px-6 py-4 bg-brand-green text-brand-navy rounded-xl font-extrabold text-sm hover:bg-white transition-all">Download PDF Report</button>
             </div>
-
-            <div class="bg-brand-card rounded-[2rem] border border-slate-700 shadow-xl p-6 mb-8">
-                <h3 class="text-lg font-bold text-white mb-6 flex items-center gap-2">
-                    <span class="w-1.5 h-6 bg-brand-teal rounded-full shadow-[0_0_10px_#22d3ee]"></span>
-                    Daily Protocol
-                </h3>
-
-                <div class="space-y-6">
-                    <div class="bg-brand-navy/50 p-4 rounded-xl border border-slate-700">
-                        <div class="flex items-center gap-2 mb-1">
-                            <span class="text-xl">😴</span>
-                            <span class="font-bold text-sm text-white">The Foundation</span>
-                        </div>
-                        <div class="text-sm text-brand-muted">Sleep <strong>8 hours</strong> every night. Recovery is where the growth happens.</div>
-                    </div>
-
-                    <div class="flex justify-between items-start pb-4 border-b border-slate-700">
-                        <div class="max-w-[70%]">
-                            <span class="font-bold text-sm text-slate-300 block">Anti-Inflammatory</span>
-                            <span class="text-[10px] text-slate-500 leading-tight block mt-1">
-                                Aim for an Omega 3 to Omega 6 ratio of less than 1:4 to reduce chronic inflammation.
-                                <a href="https://johnrubensolutions.github.io/John-Ruben-Solutions/John-Ruben-Solutions/learn-more.html" class="text-brand-teal underline">Click here to learn more.</a>
-                            </span>
-                        </div>
-                        <span class="font-bold text-sm text-brand-green">4:1 Ratio</span>
-                    </div>
-
-                    <div class="pb-4 border-b border-slate-700">
-                        <div class="flex justify-between items-center mb-2">
-                            <span class="font-bold text-sm text-slate-300">Feeding Window</span>
-                            <span class="font-bold text-sm text-brand-teal">10:00 AM - 6:00 PM</span>
-                        </div>
-                        <div class="p-3 bg-slate-800 rounded-lg text-[11px] text-slate-400 leading-relaxed border border-slate-700/50">
-                            <strong>🚀 Ramp Up Strategy:</strong> Don't start 16:8 immediately. You already fast while sleeping. Simply extend that window by <strong>1 hour every week</strong> until you comfortably reach the 10am-6pm schedule.
-                        </div>
-                    </div>
-
-                    <div class="pb-4 border-b border-slate-700">
-                        <div class="flex justify-between items-center mb-2">
-                            <div>
-                                <span class="font-bold text-sm text-slate-300 block">Fiber 2.0 Target</span>
-                                <span class="text-[10px] text-slate-500">Metabolic Health</span>
-                            </div>
-                            <span class="font-bold text-sm text-brand-green"><span id="val-fiber">0</span>g / day</span>
-                        </div>
-                        <div class="text-[10px] text-orange-200/80 bg-orange-900/10 p-2 rounded border border-orange-900/30">
-                            ⚠️ <strong>Go Slow:</strong> If you aren't used to this much fiber, increase intake gradually to prevent GI distress.
-                        </div>
-                    </div>
-
-                    <div class="flex flex-col pb-4 border-b border-slate-700">
-                        <div class="flex justify-between items-center mb-1">
-                            <div>
-                                <span class="font-bold text-sm text-slate-300 block">Hydration Goal</span>
-                                <span class="text-[10px] text-slate-500">0.75oz per lb</span>
-                            </div>
-                            <span class="font-bold text-sm text-blue-400 text-right" id="val-water-oz">0 oz</span>
-                        </div>
-                        <div class="flex justify-between items-center">
-                            <span class="text-[10px] text-brand-muted">Metric Conversion:</span>
-                            <span class="text-xs font-bold text-slate-300" id="val-water-ml">0 ml</span>
-                        </div>
-                        <div class="mt-2 text-center p-2 bg-blue-900/20 rounded-lg border border-blue-900/50">
-                            <span class="text-xs text-blue-200">Approx. <strong class="text-white text-sm" id="val-water-glasses">0</strong> glasses (8oz)</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="mt-8">
-                    <div class="flex justify-between items-center mb-4">
-                        <strong class="text-slate-200 text-sm">🏋️ Weekly Training Split</strong>
-                    </div>
-                    <div class="grid grid-cols-2 gap-3">
-                        <div class="bg-slate-800 p-3 rounded-xl border border-brand-green/30 relative overflow-hidden group">
-                            <div class="absolute top-0 right-0 w-10 h-10 bg-brand-green rounded-full blur-xl opacity-20"></div>
-                            <div class="text-xs font-bold text-brand-green mb-1 uppercase tracking-wider">3 Days / Week</div>
-                            <div class="text-white font-extrabold text-sm mb-2">Zone 2 Cardio</div>
-                            <div class="text-[10px] text-slate-400 border-t border-slate-700 pt-2 mt-1">
-                                Target HR: <span id="val-zone2" class="text-white font-bold">Calculating...</span> bpm
-                            </div>
-                        </div>
-
-                        <div class="bg-slate-800 p-3 rounded-xl border border-brand-teal/30 relative overflow-hidden group">
-                            <div class="absolute top-0 right-0 w-10 h-10 bg-brand-teal rounded-full blur-xl opacity-20"></div>
-                            <div class="text-xs font-bold text-brand-teal mb-1 uppercase tracking-wider">3 Days / Week</div>
-                            <div class="text-white font-extrabold text-sm mb-2">Resistance</div>
-                            <div class="text-[10px] text-slate-400 border-t border-slate-700 pt-2 mt-1">
-                                Full Body Compound Movements
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
         </div>
-
-        <div class="text-center border-t border-slate-800 pt-8 pb-8 flex flex-col items-center">
-            
-            <a href="https://johnrubensolutions.github.io/John-Ruben-Solutions/John-Ruben-Solutions/home.html" class="mb-6 inline-flex items-center gap-2 px-6 py-2.5 bg-slate-800 border border-slate-600 rounded-full text-sm font-bold text-white hover:bg-slate-700 hover:border-brand-teal transition-all group">
-                <span class="group-hover:-translate-x-1 transition-transform">←</span> Back to Home
-            </a>
-
-            <p class="text-[10px] font-bold text-slate-500 mb-2">© 2026 John Ruben Solutions, LLC.</p>
-            <p class="text-[10px] text-slate-600 leading-relaxed max-w-lg mx-auto">
-                <strong>Disclaimer:</strong> Educational purposes only. Not medical advice. Always seek the advice of your physician regarding medical conditions. John Ruben Rajendran is a licensed pharmacist, but he is not YOUR pharmacist.
-            </p>
-            <a href="https://www.johnrubensolutions.com/disclaimer" class="text-[10px] text-brand-teal underline mt-2 block">View Full Disclaimer</a>
-        </div>
-
     </div>
 
     <script>
-        // NAVIGATION GUARD
-        let hasCalculated = false;
-        
-        window.addEventListener('beforeunload', function (e) {
-            if (hasCalculated) {
-                e.preventDefault();
-                e.returnValue = ''; // Required for Chrome
-                return "You have unsaved results. Download your PDF before leaving?";
-            }
-        });
-
-        function toggleWeightUnit() {
-            const btn = document.getElementById('weightUnitBtn');
-            const input = document.getElementById('weightUnit');
-            const goalUnitDisplay = document.getElementById('goalUnitDisplay');
-            
-            if (input.value === 'lbs') {
-                input.value = 'kg';
-                btn.innerText = 'kg';
-                goalUnitDisplay.innerText = 'kg';
-            } else {
-                input.value = 'lbs';
-                btn.innerText = 'lbs';
-                goalUnitDisplay.innerText = 'lbs';
-            }
+        // Auth Handlers
+        function handleLogin() {
+            const e = document.getElementById('email').value;
+            const p = document.getElementById('password').value;
+            window.fb.signInWithEmailAndPassword(window.fb.auth, e, p).catch(err => document.getElementById('auth-error').innerText = err.message);
+        }
+        function handleSignup() {
+            const e = document.getElementById('email').value;
+            const p = document.getElementById('password').value;
+            window.fb.createUserWithEmailAndPassword(window.fb.auth, e, p).catch(err => document.getElementById('auth-error').innerText = err.message);
         }
 
-        function toggleHeightUnit() {
-            const btn = document.getElementById('heightUnitBtn');
-            const input = document.getElementById('heightUnit');
-            if (input.value === 'in') {
-                input.value = 'cm';
-                btn.innerText = 'cm';
-            } else {
-                input.value = 'in';
-                btn.innerText = 'in';
-            }
-        }
-
-        function calculate() {
-            hasCalculated = true; // Enable Nav Guard
-
-            // Inputs
+        // Calculation & Save Logic
+        async function calculate() {
             const gender = document.getElementById('gender').value;
-            const wInput = parseFloat(document.getElementById('weight').value);
-            const wUnit = document.getElementById('weightUnit').value;
-            const goalWeightInput = parseFloat(document.getElementById('goalWeight').value);
-            
-            const hInput = parseFloat(document.getElementById('height').value);
-            const hUnit = document.getElementById('heightUnit').value;
-
+            const w = parseFloat(document.getElementById('weight').value);
+            const gw = parseFloat(document.getElementById('goalWeight').value);
+            const h = parseFloat(document.getElementById('height').value);
             const a = parseFloat(document.getElementById('age').value);
             const act = parseFloat(document.getElementById('activity').value);
-            const goalCalorieAdjustment = parseFloat(document.getElementById('goal').value);
-            const bodyType = document.getElementById('bodyType').value;
+            const goal = parseFloat(document.getElementById('goal').value);
 
-            // Unit Normalization
-            let kg, lbs, cm, heightM, goalWeightLbs;
-
-            // Weight Normalization
-            if (wUnit === 'lbs') {
-                lbs = wInput;
-                kg = wInput * 0.453592;
-                goalWeightLbs = goalWeightInput;
-            } else {
-                kg = wInput;
-                lbs = wInput * 2.20462;
-                goalWeightLbs = goalWeightInput * 2.20462;
+            // Save to Firestore
+            const user = window.fb.auth.currentUser;
+            if (user) {
+                try {
+                    await window.fb.setDoc(window.fb.doc(window.fb.db, "users", user.uid, "data", "profile"), {
+                        gender, weight: w, goalWeight: gw, height: h, age: a, activity: act, goal,
+                        lastCalculated: new Date().toISOString()
+                    });
+                } catch (e) { console.error("Save error", e); }
             }
 
-            // Height Normalization
-            if (hUnit === 'in') {
-                cm = hInput * 2.54;
-                heightM = cm / 100;
-            } else {
-                cm = hInput;
-                heightM = hInput / 100;
-            }
-            
-            // BMI Calculation
-            const bmi = (kg / (heightM * heightM)).toFixed(1);
-            
-            // Heart Rate Calculations (Zone 2 approx 60-70% of Max HR)
-            const maxHeartRate = 220 - a;
-            const zone2Low = Math.round(maxHeartRate * 0.60);
-            const zone2High = Math.round(maxHeartRate * 0.70);
-
-            // Water Calculation: 0.75 * Weight (lbs)
-            const waterOz = Math.round(lbs * 0.75);
-            const waterMl = Math.round(waterOz * 29.5735);
-            const glasses = (waterOz / 8).toFixed(1);
-
-            // Fiber 2.0 Calculation Logic
-            let fiberTarget = (gender === 'male') ? 45 : 30;
-
-            // BMR Calculation (Mifflin-St Jeor)
+            // Math
+            const kg = w * 0.453592;
+            const cm = h * 2.54;
             let bmr = (10 * kg) + (6.25 * cm) - (5 * a);
             bmr = (gender === 'male') ? bmr + 5 : bmr - 161;
-
-            // Calories
             const tdee = Math.round(bmr * act);
-            const targetCal = tdee + goalCalorieAdjustment;
+            const targetCal = tdee + goal;
 
-            // --- TIMELINE CALCULATION ---
+            // Timeline
             const timelineContainer = document.getElementById('timeline-container');
-            const goalDateEl = document.getElementById('goal-date');
-            const goalWeeksEl = document.getElementById('goal-weeks');
-            
-            if (goalCalorieAdjustment !== 0) {
-                const isWeightLoss = goalCalorieAdjustment < 0;
-                const isWeightGain = goalCalorieAdjustment > 0;
-                const lbsChangeNeeded = Math.abs(lbs - goalWeightLbs);
-                const totalCaloriesGap = lbsChangeNeeded * 3500;
-                const daysRequired = totalCaloriesGap / Math.abs(goalCalorieAdjustment);
-                
-                let isValidDir = true;
-                if (isWeightLoss && goalWeightLbs > lbs) isValidDir = false;
-                if (isWeightGain && goalWeightLbs < lbs) isValidDir = false;
-
-                if (isValidDir && daysRequired > 0) {
-                    const today = new Date();
-                    const targetDate = new Date(today);
-                    targetDate.setDate(today.getDate() + Math.round(daysRequired));
-                    
-                    const options = { weekday: 'short', year: 'numeric', month: 'long', day: 'numeric' };
-                    goalDateEl.innerText = targetDate.toLocaleDateString('en-US', options);
-                    goalWeeksEl.innerText = (daysRequired / 7).toFixed(1);
-                    timelineContainer.classList.remove('hidden');
-                } else {
-                    timelineContainer.classList.add('hidden');
-                }
+            if (goal !== 0) {
+                const diff = Math.abs(w - gw);
+                const totalDeficit = diff * 3500;
+                const days = totalDeficit / Math.abs(goal);
+                const targetDate = new Date();
+                targetDate.setDate(targetDate.getDate() + days);
+                document.getElementById('goal-date').innerText = targetDate.toLocaleDateString();
+                timelineContainer.classList.remove('hidden');
             } else {
                 timelineContainer.classList.add('hidden');
             }
 
-            // Minimum Protein Threshold (1.6g/kg)
-            const minProteinGrams = Math.round(1.6 * kg);
+            // Macros (40/30/30)
+            const p = Math.round((targetCal * 0.4) / 4);
+            const c = Math.round((targetCal * 0.3) / 4);
+            const f = Math.round((targetCal * 0.3) / 9);
 
-            // Define Ratios based on Body Type
-            let pRatio, cRatio, fRatio;
-            let ratioText = "";
-
-            if (bodyType === 'ecto') {
-                pRatio = 0.30; cRatio = 0.50; fRatio = 0.20;
-                ratioText = "High Carb (30/50/20)";
-            } else if (bodyType === 'endo') {
-                pRatio = 0.40; cRatio = 0.20; fRatio = 0.40;
-                ratioText = "Low Carb (40/20/40)";
-            } else {
-                pRatio = 0.40; cRatio = 0.30; fRatio = 0.30;
-                ratioText = "Balanced (40/30/30)";
-            }
-
-            // Initial Split Calculation
-            let pGrams = Math.round((targetCal * pRatio) / 4);
-            let cGrams = Math.round((targetCal * cRatio) / 4);
-            let fGrams = Math.round((targetCal * fRatio) / 9);
-
-            const alertBox = document.getElementById('protein-alert');
-            const alertMsg = document.getElementById('protein-msg');
-            const alertTitle = document.querySelector('#protein-alert .alert-title');
-            const macroHeader = document.getElementById('macro-header');
-
-            // CHECK & ADJUST LOGIC (SAFETY OVERRIDE)
-            if (pGrams < minProteinGrams) {
-                pGrams = minProteinGrams;
-                const pCals = pGrams * 4;
-                const cCals = Math.round(targetCal * cRatio); 
-                cGrams = Math.round(cCals / 4);
-                
-                const fCals = targetCal - pCals - cCals;
-                fGrams = (fCals < 0) ? 0 : Math.round(fCals / 9);
-
-                // Update UI for Adjustment
-                alertBox.className = "p-4 bg-red-900/20 text-red-200 border border-red-800 rounded-xl text-xs leading-relaxed mb-4 border-l-4 border-red-500";
-                alertTitle.innerText = "⚠️ Auto-Adjustment Active";
-                alertTitle.className = "block mb-1 text-sm font-bold text-red-400";
-                alertMsg.innerText = `Your calculated protein was too low. Macros adjusted to meet minimum 1.6g/kg safety threshold (${pGrams}g). Fats reduced to balance.`;
-                alertMsg.className = "text-red-100";
-                macroHeader.innerText = `Macro Requirements (Adjusted)`;
-            } else {
-                // Standard Logic
-                alertBox.className = "p-4 bg-green-900/20 text-green-200 border border-green-800 rounded-xl text-xs leading-relaxed mb-4 border-l-4 border-brand-green";
-                alertTitle.innerText = "✅ Protein Optimized";
-                alertTitle.className = "block mb-1 text-sm font-bold text-brand-green";
-                alertMsg.innerText = `Target (${pGrams}g) is safely above the 1.6g/kg minimum (${minProteinGrams}g).`;
-                alertMsg.className = "text-green-100";
-                macroHeader.innerText = `Macro Requirements - ${ratioText}`;
-            }
-
-            // Display Results
-            const resultsDiv = document.getElementById('results');
-            resultsDiv.classList.remove('hidden');
-            
-            // Smooth Scroll to Results
-            resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
-
-            document.getElementById('tdee-base').innerText = tdee;
             document.getElementById('target-cal').innerText = targetCal;
-            document.getElementById('val-pro').innerText = pGrams + "g";
-            document.getElementById('val-carb').innerText = cGrams + "g";
-            document.getElementById('val-fat').innerText = fGrams + "g";
+            document.getElementById('val-pro').innerText = p + "g";
+            document.getElementById('val-carb').innerText = c + "g";
+            document.getElementById('val-fat').innerText = f + "g";
+            document.getElementById('results').classList.remove('hidden');
             
-            // Hydration Outputs
-            document.getElementById('val-water-oz').innerText = waterOz + " oz";
-            document.getElementById('val-water-ml').innerText = waterMl + " ml";
-            document.getElementById('val-water-glasses').innerText = glasses;
-            
-            document.getElementById('val-fiber').innerText = fiberTarget;
-            
-            // Update BMI and Zone 2 HR
-            document.getElementById('val-bmi').innerText = bmi;
-            document.getElementById('val-zone2').innerText = `${zone2Low}-${zone2High}`;
+            // Save Targets for Tracker
+            if (user) {
+                await window.fb.setDoc(window.fb.doc(window.fb.db, "users", user.uid, "data", "targets"), {
+                    calories: targetCal, protein: p, carbs: c, fat: f
+                });
+            }
         }
 
         function downloadPDF() {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
-
-            // Colors
-            const navy = '#0f172a';
-            const green = '#84cc16';
-
-            // --- USER INPUTS ---
-            const gender = document.getElementById('gender').options[document.getElementById('gender').selectedIndex].text;
-            const age = document.getElementById('age').value;
-            const weight = document.getElementById('weight').value + " " + document.getElementById('weightUnit').value;
-            const goalWeight = document.getElementById('goalWeight').value + " " + document.getElementById('weightUnit').value;
-            const height = document.getElementById('height').value + " " + document.getElementById('heightUnit').value;
-            const activity = document.getElementById('activity').options[document.getElementById('activity').selectedIndex].text;
-            
-            // --- OUTPUTS ---
-            const date = new Date().toLocaleDateString();
-            const cals = document.getElementById('target-cal').innerText;
-            const pro = document.getElementById('val-pro').innerText;
-            const carb = document.getElementById('val-carb').innerText;
-            const fat = document.getElementById('val-fat').innerText;
-            const water = document.getElementById('val-water-oz').innerText;
-            const fiber = document.getElementById('val-fiber').innerText;
-            const hr = document.getElementById('val-zone2').innerText;
-            const goalDate = document.getElementById('goal-date').innerText;
-
-            // --- PDF CONTENT ---
-            
-            // Header
-            doc.setFontSize(22);
-            doc.setTextColor(navy);
-            doc.text("JOHN RUBEN SOLUTIONS", 20, 20);
-            
-            doc.setFontSize(12);
-            doc.setTextColor(100);
-            doc.text("Macronutrient Strategy Report", 20, 28);
-            doc.text(`Generated: ${date}`, 20, 34);
-
-            // Section: Profile
-            doc.setDrawColor(green);
-            doc.setLineWidth(1);
-            doc.line(20, 40, 190, 40);
-            
-            doc.setFontSize(14);
-            doc.setTextColor(navy);
-            doc.text("YOUR PROFILE", 20, 50);
-            
-            doc.setFontSize(10);
-            doc.setTextColor(60);
-            doc.text(`Gender: ${gender}`, 20, 60);
-            doc.text(`Age: ${age}`, 80, 60);
-            doc.text(`Current Weight: ${weight}`, 20, 66);
-            doc.text(`Goal Weight: ${goalWeight}`, 80, 66);
-            doc.text(`Height: ${height}`, 140, 66);
-            doc.text(`Activity Level: ${activity}`, 20, 72);
-
-            // Section: Daily Targets
-            doc.line(20, 80, 190, 80);
-            doc.setFontSize(14);
-            doc.setTextColor(navy);
-            doc.text("DAILY MACRO TARGETS", 20, 90);
-
-            doc.setFontSize(16);
-            doc.setTextColor(green);
-            doc.text(`Calories: ${cals}`, 20, 100);
-
-            doc.setFontSize(12);
-            doc.setTextColor(navy);
-            doc.text(`Protein: ${pro}`, 20, 110);
-            doc.text(`Carbs:   ${carb}`, 80, 110);
-            doc.text(`Fat:     ${fat}`, 140, 110);
-
-            // Section: Protocol
-            doc.line(20, 120, 190, 120);
-            doc.setFontSize(14);
-            doc.text("DAILY PROTOCOL", 20, 130);
-
-            doc.setFontSize(10);
-            doc.setTextColor(60);
-            doc.text(`• Hydration: ${water} (${document.getElementById('val-water-glasses').innerText} glasses)`, 20, 140);
-            doc.text(`• Fiber Target: ${fiber}g per day`, 20, 146);
-            doc.text(`• Zone 2 Cardio Heart Rate: ${hr} bpm`, 20, 152);
-            doc.text(`• Sleep Goal: 8 Hours`, 20, 158);
-            doc.text(`• Eating Window: 10:00 AM - 6:00 PM (Recommended)`, 20, 164);
-
-            // Section: Timeline (Conditional)
-            if (goalDate !== "Loading..." && !document.getElementById('timeline-container').classList.contains('hidden')) {
-                doc.line(20, 175, 190, 175);
-                doc.setFontSize(14);
-                doc.setTextColor(navy);
-                doc.text("PROJECTED TIMELINE", 20, 185);
-                doc.setFontSize(12);
-                doc.setTextColor(green);
-                doc.text(`Projected Goal Weight Date: ${goalDate}`, 20, 195);
-            }
-
-            // Footer
-            doc.setFontSize(8);
-            doc.setTextColor(150);
-            doc.text("Disclaimer: Educational purposes only. Not medical advice. Consult a physician before starting any diet.", 20, 280);
-            doc.text("© 2026 John Ruben Solutions, LLC.", 20, 285);
-
-            // Save
-            doc.save("JohnRuben_Macro_Plan.pdf");
+            doc.text("Macronutrient Report", 20, 20);
+            doc.text(`Calories: ${document.getElementById('target-cal').innerText}`, 20, 40);
+            doc.save("MacroReport.pdf");
         }
     </script>
 </body>
 </html>
-
-
-
-
