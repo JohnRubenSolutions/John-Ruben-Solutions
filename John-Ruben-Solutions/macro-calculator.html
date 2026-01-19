@@ -1,17 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-J25PL1Z8SW"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'G-J25PL1Z8SW');
-</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>John Ruben Solutions - Metabolic Dashboard</title>
+<title>Macro Calculator - John Ruben Solutions</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -61,120 +53,69 @@
         background-position: right 1rem center; 
         background-size: 1em; 
     }
-
-    /* PULSE ANIMATION */
-    @keyframes pulse-dot {
-        0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
-        70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
-        100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
-    }
-    .animate-pulse-dot {
-        animation: pulse-dot 2s infinite;
-    }
 </style>
 </head>
-<body class="antialiased pb-20 selection:bg-brand-green selection:text-brand-navy">
+<body class="antialiased p-4 md:p-8 pt-8 selection:bg-brand-green selection:text-brand-navy">
 
-    <div class="max-w-3xl mx-auto px-4 pt-10">
+    <div class="max-w-2xl mx-auto flex flex-col items-center">
 
-        <div class="text-center mb-6">
-            <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight text-white mb-2">JOHN RUBEN</h1>
-            <p class="text-xs font-bold text-brand-green uppercase tracking-[0.3em] mb-4">Metabolic Solutions</p>
-            
-            <div class="max-w-xl mx-auto">
-                <p class="text-brand-muted text-base leading-relaxed">
-                    Welcome to your precision health dashboard. Use these tools to calculate your <strong>metabolic targets</strong>, analyze <strong>nutrition facts</strong>, and understand your <strong>medication</strong> interactions.
-                </p>
+        <div class="w-full mb-8 flex justify-between items-center">
+            <a href="https://johnrubensolutions.github.io/John-Ruben-Solutions/John-Ruben-Solutions/home.html" class="inline-flex items-center gap-2 text-slate-300 hover:text-white font-bold text-sm transition-colors bg-brand-card border border-slate-700 px-4 py-2 rounded-full shadow-sm hover:shadow-glow">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+                <span>Back</span>
+            </a>
+            <div class="text-right">
+                 <h1 class="text-xl font-extrabold text-white tracking-tight leading-none">JOHN RUBEN</h1>
+                 <p class="text-[10px] font-bold text-brand-green uppercase tracking-[0.25em]">Solutions</p>
             </div>
         </div>
 
-        <div class="flex justify-center mb-8 w-full">
-            <a href="https://www.johnrubensolutions.com/apply-for-a-live-strategy-call" target="_top" class="group relative w-full max-w-[500px]">
-                <div class="absolute inset-0 bg-brand-green blur-lg opacity-20 group-hover:opacity-40 transition-opacity rounded-full"></div>
-                
-                <div class="relative flex items-center justify-between bg-gradient-to-r from-brand-card to-slate-800 border border-brand-green/30 p-3 pr-5 rounded-full shadow-2xl hover:scale-[1.01] transition-transform cursor-pointer">
-                    
-                    <div class="flex items-center gap-3 w-full">
-                        <div class="bg-brand-navy p-2.5 rounded-full relative flex-shrink-0">
-                            <div class="w-3 h-3 bg-red-500 rounded-full animate-pulse-dot"></div>
-                        </div>
-                        
-                        <div class="flex flex-col text-left flex-grow">
-                            <span class="text-[11px] md:text-xs font-bold uppercase tracking-wide text-brand-green leading-tight">Limited Spots Available</span>
-                            <span class="font-extrabold text-[13px] md:text-sm text-white leading-tight whitespace-nowrap">APPLY FOR A LIVE CALL TODAY!</span>
-                        </div>
-                    </div>
-
-                    <svg xmlns="http://www.w3.org/2000/svg" class="text-white/50 w-5 h-5 flex-shrink-0 group-hover:translate-x-1 transition-transform ml-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
-                
-                </div>
-            </a>
+        <div class="text-center mb-8 animate-up">
+             <h2 class="text-3xl md:text-4xl font-extrabold text-white mb-2">Macro Calculator</h2>
+             <p class="text-brand-muted font-medium">Calculate your metabolic ceiling & daily targets.</p>
         </div>
 
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-10">
-            <a href="https://johnrubensolutions.github.io/Nutrition-Information-Scanner/Food-Scanner/" target="_top" class="p-4 bg-brand-card border border-slate-700 hover:border-brand-green hover:shadow-glow rounded-2xl text-center transition-all group">
-                <div class="text-2xl mb-2 group-hover:scale-110 transition-transform">🥗</div>
-                <div class="text-xs font-bold text-white">Food Search</div>
-            </a>
-            <a href="https://www.johnrubensolutions.com/medication-information" target="_top" class="p-4 bg-brand-card border border-slate-700 hover:border-brand-teal hover:shadow-glow-teal rounded-2xl text-center transition-all group">
-                <div class="text-2xl mb-2 group-hover:scale-110 transition-transform">💊</div>
-                <div class="text-xs font-bold text-white">Drug Info</div>
-            </a>
-            <a href="https://www.johnrubensolutions.com/learn-more" target="_top" class="p-4 bg-brand-card border border-slate-700 hover:border-white rounded-2xl text-center transition-all group">
-                <div class="text-2xl mb-2 group-hover:scale-110 transition-transform">📚</div>
-                <div class="text-xs font-bold text-white">Protocols</div>
-            </a>
-            <a href="https://www.johnrubensolutions.com/about-me" target="_top" class="p-4 bg-brand-card border border-slate-700 hover:border-white rounded-2xl text-center transition-all group">
-                <div class="text-2xl mb-2 group-hover:scale-110 transition-transform">👤</div>
-                <div class="text-xs font-bold text-white">About Me</div>
-            </a>
-        </div>
-
-        <div class="bg-brand-card rounded-[2rem] border border-slate-700 shadow-2xl p-6 md:p-8 mb-8">
-            <h3 class="text-xl font-extrabold text-white mb-6 flex items-center gap-3">
-                <span class="w-1.5 h-6 bg-brand-green rounded-full shadow-[0_0_10px_#84cc16]"></span>
-                Target Calculator
-            </h3>
-
+        <div class="w-full bg-brand-card rounded-[2rem] border border-slate-700 shadow-2xl p-6 md:p-8 mb-8 animate-up">
+            
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 <div class="space-y-2">
-                    <label class="text-xs font-bold text-brand-muted uppercase tracking-wider">Gender</label>
-                    <select id="gender" onchange="hideResults()" class="w-full p-4 bg-brand-input border border-slate-600 rounded-xl font-bold text-white focus:outline-none focus:border-brand-green transition-colors cursor-pointer text-base">
+                    <label class="text-sm font-bold text-brand-muted uppercase tracking-wider">Gender</label>
+                    <select id="gender" class="w-full p-4 bg-brand-input border border-slate-600 rounded-xl font-bold text-white focus:outline-none focus:border-brand-green transition-colors cursor-pointer text-base">
                         <option value="male" selected>Male</option>
                         <option value="female">Female</option>
                     </select>
                 </div>
                 
                 <div class="space-y-2">
-                    <label class="text-xs font-bold text-brand-muted uppercase tracking-wider">Age</label>
-                    <input type="number" id="age" value="35" oninput="hideResults()" class="w-full p-4 bg-brand-input border border-slate-600 rounded-xl font-bold text-white focus:outline-none focus:border-brand-green transition-colors text-base">
+                    <label class="text-sm font-bold text-brand-muted uppercase tracking-wider">Age</label>
+                    <input type="number" id="age" value="35" class="w-full p-4 bg-brand-input border border-slate-600 rounded-xl font-bold text-white focus:outline-none focus:border-brand-green transition-colors text-base">
                 </div>
 
                 <div class="space-y-2">
-                    <label class="text-xs font-bold text-brand-muted uppercase tracking-wider">Weight (lbs)</label>
-                    <input type="number" id="weight" value="155" oninput="hideResults()" class="w-full p-4 bg-brand-input border border-slate-600 rounded-xl font-bold text-white focus:outline-none focus:border-brand-green transition-colors text-base">
+                    <label class="text-sm font-bold text-brand-muted uppercase tracking-wider">Weight (lbs)</label>
+                    <input type="number" id="weight" value="155" class="w-full p-4 bg-brand-input border border-slate-600 rounded-xl font-bold text-white focus:outline-none focus:border-brand-green transition-colors text-base">
                 </div>
 
                 <div class="space-y-2">
-                    <label class="text-xs font-bold text-brand-muted uppercase tracking-wider">Height (inches)</label>
-                    <input type="number" id="height" value="66.5" oninput="hideResults()" class="w-full p-4 bg-brand-input border border-slate-600 rounded-xl font-bold text-white focus:outline-none focus:border-brand-green transition-colors text-base">
+                    <label class="text-sm font-bold text-brand-muted uppercase tracking-wider">Height (inches)</label>
+                    <input type="number" id="height" value="66.5" class="w-full p-4 bg-brand-input border border-slate-600 rounded-xl font-bold text-white focus:outline-none focus:border-brand-green transition-colors text-base">
                 </div>
             </div>
 
             <div class="space-y-2 mb-6">
-                <label class="text-xs font-bold text-brand-muted uppercase tracking-wider">Metabolic Chassis (Body Type)</label>
-                <select id="bodyType" onchange="hideResults()" class="w-full p-4 bg-brand-input border border-slate-600 rounded-xl font-bold text-white focus:outline-none focus:border-brand-green transition-colors cursor-pointer text-base">
+                <label class="text-sm font-bold text-brand-muted uppercase tracking-wider">Metabolic Chassis (Body Type)</label>
+                <select id="bodyType" class="w-full p-4 bg-brand-input border border-slate-600 rounded-xl font-bold text-white focus:outline-none focus:border-brand-green transition-colors cursor-pointer text-base">
                     <option value="meso" selected>🦍 The Gorilla (Athletic/Balanced)</option>
                     <option value="ecto">🏎️ The Greyhound (Hard Gainer)</option>
                     <option value="endo">🐻 The Bear (Easy Gainer)</option>
                 </select>
-                <p class="text-[11px] text-brand-muted ml-1">Select the frame that represents your natural baseline.</p>
+                <p class="text-xs text-brand-muted ml-1">Select the frame that represents your natural baseline.</p>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                 <div class="space-y-2">
-                    <label class="text-xs font-bold text-brand-muted uppercase tracking-wider">Activity Level</label>
-                    <select id="activity" onchange="hideResults()" class="w-full p-4 bg-brand-input border border-slate-600 rounded-xl font-bold text-white focus:outline-none focus:border-brand-green transition-colors cursor-pointer text-base">
+                    <label class="text-sm font-bold text-brand-muted uppercase tracking-wider">Activity Level</label>
+                    <select id="activity" class="w-full p-4 bg-brand-input border border-slate-600 rounded-xl font-bold text-white focus:outline-none focus:border-brand-green transition-colors cursor-pointer text-base">
                         <option value="1.2">🪑 Desk Jockey (Sedentary)</option>
                         <option value="1.55" selected>🏃 Mover & Shaker (Moderate)</option>
                         <option value="1.725">🔥 Human Machine (Very Active)</option>
@@ -182,8 +123,8 @@
                 </div>
 
                 <div class="space-y-2">
-                    <label class="text-xs font-bold text-brand-muted uppercase tracking-wider">Current Goal</label>
-                    <select id="goal" onchange="hideResults()" class="w-full p-4 bg-brand-input border border-slate-600 rounded-xl font-bold text-white focus:outline-none focus:border-brand-green transition-colors cursor-pointer text-base">
+                    <label class="text-sm font-bold text-brand-muted uppercase tracking-wider">Current Goal</label>
+                    <select id="goal" class="w-full p-4 bg-brand-input border border-slate-600 rounded-xl font-bold text-white focus:outline-none focus:border-brand-green transition-colors cursor-pointer text-base">
                         <option value="0">⚓ Cruise Control (Maintain)</option>
                         <option value="-500">✂️ Shred Mode (Lose Fat)</option>
                         <option value="250">💪 Gains Train (Build Muscle)</option>
@@ -192,56 +133,59 @@
             </div>
 
             <div class="flex gap-3">
-                <button type="button" onclick="resetCalculator()" class="w-1/3 py-4 bg-slate-800 border border-slate-600 hover:bg-slate-700 text-white rounded-xl font-bold text-lg transition-all active:scale-[0.98]">
+                <button onclick="resetCalculator()" class="w-1/3 py-4 bg-slate-800 border border-slate-600 hover:bg-slate-700 text-white rounded-xl font-bold text-lg transition-all active:scale-[0.98]">
                     RESET
                 </button>
-                <button type="button" id="calcBtn" onclick="calculate()" class="w-2/3 py-4 bg-gradient-to-r from-brand-green to-lime-600 hover:to-brand-green text-brand-navy rounded-xl font-extrabold text-xl shadow-glow transition-all active:scale-[0.98]">
+                <button id="calcBtn" onclick="calculate()" class="w-2/3 py-4 bg-gradient-to-r from-brand-green to-lime-600 hover:to-brand-green text-brand-navy rounded-xl font-extrabold text-xl shadow-glow transition-all active:scale-[0.98]">
                     GENERATE
                 </button>
             </div>
         </div>
 
-        <div id="results" class="hidden">
+        <div id="results" class="w-full hidden">
             
             <div class="bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 text-white rounded-[2rem] p-8 text-center shadow-2xl mb-6 relative overflow-hidden">
                 <div class="absolute top-0 right-0 w-64 h-64 bg-brand-teal rounded-full blur-[100px] opacity-10"></div>
                 
-                <span class="text-xs font-bold text-brand-green uppercase tracking-[0.2em] mb-2 block">Your Daily Ceiling</span>
+                <span class="text-sm font-bold text-brand-green uppercase tracking-[0.2em] mb-2 block">Your Daily Ceiling</span>
                 <div class="text-6xl md:text-7xl font-extrabold mb-1 tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white to-slate-400" id="target-cal">0</div>
-                <div class="text-sm font-medium text-brand-muted">Calories / Day</div>
-                <div class="mt-4 inline-block bg-white/5 border border-white/10 px-4 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-brand-teal">Base TDEE: <span id="tdee-base">0</span></div>
+                
+                <div class="flex justify-center gap-6 mt-4">
+                    <div class="text-sm font-bold uppercase tracking-wider text-brand-muted">Base TDEE: <span id="tdee-base" class="text-white text-base">0</span></div>
+                    <div class="text-sm font-bold uppercase tracking-wider text-brand-teal">BMI: <span id="val-bmi" class="text-white text-base">0</span></div>
+                </div>
             </div>
 
             <div class="bg-brand-card rounded-[2rem] border border-slate-700 shadow-xl p-6 mb-6">
-                <h3 id="macro-header" class="text-lg font-bold text-white mb-6 text-center">Macro Split</h3>
+                <h3 id="macro-header" class="text-xl font-bold text-white mb-6 text-center">Macro Split</h3>
                 
                 <div class="grid grid-cols-3 gap-3 mb-6">
                     <div class="bg-brand-navy border border-slate-700 rounded-2xl p-4 text-center">
                         <span class="block text-2xl font-extrabold text-white" id="val-pro">0g</span>
-                        <span class="text-[10px] font-bold text-brand-green uppercase tracking-wider">Protein</span>
+                        <span class="text-xs font-bold text-brand-green uppercase tracking-wider">Protein</span>
                     </div>
                     <div class="bg-brand-navy border border-slate-700 rounded-2xl p-4 text-center">
                         <span class="block text-2xl font-extrabold text-white" id="val-carb">0g</span>
-                        <span class="text-[10px] font-bold text-brand-teal uppercase tracking-wider">Carbs</span>
+                        <span class="text-xs font-bold text-brand-teal uppercase tracking-wider">Carbs</span>
                     </div>
                     <div class="bg-brand-navy border border-slate-700 rounded-2xl p-4 text-center">
                         <span class="block text-2xl font-extrabold text-white" id="val-fat">0g</span>
-                        <span class="text-[10px] font-bold text-yellow-400 uppercase tracking-wider">Fat</span>
+                        <span class="text-xs font-bold text-yellow-400 uppercase tracking-wider">Fat</span>
                     </div>
                 </div>
 
-                <div id="protein-alert" class="p-4 rounded-xl text-xs leading-relaxed mb-4 border-l-4 bg-slate-800">
-                    <strong class="block mb-1 text-sm alert-title text-white">Status</strong>
+                <div id="protein-alert" class="p-4 rounded-xl text-sm leading-relaxed mb-4 border-l-4 bg-slate-800">
+                    <strong class="block mb-1 text-base alert-title text-white">Status</strong>
                     <span id="protein-msg" class="text-slate-300">Calculating...</span>
                 </div>
 
-                <div class="p-4 bg-orange-900/20 text-orange-200 border border-orange-900/50 rounded-xl text-xs leading-relaxed">
+                <div class="p-4 bg-orange-900/20 text-orange-200 border border-orange-900/50 rounded-xl text-sm leading-relaxed">
                     <strong>⚠️ Kidney Health:</strong> If you have pre-existing diabetes or kidney disease, consult your physician before following a high-protein diet.
                 </div>
             </div>
 
             <div class="bg-brand-card rounded-[2rem] border border-slate-700 shadow-xl p-6 mb-8">
-                <h3 class="text-lg font-bold text-white mb-6 flex items-center gap-2">
+                <h3 class="text-xl font-bold text-white mb-6 flex items-center gap-2">
                     <span class="w-1.5 h-6 bg-brand-teal rounded-full shadow-[0_0_10px_#22d3ee]"></span>
                     Daily Protocol
                 </h3>
@@ -299,12 +243,10 @@
                         <strong class="text-slate-200 text-base">🏋️ Weekly Training Split</strong>
                     </div>
                     <div class="grid grid-cols-2 gap-3">
-                        
                         <div class="bg-slate-800 p-3 rounded-xl border border-brand-green/30 relative overflow-hidden">
                             <div class="absolute top-0 right-0 w-10 h-10 bg-brand-green rounded-full blur-xl opacity-20"></div>
                             <div class="text-xs font-bold text-brand-green mb-1 uppercase tracking-wider">3 Days / Week</div>
                             <div class="text-white font-extrabold text-base mb-2">Zone 2 Cardio</div>
-                            
                             <div class="text-xs text-slate-400 border-t border-slate-700 pt-2 mt-1">
                                 Target HR: <span id="val-zone2" class="text-white font-bold">Calculating...</span> bpm
                             </div>
@@ -323,56 +265,53 @@
             </div>
 
         </div>
-
-        <div class="text-center border-t border-slate-800 pt-8 pb-4">
-            <p class="text-[10px] font-bold text-slate-500 mb-2">© 2026 John Ruben Solutions, LLC.</p>
-            <p class="text-[10px] text-slate-600 leading-relaxed max-w-lg mx-auto">
-                <strong>Disclaimer:</strong> Educational purposes only. Not medical advice. Always seek the advice of your physician regarding medical conditions. John Ruben Rajendran is a licensed pharmacist, but he is not YOUR pharmacist.
-            </p>
-            <a href="https://www.johnrubensolutions.com/disclaimer" class="text-[10px] text-brand-teal underline mt-2 block">View Full Disclaimer</a>
-        </div>
-
     </div>
 
     <script>
-        // 1. Force a full page reload when Reset is clicked
         function resetCalculator() {
-            window.location.reload();
-        }
+            // Reset to defaults
+            document.getElementById('gender').value = 'male';
+            document.getElementById('age').value = '35';
+            document.getElementById('weight').value = '155';
+            document.getElementById('height').value = '66.5';
+            document.getElementById('bodyType').value = 'meso';
+            document.getElementById('activity').value = '1.55';
+            document.getElementById('goal').value = '0';
 
-        // 2. Hide results immediately if user changes an input
-        function hideResults() {
+            // Hide results
             const resultsDiv = document.getElementById('results');
-            const btn = document.getElementById('calcBtn');
-            
-            // Hide the results
             resultsDiv.classList.add('hidden');
             resultsDiv.classList.remove('animate-up');
-            
-            // Ensure button is ready to go
+
+            // Reset Generate button state just in case
+            const btn = document.getElementById('calcBtn');
             btn.disabled = false;
             btn.innerText = "GENERATE TARGETS";
             btn.classList.remove('opacity-75', 'cursor-not-allowed');
+
+            // Scroll up
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         function calculate() {
-            // Grab UI Elements
+            // 1. Grab Buttons & Elements
             const btn = document.getElementById('calcBtn');
             const resultsDiv = document.getElementById('results');
             const originalBtnText = "GENERATE TARGETS";
 
-            // Visual feedback - Processing
+            // 2. Lock UI
             btn.disabled = true;
             btn.innerText = "Processing...";
             btn.classList.add('opacity-75', 'cursor-not-allowed');
             
-            // Hide old results briefly to trigger animation restart
+            // Hide old results to force visual refresh
             resultsDiv.classList.add('hidden');
             resultsDiv.classList.remove('animate-up');
 
+            // 3. Wait 300ms then Calculate
             setTimeout(() => {
                 try {
-                    // --- DATA GATHERING (Always gets fresh values) ---
+                    // --- DATA GATHERING ---
                     const gender = document.getElementById('gender').value;
                     const wVal = document.getElementById('weight').value;
                     const hVal = document.getElementById('height').value;
@@ -381,28 +320,23 @@
                     const goalVal = document.getElementById('goal').value;
                     const bodyType = document.getElementById('bodyType').value;
 
-                    // Parse & Validate
-                    const w = parseFloat(wVal);
-                    const h = parseFloat(hVal);
-                    const a = parseFloat(aVal);
-                    
-                    if (!w || !h || !a || w <= 0 || h <= 0) {
-                        alert("Please enter valid positive numbers for Weight, Height, and Age.");
-                        // Reset button
-                        btn.disabled = false;
-                        btn.innerText = originalBtnText;
-                        btn.classList.remove('opacity-75', 'cursor-not-allowed');
-                        return; // Stop execution
-                    }
-
+                    // Parse Floats (Default to 0 if empty/NaN to prevent crash)
+                    const w = parseFloat(wVal) || 0;
+                    const h = parseFloat(hVal) || 0;
+                    const a = parseFloat(aVal) || 0;
                     const act = parseFloat(actVal) || 1.2;
                     const goal = parseFloat(goalVal) || 0;
 
                     // --- CALCULATIONS ---
+                    // Conversions
                     const kg = w * 0.453592;
                     const cm = h * 2.54;
+                    const heightM = cm / 100;
                     
-                    // Zone 2 Heart Rate
+                    // BMI (Safe Check for height 0)
+                    const bmi = heightM > 0 ? (kg / (heightM * heightM)).toFixed(1) : "0.0";
+                    
+                    // Heart Rate
                     const maxHeartRate = 220 - a;
                     const zone2Low = Math.round(maxHeartRate * 0.60);
                     const zone2High = Math.round(maxHeartRate * 0.70);
@@ -421,7 +355,7 @@
                     const tdee = Math.round(bmr * act);
                     const targetCal = tdee + goal;
 
-                    // Protein Threshold (Safety)
+                    // Protein Threshold
                     const minProteinGrams = Math.round(1.6 * kg);
 
                     // Ratios
@@ -483,12 +417,12 @@
                     document.getElementById('val-fat').innerText = fGrams + "g";
                     document.getElementById('val-water').innerText = waterOz + " oz";
                     document.getElementById('val-fiber').innerText = fiberTarget;
-                    
+                    document.getElementById('val-bmi').innerText = bmi;
                     document.getElementById('val-zone2').innerText = `${zone2Low}-${zone2High}`;
 
                     // --- SHOW RESULTS ---
                     resultsDiv.classList.remove('hidden');
-                    void resultsDiv.offsetWidth; // Force Reflow
+                    void resultsDiv.offsetWidth; // Force reflow for animation
                     resultsDiv.classList.add('animate-up');
                     resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
@@ -496,13 +430,15 @@
                     console.error("Calculator Error:", err);
                     alert("Something went wrong with the calculation. Please check your inputs.");
                 } finally {
-                    // Reset Button State
+                    // --- RESET BUTTON (ALWAYS RUNS) ---
                     btn.disabled = false;
                     btn.innerText = originalBtnText;
                     btn.classList.remove('opacity-75', 'cursor-not-allowed');
                 }
-            }, 150); // Short delay for UX
+            }, 300); // 300ms simulated delay
         }
     </script>
 </body>
+
 </html>
+
