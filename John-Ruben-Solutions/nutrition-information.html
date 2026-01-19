@@ -66,13 +66,17 @@
         const { useState, useEffect, useRef } = React;
         const API_KEY = '4FRpc4urF9W2UedPH6agara8y52PR0efkZRmoPvv'; 
 
-        // --- HELPER: GET WEEK NUMBER ---
         const getWeekNumber = (d) => {
             d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
             d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
             const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
             const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
-            return `W${weekNo} - ${d.getUTCFullYear()}`;
+            return `${d.getUTCFullYear()}-W${weekNo}`;
+        };
+        
+        const formatWeekLabel = (weekStr) => {
+             const parts = weekStr.split('-');
+             return `Week ${parts[1]}, ${parts[0]}`;
         };
 
         // --- AUTH COMPONENT ---
@@ -114,15 +118,22 @@
             const [currentDate, setCurrentDate] = useState(new Date().toISOString().split('T')[0]);
             const [log, setLog] = useState([]);
             const [dailyWeight, setDailyWeight] = useState("");
+            
+            // --- NEW STATES FOR GAMIFICATION & MANUAL ---
+            const [scores, setScores] = useState({ adherence: 0, consistency: 0 });
+            const [showManual, setShowManual] = useState(false);
+            const [manualForm, setManualForm] = useState({ name: "", p: "", c: "", f: "", fib: "" });
+
+            // Selection & Adjustment
             const [selectedFood, setSelectedFood] = useState(null);
             const [displayAmount, setDisplayAmount] = useState(100);
             const [measureUnit, setMeasureUnit] = useState('g');
+            
             const [isScanning, setIsScanning] = useState(false);
             const [loading, setLoading] = useState(false);
             const scannerRef = useRef(null);
             const chartRef = useRef(null); 
 
-            // --- INIT ---
             useEffect(() => {
                 const check = setInterval(() => {
                     if (window.fb) {
@@ -142,19 +153,16 @@
                 if (snap.exists()) setTargets(snap.data());
             };
 
-            // --- DATA FETCHING (Single Day) ---
+            // DATA FETCHING (Single Day)
             useEffect(() => {
                 if (!user || !window.fb) return;
-                
-                // Real-time Daily Log
                 const q = window.fb.query(window.fb.collection(window.fb.db, "users", user.uid, "logs"), window.fb.where("date", "==", currentDate));
                 const unsub = window.fb.onSnapshot(q, (snap) => {
                     const raw = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-                    raw.sort((a,b) => (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0)); // Ascending time
+                    raw.sort((a,b) => (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0)); 
                     setLog(raw);
                 });
                 
-                // Daily Weight
                 const fetchWeight = async () => {
                     const docRef = window.fb.doc(window.fb.db, "users", user.uid, "daily_stats", currentDate);
                     const docSnap = await window.fb.getDoc(docRef);
@@ -164,18 +172,17 @@
                 return () => unsub();
             }, [user, currentDate]);
 
-            // --- CHART RENDERING ---
+            // --- ANALYTICS ENGINE (Chart + Scores) ---
             useEffect(() => {
                 if (view === 'trends' && user && chartRef.current) {
-                    renderTrendChart();
+                    calculateAnalytics();
                 }
             }, [view, user]);
 
-            const renderTrendChart = async () => {
+            const calculateAnalytics = async () => {
                 const logSnap = await window.fb.getDocs(window.fb.collection(window.fb.db, "users", user.uid, "logs"));
                 const weightSnap = await window.fb.getDocs(window.fb.collection(window.fb.db, "users", user.uid, "daily_stats"));
                 
-                // 1. Calculate Daily Totals
                 const dailyData = {}; 
                 logSnap.forEach(doc => {
                     const d = doc.data();
@@ -188,7 +195,34 @@
                     dailyData[d.date].weight = parseFloat(d.weight);
                 });
 
-                // 2. Aggregate into Weeks
+                // --- 1. GAMIFICATION MATH ---
+                const dates = Object.keys(dailyData).sort();
+                if (dates.length > 0) {
+                    // Consistency
+                    const firstDate = new Date(dates[0]);
+                    const lastDate = new Date(dates[dates.length - 1]);
+                    const diffTime = Math.abs(lastDate - firstDate);
+                    const totalDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; 
+                    const loggedDays = dates.length;
+                    const consistencyScore = Math.round((loggedDays / totalDays) * 100);
+
+                    // Adherence (Option C: +/- 10% of Target)
+                    let adherenceDays = 0;
+                    const target = targets.calories;
+                    const range = target * 0.10; // 10%
+                    const minCal = target - range;
+                    const maxCal = target + range;
+
+                    dates.forEach(d => {
+                        const intake = dailyData[d].cals;
+                        if (intake >= minCal && intake <= maxCal) adherenceDays++;
+                    });
+                    
+                    const adherenceScore = Math.round((adherenceDays / loggedDays) * 100);
+                    setScores({ adherence: adherenceScore, consistency: consistencyScore });
+                }
+
+                // --- 2. CHART DATA PREP ---
                 const weeklyData = {};
                 Object.keys(dailyData).forEach(dateStr => {
                     const weekKey = getWeekNumber(new Date(dateStr));
@@ -204,13 +238,11 @@
                     }
                 });
 
-                // 3. Sort & Average
-                const sortedWeeks = Object.keys(weeklyData).sort(); // Sorts by string, works generally for "W1 - 2026" vs "W2"
-                const labels = sortedWeeks;
+                const sortedWeeks = Object.keys(weeklyData).sort(); 
+                const labels = sortedWeeks.map(formatWeekLabel);
                 const avgCals = sortedWeeks.map(w => weeklyData[w].daysWithCals ? weeklyData[w].totalCals / weeklyData[w].daysWithCals : 0);
                 const avgWeights = sortedWeeks.map(w => weeklyData[w].daysWithWeight ? weeklyData[w].totalWeight / weeklyData[w].daysWithWeight : null);
 
-                // 4. Render
                 if (window.myChart) window.myChart.destroy();
                 const ctx = chartRef.current.getContext('2d');
                 window.myChart = new Chart(ctx, {
@@ -233,24 +265,33 @@
                 });
             };
 
-            // --- FULL HISTORY PDF EXPORT ---
             const exportFullHistory = async () => {
+                setView('trends');
+                await new Promise(r => setTimeout(r, 1000)); 
+
                 const { jsPDF } = window.jspdf;
                 const doc = new jsPDF();
                 const navy = [15, 23, 42]; 
                 
                 doc.setFontSize(18); doc.setTextColor(...navy); doc.text("JOHN RUBEN SOLUTIONS", 14, 20);
-                doc.setFontSize(12); doc.setTextColor(100); doc.text(`Full Nutrition History Report`, 14, 28);
-                doc.text(`Generated: ${new Date().toLocaleDateString()}`, 14, 34);
+                doc.setFontSize(12); doc.setTextColor(100); doc.text(`Full Nutrition & Performance Report`, 14, 28);
+                
+                // Add Scores
+                doc.setFontSize(10);
+                doc.setTextColor(0);
+                doc.text(`Adherence Score: ${scores.adherence}%`, 14, 35);
+                doc.text(`Consistency Score: ${scores.consistency}%`, 70, 35);
 
-                // Fetch ALL Data
+                const canvas = document.getElementById('trendChart');
+                if (canvas) {
+                    const imgData = canvas.toDataURL("image/png");
+                    doc.addImage(imgData, 'PNG', 14, 40, 180, 80);
+                }
+
                 const logSnap = await window.fb.getDocs(window.fb.query(window.fb.collection(window.fb.db, "users", user.uid, "logs"), window.fb.orderBy("date", "desc"), window.fb.orderBy("createdAt", "asc")));
                 const weightSnap = await window.fb.getDocs(window.fb.collection(window.fb.db, "users", user.uid, "daily_stats"));
-                
-                const weights = {};
-                weightSnap.forEach(d => weights[d.id] = d.data().weight);
+                const weights = {}; weightSnap.forEach(d => weights[d.id] = d.data().weight);
 
-                // Group by Date
                 const grouped = {};
                 logSnap.forEach(doc => {
                     const d = doc.data();
@@ -258,68 +299,93 @@
                     grouped[d.date].push(d);
                 });
 
-                let finalY = 45;
+                let finalY = 130; 
 
-                // Loop Dates
+                // DAILY TABLES
                 Object.keys(grouped).forEach(date => {
+                    if (finalY > 250) { doc.addPage(); finalY = 20; }
                     const items = grouped[date];
                     const dayTotal = items.reduce((acc, i) => ({ cals: acc.cals + i.calories, pro: acc.pro + i.protein, carbs: acc.carbs + i.carbs, fat: acc.fat + i.fat }), { cals: 0, pro: 0, carbs: 0, fat: 0 });
                     
-                    // Date Header
-                    doc.setFontSize(10);
-                    doc.setTextColor(...navy);
-                    doc.setFont("helvetica", "bold");
+                    doc.setFontSize(10); doc.setTextColor(...navy); doc.setFont("helvetica", "bold");
                     doc.text(`Date: ${date}   |   Weight: ${weights[date] ? weights[date] + ' lbs' : 'N/A'}`, 14, finalY);
                     
-                    // Table for this day
                     const tableBody = items.map(i => [
                         i.time || '--',
-                        i.name.substring(0, 25),
-                        Math.round(i.grams) + 'g',
-                        Math.round(i.calories),
-                        Math.round(i.protein),
-                        Math.round(i.carbs),
-                        Math.round(i.fat),
-                        (i.fiber||0).toFixed(1),
-                        (i.o3||0).toFixed(1),
-                        (i.o6||0).toFixed(1)
+                        i.name.substring(0, 30),
+                        (i.grams > 0 ? Math.round(i.grams) + 'g' : '-'),
+                        parseFloat(i.calories).toFixed(1),
+                        parseFloat(i.protein).toFixed(1),
+                        parseFloat(i.carbs).toFixed(1),
+                        parseFloat(i.fat).toFixed(1),
+                        (i.fiber||0).toFixed(1)
                     ]);
                     
-                    // Add Total Row
                     tableBody.push([
-                        { content: 'DAILY TOTAL', colSpan: 3, styles: { fontStyle: 'bold' } },
-                        Math.round(dayTotal.cals),
-                        Math.round(dayTotal.pro),
-                        Math.round(dayTotal.carbs),
-                        Math.round(dayTotal.fat),
-                        '-', '-', '-'
+                        { content: 'DAILY TOTAL', colSpan: 3, styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } },
+                        dayTotal.cals.toFixed(1),
+                        dayTotal.pro.toFixed(1),
+                        dayTotal.carbs.toFixed(1),
+                        dayTotal.fat.toFixed(1),
+                        '-'
                     ]);
 
                     doc.autoTable({
                         startY: finalY + 2,
-                        head: [['Time', 'Food', 'Weight', 'Cals', 'P', 'C', 'F', 'Fib', 'Ω3', 'Ω6']],
+                        head: [['Time', 'Food', 'Weight', 'Cals', 'P', 'C', 'F', 'Fib']],
                         body: tableBody,
                         theme: 'grid',
                         headStyles: { fillColor: navy, fontSize: 8 },
                         bodyStyles: { fontSize: 8 },
                         margin: { left: 14, right: 14 }
                     });
-
                     finalY = doc.lastAutoTable.finalY + 10;
                 });
+
+                if (finalY > 230) { doc.addPage(); finalY = 20; }
                 
-                // Weekly Averages Summary at the end
-                // Re-calculate averages for summary table
-                // (Simplified logic for brevity in PDF generation)
                 doc.setFontSize(14);
                 doc.text("Weekly Averages Summary", 14, finalY);
-                finalY += 5;
-                // You can add a specific summary table here if desired based on the aggregated data
                 
+                const weeklyAgg = {};
+                Object.keys(grouped).forEach(date => {
+                    const week = getWeekNumber(new Date(date));
+                    if(!weeklyAgg[week]) weeklyAgg[week] = { days: 0, cals: 0, pro: 0, carb: 0, fat: 0, weight: 0, wDays: 0 };
+                    const items = grouped[date];
+                    weeklyAgg[week].days++;
+                    items.forEach(i => {
+                        weeklyAgg[week].cals += i.calories;
+                        weeklyAgg[week].pro += i.protein;
+                        weeklyAgg[week].carb += i.carbs;
+                        weeklyAgg[week].fat += i.fat;
+                    });
+                    if(weights[date]) { weeklyAgg[week].weight += parseFloat(weights[date]); weeklyAgg[week].wDays++; }
+                });
+
+                const summaryBody = Object.keys(weeklyAgg).sort().map(w => {
+                    const d = weeklyAgg[w];
+                    return [
+                        formatWeekLabel(w),
+                        (d.cals / d.days).toFixed(1),
+                        (d.pro / d.days).toFixed(1),
+                        (d.carb / d.days).toFixed(1),
+                        (d.fat / d.days).toFixed(1),
+                        d.wDays ? (d.weight / d.wDays).toFixed(1) + ' lbs' : '-'
+                    ];
+                });
+
+                doc.autoTable({
+                    startY: finalY + 5,
+                    head: [['Week', 'Avg Cals', 'Avg Pro', 'Avg Carb', 'Avg Fat', 'Avg Weight']],
+                    body: summaryBody,
+                    theme: 'striped',
+                    headStyles: { fillColor: [132, 204, 22] }, 
+                    styles: { fontSize: 9 }
+                });
+
                 doc.save("Full_History_Report.pdf");
             };
 
-            // --- STANDARD SEARCH & ADD ---
             const saveWeight = async () => {
                 if (!user) return;
                 await window.fb.setDoc(window.fb.doc(window.fb.db, "users", user.uid, "daily_stats", currentDate), { weight: dailyWeight, date: currentDate }, { merge: true });
@@ -331,7 +397,6 @@
                 if (!qTerm) return;
                 setLoading(true); setResults([]); setSelectedFood(null);
 
-                // Barcode
                 if (/^\d+$/.test(qTerm)) {
                     try {
                         let res = await fetch(`https://api.nal.usda.gov/fdc/v1/foods/search?api_key=${API_KEY}&query=${qTerm}&pageSize=1&dataType=Branded,SR Legacy`);
@@ -350,8 +415,6 @@
                                 carbs: n.carbohydrates_100g || 0,
                                 fat: n.fat_100g || 0,
                                 fiber: n.fiber_100g || 0,
-                                o3: n['omega-3-fat_100g'] || 0,
-                                o6: n['omega-6-fat_100g'] || 0,
                                 userGrams: 100
                              });
                              setQuery(""); setLoading(false); return;
@@ -359,7 +422,6 @@
                     } catch (e) {}
                 }
 
-                // Text
                 try {
                     const res = await fetch(`https://api.nal.usda.gov/fdc/v1/foods/search?api_key=${API_KEY}&query=${qTerm}&pageSize=10&dataType=Foundation,SR Legacy,Branded`);
                     const data = await res.json();
@@ -379,9 +441,6 @@
                     return n ? (n.amount || n.value) : 0;
                 };
 
-                let o3 = getN(1272) || 0;
-                let o6 = getN(1269) || 0;
-
                 setSelectedFood({
                     name: d.description,
                     calories: getN(1008) || getN(208),
@@ -389,40 +448,69 @@
                     carbs: getN(1005) || getN(205),
                     fat: getN(1004) || getN(204),
                     fiber: getN(1079) || getN(291),
-                    o3: o3,
-                    o6: o6,
                     userGrams: 100
                 });
                 setResults([]); setQuery("");
                 setLoading(false);
             };
 
-            const addToLog = async () => {
-                if(!selectedFood) return;
-                const f = selectedFood.userGrams / 100;
-                const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const addToLog = async (manualItem = null) => {
+                const item = manualItem || selectedFood;
+                if(!item) return;
                 
-                const item = {
-                    name: selectedFood.name,
-                    grams: selectedFood.userGrams,
-                    calories: Math.round(selectedFood.calories * f),
-                    protein: parseFloat((selectedFood.protein * f).toFixed(1)),
-                    carbs: parseFloat((selectedFood.carbs * f).toFixed(1)),
-                    fat: parseFloat((selectedFood.fat * f).toFixed(1)),
-                    fiber: parseFloat((selectedFood.fiber * f).toFixed(1)),
-                    o3: parseFloat((selectedFood.o3 * f).toFixed(2)),
-                    o6: parseFloat((selectedFood.o6 * f).toFixed(2)),
-                    date: currentDate,
-                    time: time,
-                    createdAt: window.fb.serverTimestamp()
-                };
+                let finalItem = {};
+                
+                if (manualItem) {
+                    finalItem = {
+                        ...manualItem,
+                        date: currentDate,
+                        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                        createdAt: window.fb.serverTimestamp()
+                    }
+                } else {
+                    const f = item.userGrams / 100;
+                    finalItem = {
+                        name: item.name,
+                        grams: item.userGrams,
+                        calories: item.calories * f,
+                        protein: item.protein * f,
+                        carbs: item.carbs * f,
+                        fat: item.fat * f,
+                        fiber: item.fiber * f,
+                        date: currentDate,
+                        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                        createdAt: window.fb.serverTimestamp()
+                    };
+                }
 
-                await window.fb.addDoc(window.fb.collection(window.fb.db, "users", user.uid, "logs"), item);
+                await window.fb.addDoc(window.fb.collection(window.fb.db, "users", user.uid, "logs"), finalItem);
                 setSelectedFood(null);
+                setShowManual(false);
+                setManualForm({ name: "", p: "", c: "", f: "", fib: "" });
             };
 
             const deleteItem = async (id) => {
                 if(confirm("Delete item?")) await window.fb.deleteDoc(window.fb.doc(window.fb.db, "users", user.uid, "logs", id));
+            };
+
+            // Manual Entry Handler
+            const submitManual = (e) => {
+                e.preventDefault();
+                const p = parseFloat(manualForm.p)||0;
+                const c = parseFloat(manualForm.c)||0;
+                const f = parseFloat(manualForm.f)||0;
+                const fib = parseFloat(manualForm.fib)||0;
+                const cals = (p*4) + (c*4) + (f*9);
+                
+                addToLog({
+                    name: manualForm.name || "Custom Food",
+                    grams: 0,
+                    calories: cals,
+                    protein: p,
+                    carbs: c,
+                    fat: f,
+                    fiber: fib
+                });
             };
 
             const totals = log.reduce((acc, i) => ({
@@ -430,10 +518,8 @@
                 pro: acc.pro + i.protein,
                 carb: acc.carb + i.carbs,
                 fat: acc.fat + i.fat,
-                fib: acc.fib + (i.fiber||0),
-                o3: acc.o3 + (i.o3||0),
-                o6: acc.o6 + (i.o6||0)
-            }), { cals: 0, pro: 0, carb: 0, fat: 0, fib: 0, o3: 0, o6: 0 });
+                fib: acc.fib + (i.fiber||0)
+            }), { cals: 0, pro: 0, carb: 0, fat: 0, fib: 0 });
 
             if (!user) return <AuthScreen />;
 
@@ -490,11 +576,29 @@
                                 </div>
                             </div>
 
-                            {/* SEARCH */}
-                            <form onSubmit={handleSearch} className="flex gap-2 mb-6">
-                                <input type="text" value={query} onChange={e => setQuery(e.target.value)} placeholder="Search food..." className="flex-1 p-3 bg-brand-input rounded-xl text-white outline-none focus:border-brand-green border border-transparent" />
-                                <button type="submit" className="bg-brand-green text-brand-navy px-6 rounded-xl font-bold hover:bg-white transition-colors">Find</button>
-                            </form>
+                            {/* SEARCH BAR */}
+                            <div className="flex gap-2 mb-6">
+                                <form onSubmit={handleSearch} className="flex-1 flex gap-2">
+                                    <input type="text" value={query} onChange={e => setQuery(e.target.value)} placeholder="Search food..." className="flex-1 p-3 bg-brand-input rounded-xl text-white outline-none border border-transparent focus:border-brand-green" />
+                                    <button type="submit" className="bg-brand-green text-brand-navy px-6 rounded-xl font-bold hover:bg-white transition-colors">Find</button>
+                                </form>
+                                <button onClick={()=>setShowManual(!showManual)} className="bg-brand-card border border-slate-600 px-4 rounded-xl font-bold text-slate-300 hover:text-white">Custom</button>
+                            </div>
+
+                            {/* MANUAL ENTRY FORM */}
+                            {showManual && (
+                                <div className="bg-brand-card p-4 rounded-2xl border border-slate-600 mb-6 animate-fade">
+                                    <h3 className="font-bold mb-3">Add Custom Food</h3>
+                                    <form onSubmit={submitManual} className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                                        <input className="col-span-2 md:col-span-5 p-2 bg-brand-input rounded-lg text-white" placeholder="Food Name" required value={manualForm.name} onChange={e=>setManualForm({...manualForm, name: e.target.value})} />
+                                        <input type="number" className="p-2 bg-brand-input rounded-lg text-white" placeholder="Protein (g)" required value={manualForm.p} onChange={e=>setManualForm({...manualForm, p: e.target.value})} />
+                                        <input type="number" className="p-2 bg-brand-input rounded-lg text-white" placeholder="Carbs (g)" required value={manualForm.c} onChange={e=>setManualForm({...manualForm, c: e.target.value})} />
+                                        <input type="number" className="p-2 bg-brand-input rounded-lg text-white" placeholder="Fat (g)" required value={manualForm.f} onChange={e=>setManualForm({...manualForm, f: e.target.value})} />
+                                        <input type="number" className="p-2 bg-brand-input rounded-lg text-white" placeholder="Fiber (g)" value={manualForm.fib} onChange={e=>setManualForm({...manualForm, fib: e.target.value})} />
+                                        <button type="submit" className="col-span-2 md:col-span-1 bg-brand-green text-brand-navy font-bold rounded-lg">Add</button>
+                                    </form>
+                                </div>
+                            )}
 
                             {/* RESULTS LIST */}
                             {results.length > 0 && (
@@ -530,7 +634,7 @@
                                         }} className="text-brand-green font-bold uppercase">{measureUnit}</button>
                                         <div className="ml-auto text-xl font-bold">{Math.round(selectedFood.calories * (selectedFood.userGrams/100))} <span className="text-xs font-normal">kcal</span></div>
                                     </div>
-                                    <button onClick={addToLog} className="w-full py-3 bg-brand-green text-brand-navy font-bold rounded-xl hover:bg-white">Add to Log</button>
+                                    <button onClick={()=>addToLog()} className="w-full py-3 bg-brand-green text-brand-navy font-bold rounded-xl hover:bg-white">Add to Log</button>
                                 </div>
                             )}
 
@@ -552,8 +656,6 @@
                                                 <th className="px-4 py-3">Carb</th>
                                                 <th className="px-4 py-3">Fat</th>
                                                 <th className="px-4 py-3">Fib</th>
-                                                <th className="px-4 py-3">Ω3</th>
-                                                <th className="px-4 py-3">Ω6</th>
                                                 <th className="px-4 py-3"></th>
                                             </tr>
                                         </thead>
@@ -562,29 +664,24 @@
                                                 <tr key={item.id} className="border-b border-slate-700 hover:bg-slate-700/30">
                                                     <td className="px-4 py-3 font-mono text-slate-500">{item.time}</td>
                                                     <td className="px-4 py-3 font-medium text-white max-w-[150px] truncate">{item.name}</td>
-                                                    <td className="px-4 py-3">{Math.round(item.grams)}</td>
-                                                    <td className="px-4 py-3 font-bold text-white">{item.calories}</td>
-                                                    <td className="px-4 py-3 text-brand-teal">{Math.round(item.protein)}</td>
-                                                    <td className="px-4 py-3 text-brand-green">{Math.round(item.carbs)}</td>
-                                                    <td className="px-4 py-3 text-yellow-400">{Math.round(item.fat)}</td>
-                                                    <td className="px-4 py-3 text-purple-400">{Math.round(item.fiber || 0)}</td>
-                                                    <td className="px-4 py-3 text-sky-400">{(item.o3 || 0).toFixed(1)}</td>
-                                                    <td className="px-4 py-3 text-orange-400">{(item.o6 || 0).toFixed(1)}</td>
+                                                    <td className="px-4 py-3">{item.grams > 0 ? Math.round(item.grams) : '-'}</td>
+                                                    <td className="px-4 py-3 font-bold text-white">{item.calories.toFixed(1)}</td>
+                                                    <td className="px-4 py-3 text-brand-teal">{item.protein.toFixed(1)}</td>
+                                                    <td className="px-4 py-3 text-brand-green">{item.carbs.toFixed(1)}</td>
+                                                    <td className="px-4 py-3 text-yellow-400">{item.fat.toFixed(1)}</td>
+                                                    <td className="px-4 py-3 text-purple-400">{(item.fiber || 0).toFixed(1)}</td>
                                                     <td className="px-4 py-3 text-right">
                                                         <button onClick={() => deleteItem(item.id)} className="text-red-400 hover:text-red-300">x</button>
                                                     </td>
                                                 </tr>
                                             ))}
-                                            {/* TOTALS ROW */}
                                             <tr className="bg-slate-800 font-bold text-white">
                                                 <td colSpan="3" className="px-4 py-3 text-right uppercase text-slate-400">Totals</td>
-                                                <td className="px-4 py-3">{Math.round(totals.cals)}</td>
-                                                <td className="px-4 py-3">{Math.round(totals.pro)}</td>
-                                                <td className="px-4 py-3">{Math.round(totals.carb)}</td>
-                                                <td className="px-4 py-3">{Math.round(totals.fat)}</td>
-                                                <td className="px-4 py-3">{Math.round(totals.fib)}</td>
-                                                <td className="px-4 py-3">{totals.o3.toFixed(1)}</td>
-                                                <td className="px-4 py-3">{totals.o6.toFixed(1)}</td>
+                                                <td className="px-4 py-3">{totals.cals.toFixed(1)}</td>
+                                                <td className="px-4 py-3">{totals.pro.toFixed(1)}</td>
+                                                <td className="px-4 py-3">{totals.carb.toFixed(1)}</td>
+                                                <td className="px-4 py-3">{totals.fat.toFixed(1)}</td>
+                                                <td className="px-4 py-3">{totals.fib.toFixed(1)}</td>
                                                 <td></td>
                                             </tr>
                                         </tbody>
@@ -593,14 +690,34 @@
                             </div>
                         </>
                     ) : (
-                        /* TRENDS VIEW */
-                        <div className="bg-brand-card p-4 rounded-2xl border border-slate-700">
-                            <h3 className="font-bold text-white mb-4">Weekly Trends (Weight vs. Calories)</h3>
-                            <div className="relative h-80 w-full">
-                                <canvas id="trendChart"></canvas>
+                        /* TRENDS & SCORES */
+                        <div className="space-y-6">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="bg-brand-card p-6 rounded-2xl border border-slate-700 text-center relative group">
+                                    <span className="text-xs text-slate-400 uppercase tracking-widest">Adherence Score</span>
+                                    <div className="text-4xl font-extrabold text-brand-teal mt-2">{scores.adherence}%</div>
+                                    <div className="text-[10px] text-slate-500 mt-2">Days within ±10% of calorie goal</div>
+                                    
+                                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-800 p-2 rounded text-[10px] w-40 text-left z-10 border border-slate-600 pointer-events-none">
+                                        Measures how often you land within 10% of your daily calorie target. Precision matters!
+                                    </div>
+                                </div>
+                                <div className="bg-brand-card p-6 rounded-2xl border border-slate-700 text-center relative group">
+                                    <span className="text-xs text-slate-400 uppercase tracking-widest">Consistency Score</span>
+                                    <div className="text-4xl font-extrabold text-brand-green mt-2">{scores.consistency}%</div>
+                                    <div className="text-[10px] text-slate-500 mt-2">Days tracked / Total days</div>
+                                    
+                                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-800 p-2 rounded text-[10px] w-40 text-left z-10 border border-slate-600 pointer-events-none">
+                                        Measures how often you log data. Missing days lowers this score. Consistency is key!
+                                    </div>
+                                </div>
                             </div>
-                            <div className="mt-4 text-center text-xs text-slate-400">
-                                This chart visualizes your average caloric intake vs. recorded weight week over week.
+
+                            <div className="bg-brand-card p-4 rounded-2xl border border-slate-700">
+                                <h3 className="font-bold text-white mb-4">Weekly Trends</h3>
+                                <div className="relative h-80 w-full">
+                                    <canvas id="trendChart"></canvas>
+                                </div>
                             </div>
                         </div>
                     )}
