@@ -59,6 +59,17 @@
         background-position: right 1rem center; 
         background-size: 1em; 
     }
+    
+    /* Remove default arrow from number inputs in Chrome, Safari, Edge, Opera */
+    input[type=number]::-webkit-inner-spin-button, 
+    input[type=number]::-webkit-outer-spin-button { 
+        -webkit-appearance: none; 
+        margin: 0; 
+    }
+    /* Firefox */
+    input[type=number] {
+        -moz-appearance: textfield;
+    }
 </style>
 </head>
 <body class="antialiased pb-20 selection:bg-brand-green selection:text-brand-navy">
@@ -82,26 +93,38 @@
                 
                 <div class="space-y-2">
                     <label class="text-xs font-bold text-brand-muted uppercase tracking-wider">Age</label>
-                    <input type="number" id="age" value="35" class="w-full p-4 bg-brand-input border border-slate-600 rounded-xl font-bold text-white focus:outline-none focus:border-brand-green transition-colors text-base">
+                    <input type="number" id="age" value="38" class="w-full p-4 bg-brand-input border border-slate-600 rounded-xl font-bold text-white focus:outline-none focus:border-brand-green transition-colors text-base">
                 </div>
 
                 <div class="space-y-2">
-                    <label class="text-xs font-bold text-brand-muted uppercase tracking-wider">Weight (lbs)</label>
-                    <input type="number" id="weight" value="155" class="w-full p-4 bg-brand-input border border-slate-600 rounded-xl font-bold text-white focus:outline-none focus:border-brand-green transition-colors text-base">
+                    <label class="text-xs font-bold text-brand-muted uppercase tracking-wider">Weight</label>
+                    <div class="flex items-center bg-brand-input rounded-xl p-1.5 border border-slate-600 focus-within:border-brand-green transition-colors">
+                        <input type="number" id="weight" value="163" class="w-full bg-transparent text-white font-bold text-xl px-3 focus:outline-none placeholder-slate-500" placeholder="0">
+                        <button type="button" id="weightUnitBtn" onclick="toggleWeightUnit()" class="h-10 px-4 bg-brand-card text-white rounded-lg font-bold text-sm uppercase tracking-wide border border-slate-600 hover:bg-brand-green hover:border-brand-green hover:text-white transition-all shadow-sm active:scale-95">
+                            lbs
+                        </button>
+                        <input type="hidden" id="weightUnit" value="lbs">
+                    </div>
                 </div>
 
                 <div class="space-y-2">
-                    <label class="text-xs font-bold text-brand-muted uppercase tracking-wider">Height (inches)</label>
-                    <input type="number" id="height" value="66.5" class="w-full p-4 bg-brand-input border border-slate-600 rounded-xl font-bold text-white focus:outline-none focus:border-brand-green transition-colors text-base">
+                    <label class="text-xs font-bold text-brand-muted uppercase tracking-wider">Height</label>
+                    <div class="flex items-center bg-brand-input rounded-xl p-1.5 border border-slate-600 focus-within:border-brand-green transition-colors">
+                        <input type="number" id="height" value="66.5" class="w-full bg-transparent text-white font-bold text-xl px-3 focus:outline-none placeholder-slate-500" placeholder="0">
+                        <button type="button" id="heightUnitBtn" onclick="toggleHeightUnit()" class="h-10 px-4 bg-brand-card text-white rounded-lg font-bold text-sm uppercase tracking-wide border border-slate-600 hover:bg-brand-green hover:border-brand-green hover:text-white transition-all shadow-sm active:scale-95">
+                            in
+                        </button>
+                        <input type="hidden" id="heightUnit" value="in">
+                    </div>
                 </div>
             </div>
 
             <div class="space-y-2 mb-6">
                 <label class="text-xs font-bold text-brand-muted uppercase tracking-wider">Metabolic Chassis (Body Type)</label>
                 <select id="bodyType" class="w-full p-4 bg-brand-input border border-slate-600 rounded-xl font-bold text-white focus:outline-none focus:border-brand-green transition-colors cursor-pointer text-base">
-                    <option value="meso" selected>🦍 The Gorilla (Athletic/Balanced)</option>
+                    <option value="endo" selected>🐻 The Bear (Easy Gainer)</option>
                     <option value="ecto">🏎️ The Greyhound (Hard Gainer)</option>
-                    <option value="endo">🐻 The Bear (Easy Gainer)</option>
+                    <option value="meso">🦍 The Gorilla (Athletic/Balanced)</option>
                 </select>
                 <p class="text-[11px] text-brand-muted ml-1">Select the frame that represents your natural baseline.</p>
             </div>
@@ -119,8 +142,8 @@
                 <div class="space-y-2">
                     <label class="text-xs font-bold text-brand-muted uppercase tracking-wider">Current Goal</label>
                     <select id="goal" class="w-full p-4 bg-brand-input border border-slate-600 rounded-xl font-bold text-white focus:outline-none focus:border-brand-green transition-colors cursor-pointer text-base">
-                        <option value="0">⚓ Cruise Control (Maintain)</option>
                         <option value="-500">✂️ Shred Mode (Lose Fat)</option>
+                        <option value="0">⚓ Cruise Control (Maintain)</option>
                         <option value="250">💪 Gains Train (Build Muscle)</option>
                     </select>
                 </div>
@@ -270,19 +293,64 @@
     </div>
 
     <script>
+        function toggleWeightUnit() {
+            const btn = document.getElementById('weightUnitBtn');
+            const input = document.getElementById('weightUnit');
+            if (input.value === 'lbs') {
+                input.value = 'kg';
+                btn.innerText = 'kg';
+            } else {
+                input.value = 'lbs';
+                btn.innerText = 'lbs';
+            }
+        }
+
+        function toggleHeightUnit() {
+            const btn = document.getElementById('heightUnitBtn');
+            const input = document.getElementById('heightUnit');
+            if (input.value === 'in') {
+                input.value = 'cm';
+                btn.innerText = 'cm';
+            } else {
+                input.value = 'in';
+                btn.innerText = 'in';
+            }
+        }
+
         function calculate() {
+            // Inputs
             const gender = document.getElementById('gender').value;
-            const w = parseFloat(document.getElementById('weight').value);
-            const h = parseFloat(document.getElementById('height').value);
+            const wInput = parseFloat(document.getElementById('weight').value);
+            const wUnit = document.getElementById('weightUnit').value;
+            
+            const hInput = parseFloat(document.getElementById('height').value);
+            const hUnit = document.getElementById('heightUnit').value;
+
             const a = parseFloat(document.getElementById('age').value);
             const act = parseFloat(document.getElementById('activity').value);
             const goal = parseFloat(document.getElementById('goal').value);
             const bodyType = document.getElementById('bodyType').value;
 
-            // Conversions
-            const kg = w * 0.453592;
-            const cm = h * 2.54;
-            const heightM = cm / 100;
+            // Unit Normalization
+            let kg, lbs, cm, heightM;
+
+            // Weight Normalization
+            if (wUnit === 'lbs') {
+                lbs = wInput;
+                kg = wInput * 0.453592;
+            } else {
+                kg = wInput;
+                lbs = wInput * 2.20462;
+            }
+
+            // Height Normalization
+            if (hUnit === 'in') {
+                cm = hInput * 2.54;
+                heightM = cm / 100;
+            } else {
+                cm = hInput;
+                heightM = hInput / 100;
+            }
             
             // BMI Calculation
             const bmi = (kg / (heightM * heightM)).toFixed(1);
@@ -293,7 +361,7 @@
             const zone2High = Math.round(maxHeartRate * 0.70);
 
             // Water Calculation: 0.75 * Weight (lbs)
-            const waterOz = Math.round(w * 0.75);
+            const waterOz = Math.round(lbs * 0.75);
 
             // Fiber 2.0 Calculation Logic
             let fiberTarget = (gender === 'male') ? 45 : 30;
@@ -383,5 +451,3 @@
     </script>
 </body>
 </html>
-
-
