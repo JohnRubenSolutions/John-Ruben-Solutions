@@ -25,15 +25,17 @@
                     colors: {
                         brand: { 
                             navy: '#0f172a', 
+                            dark: '#020617',
+                            card: '#1e293b',
                             green: '#84cc16', 
                             teal: '#06b6d4',
-                            bg: '#f8fafc'
+                            bg: '#0f172a' // Dark Background
                         }
                     },
                     fontFamily: { sans: ['"Plus Jakarta Sans"', 'sans-serif'] },
                     boxShadow: {
-                        'soft': '0 20px 40px -15px rgba(0, 0, 0, 0.05)',
-                        'glow': '0 0 20px rgba(132, 204, 22, 0.3)'
+                        'soft': '0 20px 40px -15px rgba(0, 0, 0, 0.5)', // Darker shadow for dark mode
+                        'glow': '0 0 20px rgba(132, 204, 22, 0.2)'
                     }
                 }
             }
@@ -41,42 +43,42 @@
     </script>
 
     <style>
-        body { background-color: #f8fafc; }
+        body { background-color: #0f172a; } /* Dark Background */
         .animate-up { animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
         @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
-<body class="text-slate-600 antialiased pb-20">
+<body class="text-slate-300 antialiased pb-20">
 
     <div class="max-w-3xl mx-auto px-4 pt-8">
 
         <div class="flex justify-between items-center mb-8">
-            <a href="https://johnrubensolutions.github.io/John-Ruben-Solutions/John-Ruben-Solutions/home.html" class="inline-flex items-center gap-2 text-slate-500 hover:text-brand-navy font-bold text-xs transition-colors bg-white px-4 py-2 rounded-full shadow-sm hover:shadow-md">
+            <a href="https://johnrubensolutions.github.io/John-Ruben-Solutions/John-Ruben-Solutions/home.html" class="inline-flex items-center gap-2 text-slate-300 hover:text-white font-bold text-xs transition-colors bg-brand-card border border-slate-700 px-4 py-2 rounded-full shadow-sm hover:border-brand-green">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
                 Back
             </a>
             <div class="text-right">
-                <h1 class="text-xl font-extrabold text-brand-navy tracking-tight leading-none">JOHN RUBEN</h1>
+                <h1 class="text-xl font-extrabold text-white tracking-tight leading-none">JOHN RUBEN</h1>
                 <p class="text-[10px] font-bold text-brand-green uppercase tracking-[0.25em]">Solutions</p>
             </div>
         </div>
 
         <div class="text-center mb-10 animate-up">
-            <h2 class="text-3xl font-extrabold text-brand-navy mb-3">Metabolic Protocols</h2>
-            <p class="text-sm font-medium text-slate-500 max-w-lg mx-auto">
+            <h2 class="text-3xl font-extrabold text-white mb-3">Metabolic Protocols</h2>
+            <p class="text-sm font-medium text-slate-400 max-w-lg mx-auto">
                 Nutrition isn't just about calories. It's about engineering your cellular function to lower inflammation and optimize performance.
             </p>
         </div>
 
-        <div class="bg-white rounded-[2rem] shadow-soft p-8 mb-8 border-l-8 border-brand-green animate-up relative overflow-hidden">
+        <div class="bg-brand-card rounded-[2rem] shadow-soft p-8 mb-8 border-l-8 border-brand-green animate-up relative overflow-hidden ring-1 ring-white/5">
             <div class="absolute top-0 right-0 w-32 h-32 bg-brand-green opacity-10 rounded-full blur-2xl translate-x-10 -translate-y-10"></div>
-            <div class="flex items-start gap-4">
-                <div class="bg-brand-green/10 p-3 rounded-xl text-brand-green">
+            <div class="flex items-start gap-4 relative z-10">
+                <div class="bg-brand-green/20 p-3 rounded-xl text-brand-green">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"/><path d="m17 5-5-3-5 3"/><path d="m17 19-5 3-5-3"/><path d="M2 12h20"/></svg>
                 </div>
                 <div>
-                    <h3 class="text-lg font-extrabold text-brand-navy mb-2">The Science of Metabolism</h3>
-                    <p class="text-sm leading-relaxed text-slate-600">
+                    <h3 class="text-lg font-extrabold text-white mb-2">The Science of Metabolism</h3>
+                    <p class="text-sm leading-relaxed text-slate-300">
                         <strong>Chronic inflammation</strong> is the "silent" driver behind metabolic dysfunction. The good news? You can actively lower this flame with the right inputs.
                     </p>
                 </div>
@@ -85,48 +87,48 @@
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12 animate-up">
 
-            <div class="bg-white p-6 rounded-[2rem] shadow-soft border border-white hover:border-brand-teal/20 transition-all">
+            <div class="bg-brand-card p-6 rounded-[2rem] shadow-soft border border-slate-700 hover:border-brand-teal/50 transition-all group">
                 <span class="text-[10px] font-bold text-brand-teal uppercase tracking-widest mb-3 block">Protocol 01</span>
-                <h3 class="text-xl font-extrabold text-brand-navy mb-3">Omega 6:3 Ratio</h3>
-                <div class="bg-sky-50 text-sky-900 px-3 py-1 rounded-lg text-xs font-bold inline-block mb-4">Target: 4:1 Ratio</div>
-                <p class="text-sm leading-relaxed">
-                    The modern diet is pro-inflammatory (20:1). Achieving a 4:1 ratio is associated with a <strong>70% reduction in total mortality</strong> in cardiovascular studies.
+                <h3 class="text-xl font-extrabold text-white mb-3 group-hover:text-brand-teal transition-colors">Omega 6:3 Ratio</h3>
+                <div class="bg-sky-900/30 text-sky-200 px-3 py-1 rounded-lg text-xs font-bold inline-block mb-4 border border-sky-800/50">Target: 4:1 Ratio</div>
+                <p class="text-sm leading-relaxed text-slate-400">
+                    The modern diet is pro-inflammatory (20:1). Achieving a 4:1 ratio is associated with a <strong class="text-slate-200">70% reduction in total mortality</strong> in cardiovascular studies.
                 </p>
             </div>
 
-            <div class="bg-white p-6 rounded-[2rem] shadow-soft border border-white hover:border-brand-teal/20 transition-all">
+            <div class="bg-brand-card p-6 rounded-[2rem] shadow-soft border border-slate-700 hover:border-brand-teal/50 transition-all group">
                 <span class="text-[10px] font-bold text-brand-teal uppercase tracking-widest mb-3 block">Protocol 02</span>
-                <h3 class="text-xl font-extrabold text-brand-navy mb-3">Time-Restricted Feeding</h3>
-                <div class="bg-indigo-50 text-indigo-900 px-3 py-1 rounded-lg text-xs font-bold inline-block mb-4">Target: 18:6 Window</div>
-                <p class="text-sm leading-relaxed">
+                <h3 class="text-xl font-extrabold text-white mb-3 group-hover:text-brand-teal transition-colors">Time-Restricted Feeding</h3>
+                <div class="bg-indigo-900/30 text-indigo-200 px-3 py-1 rounded-lg text-xs font-bold inline-block mb-4 border border-indigo-800/50">Target: 18:6 Window</div>
+                <p class="text-sm leading-relaxed text-slate-400">
                     Fasting for 18 hours improves insulin sensitivity and reduces fat mass without muscle loss (provided protein is sufficient). It dictates your hormonal environment.
                 </p>
             </div>
 
-            <div class="bg-white p-6 rounded-[2rem] shadow-soft border border-white hover:border-brand-teal/20 transition-all">
+            <div class="bg-brand-card p-6 rounded-[2rem] shadow-soft border border-slate-700 hover:border-brand-teal/50 transition-all group">
                 <span class="text-[10px] font-bold text-brand-teal uppercase tracking-widest mb-3 block">Protocol 03</span>
-                <h3 class="text-xl font-extrabold text-brand-navy mb-3">Creatine Monohydrate</h3>
-                <div class="bg-purple-50 text-purple-900 px-3 py-1 rounded-lg text-xs font-bold inline-block mb-4">Focus: Muscle & Brain</div>
-                <p class="text-sm leading-relaxed">
+                <h3 class="text-xl font-extrabold text-white mb-3 group-hover:text-brand-teal transition-colors">Creatine Monohydrate</h3>
+                <div class="bg-purple-900/30 text-purple-200 px-3 py-1 rounded-lg text-xs font-bold inline-block mb-4 border border-purple-800/50">Focus: Muscle & Brain</div>
+                <p class="text-sm leading-relaxed text-slate-400">
                     Crucial for cellular energy (ATP) and cognitive health. The ISSN confirms its efficacy in preserving lean mass during weight loss phases.
                 </p>
             </div>
 
-            <div class="bg-white p-6 rounded-[2rem] shadow-soft border border-white hover:border-brand-teal/20 transition-all">
+            <div class="bg-brand-card p-6 rounded-[2rem] shadow-soft border border-slate-700 hover:border-brand-teal/50 transition-all group">
                 <span class="text-[10px] font-bold text-brand-teal uppercase tracking-widest mb-3 block">Protocol 04</span>
-                <h3 class="text-xl font-extrabold text-brand-navy mb-3">Zone 2 & Resistance</h3>
-                <div class="bg-orange-50 text-orange-900 px-3 py-1 rounded-lg text-xs font-bold inline-block mb-4">Focus: Mitochondria</div>
-                <p class="text-sm leading-relaxed">
+                <h3 class="text-xl font-extrabold text-white mb-3 group-hover:text-brand-teal transition-colors">Zone 2 & Resistance</h3>
+                <div class="bg-orange-900/30 text-orange-200 px-3 py-1 rounded-lg text-xs font-bold inline-block mb-4 border border-orange-800/50">Focus: Mitochondria</div>
+                <p class="text-sm leading-relaxed text-slate-400">
                     Zone 2 improves mitochondrial flexibility (fat burning). Combined with lifting, it prevents the "skinny fat" adaptation often seen with diet alone.
                 </p>
             </div>
 
-            <div class="bg-brand-navy text-white p-8 rounded-[2rem] shadow-xl md:col-span-2 relative overflow-hidden">
-                <div class="absolute top-0 right-0 w-64 h-64 bg-brand-teal rounded-full blur-[80px] opacity-20"></div>
+            <div class="bg-gradient-to-br from-slate-800 to-slate-900 text-white p-8 rounded-[2rem] shadow-xl md:col-span-2 relative overflow-hidden border border-slate-700">
+                <div class="absolute top-0 right-0 w-64 h-64 bg-brand-teal rounded-full blur-[80px] opacity-10"></div>
                 <div class="relative z-10">
                     <span class="text-[10px] font-bold text-brand-green uppercase tracking-widest mb-3 block">Protocol 05 - The Foundation</span>
-                    <h3 class="text-2xl font-extrabold mb-3">Sleep & Hydration</h3>
-                    <p class="text-sm leading-relaxed opacity-90 max-w-xl">
+                    <h3 class="text-2xl font-extrabold mb-3 text-white">Sleep & Hydration</h3>
+                    <p class="text-sm leading-relaxed text-slate-300 max-w-xl">
                         Metabolic dysregulation begins with poor recovery. Sleep curtailment (< 7.5 hrs) decreases insulin sensitivity and increases hunger hormones (ghrelin). Hydration is critical for liver function.
                     </p>
                 </div>
@@ -135,20 +137,20 @@
         </div>
 
         <div class="animate-up">
-            <h3 class="text-sm font-extrabold text-brand-navy uppercase tracking-widest mb-6 text-center">🔬 Clinical Evidence</h3>
+            <h3 class="text-sm font-extrabold text-slate-400 uppercase tracking-widest mb-6 text-center">🔬 Clinical Evidence</h3>
             
-            <div class="bg-white rounded-[2rem] shadow-soft border border-slate-100 overflow-hidden">
+            <div class="bg-brand-card rounded-[2rem] shadow-soft border border-slate-700 overflow-hidden divide-y divide-slate-700/50">
                 
-                <div class="p-6 border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                <div class="p-6 hover:bg-slate-800/50 transition-colors">
                     <div class="flex gap-4 items-start">
                         <div class="text-brand-green mt-1"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
                         <div>
-                            <p class="text-sm italic text-brand-navy font-medium mb-3">
+                            <p class="text-sm italic text-slate-200 font-medium mb-3 leading-relaxed">
                                 "In the secondary prevention of cardiovascular disease, a ratio of 4/1 was associated with a 70% decrease in total mortality."
                             </p>
                             <div class="flex flex-wrap justify-between items-center gap-3">
-                                <span class="text-[10px] font-bold text-slate-400 uppercase">Simopoulos, A.P. (2008)</span>
-                                <a href="https://pubmed.ncbi.nlm.nih.gov/18408140/" target="_blank" class="inline-flex items-center gap-1 text-[10px] font-bold bg-white border border-brand-teal text-brand-teal px-3 py-1.5 rounded-full hover:bg-brand-teal hover:text-white transition-colors">
+                                <span class="text-[10px] font-bold text-slate-500 uppercase">Simopoulos, A.P. (2008)</span>
+                                <a href="https://pubmed.ncbi.nlm.nih.gov/18408140/" target="_blank" class="inline-flex items-center gap-1 text-[10px] font-bold bg-slate-800 border border-brand-teal/50 text-brand-teal px-3 py-1.5 rounded-full hover:bg-brand-teal hover:text-white transition-colors">
                                     PubMed ↗
                                 </a>
                             </div>
@@ -156,16 +158,16 @@
                     </div>
                 </div>
 
-                <div class="p-6 border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                <div class="p-6 hover:bg-slate-800/50 transition-colors">
                     <div class="flex gap-4 items-start">
                         <div class="text-brand-green mt-1"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
                         <div>
-                            <p class="text-sm italic text-brand-navy font-medium mb-3">
+                            <p class="text-sm italic text-slate-200 font-medium mb-3 leading-relaxed">
                                 "Time-restricted feeding elicited greater fat loss while preserving fat-free mass when combined with resistance training."
                             </p>
                             <div class="flex flex-wrap justify-between items-center gap-3">
-                                <span class="text-[10px] font-bold text-slate-400 uppercase">Stratton, M.T., et al. (2020)</span>
-                                <a href="https://pubmed.ncbi.nlm.nih.gov/32160822/" target="_blank" class="inline-flex items-center gap-1 text-[10px] font-bold bg-white border border-brand-teal text-brand-teal px-3 py-1.5 rounded-full hover:bg-brand-teal hover:text-white transition-colors">
+                                <span class="text-[10px] font-bold text-slate-500 uppercase">Stratton, M.T., et al. (2020)</span>
+                                <a href="https://pubmed.ncbi.nlm.nih.gov/32160822/" target="_blank" class="inline-flex items-center gap-1 text-[10px] font-bold bg-slate-800 border border-brand-teal/50 text-brand-teal px-3 py-1.5 rounded-full hover:bg-brand-teal hover:text-white transition-colors">
                                     PubMed ↗
                                 </a>
                             </div>
@@ -173,16 +175,16 @@
                     </div>
                 </div>
 
-                <div class="p-6 border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                <div class="p-6 hover:bg-slate-800/50 transition-colors">
                     <div class="flex gap-4 items-start">
                         <div class="text-brand-green mt-1"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
                         <div>
-                            <p class="text-sm italic text-brand-navy font-medium mb-3">
+                            <p class="text-sm italic text-slate-200 font-medium mb-3 leading-relaxed">
                                 "Creatine monohydrate is the most effective ergogenic nutritional supplement currently available for increasing high-intensity exercise capacity."
                             </p>
                             <div class="flex flex-wrap justify-between items-center gap-3">
-                                <span class="text-[10px] font-bold text-slate-400 uppercase">Kreider, R.B., et al. (2017)</span>
-                                <a href="https://pubmed.ncbi.nlm.nih.gov/28615996/" target="_blank" class="inline-flex items-center gap-1 text-[10px] font-bold bg-white border border-brand-teal text-brand-teal px-3 py-1.5 rounded-full hover:bg-brand-teal hover:text-white transition-colors">
+                                <span class="text-[10px] font-bold text-slate-500 uppercase">Kreider, R.B., et al. (2017)</span>
+                                <a href="https://pubmed.ncbi.nlm.nih.gov/28615996/" target="_blank" class="inline-flex items-center gap-1 text-[10px] font-bold bg-slate-800 border border-brand-teal/50 text-brand-teal px-3 py-1.5 rounded-full hover:bg-brand-teal hover:text-white transition-colors">
                                     PubMed ↗
                                 </a>
                             </div>
@@ -190,16 +192,16 @@
                     </div>
                 </div>
 
-                <div class="p-6 hover:bg-slate-50 transition-colors">
+                <div class="p-6 hover:bg-slate-800/50 transition-colors">
                     <div class="flex gap-4 items-start">
                         <div class="text-brand-green mt-1"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
                         <div>
-                            <p class="text-sm italic text-brand-navy font-medium mb-3">
+                            <p class="text-sm italic text-slate-200 font-medium mb-3 leading-relaxed">
                                 "Zone 2 training improves mitochondrial function and metabolic flexibility, which is crucial for long-term health and fat oxidation."
                             </p>
                             <div class="flex flex-wrap justify-between items-center gap-3">
-                                <span class="text-[10px] font-bold text-slate-400 uppercase">San-Millán, I., et al. (2020)</span>
-                                <a href="https://pubmed.ncbi.nlm.nih.gov/32407695/" target="_blank" class="inline-flex items-center gap-1 text-[10px] font-bold bg-white border border-brand-teal text-brand-teal px-3 py-1.5 rounded-full hover:bg-brand-teal hover:text-white transition-colors">
+                                <span class="text-[10px] font-bold text-slate-500 uppercase">San-Millán, I., et al. (2020)</span>
+                                <a href="https://pubmed.ncbi.nlm.nih.gov/32407695/" target="_blank" class="inline-flex items-center gap-1 text-[10px] font-bold bg-slate-800 border border-brand-teal/50 text-brand-teal px-3 py-1.5 rounded-full hover:bg-brand-teal hover:text-white transition-colors">
                                     PubMed ↗
                                 </a>
                             </div>
@@ -210,15 +212,13 @@
             </div>
         </div>
 
-        <div class="text-center border-t border-slate-200 mt-12 pt-8 pb-4">
-            <p class="text-[10px] font-bold text-brand-navy mb-2">© 2026 John Ruben Solutions, LLC.</p>
-            <p class="text-[10px] text-slate-400 leading-relaxed">
+        <div class="text-center border-t border-slate-800 mt-12 pt-8 pb-4">
+            <p class="text-[10px] font-bold text-slate-500 mb-2">© 2026 John Ruben Solutions, LLC.</p>
+            <p class="text-[10px] text-slate-600 leading-relaxed">
                 <strong>Disclaimer:</strong> Educational purposes only. Not medical advice. Always seek the advice of your physician regarding medical conditions.
             </p>
         </div>
 
     </div>
 </body>
-
 </html>
-
