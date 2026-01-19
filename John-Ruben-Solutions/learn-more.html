@@ -29,12 +29,12 @@
                             card: '#1e293b',
                             green: '#84cc16', 
                             teal: '#06b6d4',
-                            bg: '#0f172a' // Dark Background
+                            bg: '#0f172a' 
                         }
                     },
                     fontFamily: { sans: ['"Plus Jakarta Sans"', 'sans-serif'] },
                     boxShadow: {
-                        'soft': '0 20px 40px -15px rgba(0, 0, 0, 0.5)', // Darker shadow for dark mode
+                        'soft': '0 20px 40px -15px rgba(0, 0, 0, 0.5)', 
                         'glow': '0 0 20px rgba(132, 204, 22, 0.2)'
                     }
                 }
@@ -43,7 +43,7 @@
     </script>
 
     <style>
-        body { background-color: #0f172a; } /* Dark Background */
+        body { background-color: #0f172a; } 
         .animate-up { animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
         @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
     </style>
@@ -108,10 +108,32 @@
             <div class="bg-brand-card p-6 rounded-[2rem] shadow-soft border border-slate-700 hover:border-brand-teal/50 transition-all group">
                 <span class="text-[10px] font-bold text-brand-teal uppercase tracking-widest mb-3 block">Protocol 03</span>
                 <h3 class="text-xl font-extrabold text-white mb-3 group-hover:text-brand-teal transition-colors">Creatine Monohydrate</h3>
-                <div class="bg-purple-900/30 text-purple-200 px-3 py-1 rounded-lg text-xs font-bold inline-block mb-4 border border-purple-800/50">Focus: Muscle & Brain</div>
-                <p class="text-sm leading-relaxed text-slate-400">
-                    Crucial for cellular energy (ATP) and cognitive health. The ISSN confirms its efficacy in preserving lean mass during weight loss phases.
-                </p>
+                
+                <div class="flex flex-wrap gap-2 mb-4">
+                    <div class="bg-purple-900/30 text-purple-200 px-3 py-1 rounded-lg text-xs font-bold border border-purple-800/50">ATP Regeneration</div>
+                    <div class="bg-purple-900/30 text-purple-200 px-3 py-1 rounded-lg text-xs font-bold border border-purple-800/50">Lean Mass Retention</div>
+                </div>
+                
+                <div class="space-y-3 mb-4">
+                    <p class="text-sm leading-relaxed text-slate-400">
+                        <strong>Mechanism:</strong> Creatine facilitates rapid ATP resynthesis. During caloric restriction, this enables you to maintain training intensity despite lower energy intake.
+                    </p>
+                    <p class="text-sm leading-relaxed text-slate-400">
+                        <strong>Evidence:</strong> Per the ISSN Position Stand (<em>Kreider et al., 2017</em>), combining creatine with resistance training preserves muscle mass during weight loss by buffering catabolism and increasing cellular hydration.
+                    </p>
+                </div>
+
+                <div class="bg-brand-navy/50 p-3 rounded-xl border border-slate-700/50 mb-4">
+                    <span class="text-xs font-bold text-white block mb-1">Dosing Strategy:</span>
+                    <p class="text-xs text-slate-400 leading-relaxed">
+                        Start with <strong>5g daily</strong>. Once tolerated, you may titrate up to <strong>20g</strong> for maximal saturation and cognitive benefits.
+                    </p>
+                </div>
+
+                <div class="flex items-start gap-3 bg-red-900/20 p-3 rounded-xl border border-red-900/50">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="text-red-400 w-5 h-5 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                    <span class="text-xs text-red-200 font-medium leading-relaxed">Contraindicated for individuals with impaired kidney function.</span>
+                </div>
             </div>
 
             <div class="bg-brand-card p-6 rounded-[2rem] shadow-soft border border-slate-700 hover:border-brand-teal/50 transition-all group">
