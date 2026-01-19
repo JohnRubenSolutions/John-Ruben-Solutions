@@ -20,7 +20,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, query, where, onSnapshot, deleteDoc, doc, setDoc, getDoc, orderBy, serverTimestamp, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, query, where, onSnapshot, deleteDoc, doc, setDoc, getDoc, orderBy, serverTimestamp, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         
         const firebaseConfig = {
             apiKey: "AIzaSyD2h_sejv6lB8sFC15xHSgqxfdD2hLd5Kg",
@@ -36,7 +36,7 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
         
-        window.fb = { auth, db, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, collection, addDoc, query, where, onSnapshot, deleteDoc, doc, setDoc, getDoc, getDocs, orderBy, serverTimestamp };
+        window.fb = { auth, db, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, collection, addDoc, query, where, onSnapshot, deleteDoc, doc, setDoc, getDoc, getDocs, orderBy, serverTimestamp, writeBatch };
     </script>
     
     <script>
@@ -357,8 +357,7 @@
 
                 const summaryBody = Object.keys(weeklyAgg).sort().map(w => {
                     const d = weeklyAgg[w];
-                    // Format: Actual / Goal
-                    const fmt = (val, target) => `${(val / d.days).toFixed(0)} / ${target}`;
+                    const fmt = (val, target) => `${(val / d.days).toFixed(1)} / ${target}`;
                     
                     return [
                         formatWeekLabel(w),
@@ -386,6 +385,42 @@
             const saveWeight = async () => {
                 if (!user) return;
                 await window.fb.setDoc(window.fb.doc(window.fb.db, "users", user.uid, "daily_stats", currentDate), { weight: dailyWeight, date: currentDate }, { merge: true });
+            };
+
+            // HARD RESET FUNCTION
+            const hardReset = async () => {
+                if(!confirm("⚠️ DANGER: Are you sure you want to delete ALL data? This action cannot be undone.")) return;
+                if(!confirm("Final Confirmation: Do you want to wipe your entire history and start fresh?")) return;
+                
+                try {
+                    setLoading(true);
+                    
+                    // 1. Delete all logs
+                    const logsQ = window.fb.query(window.fb.collection(window.fb.db, "users", user.uid, "logs"));
+                    const logsSnap = await window.fb.getDocs(logsQ);
+                    const batch1 = window.fb.writeBatch(window.fb.db);
+                    logsSnap.forEach(d => batch1.delete(d.ref));
+                    await batch1.commit();
+
+                    // 2. Delete all daily stats (weight)
+                    const statsQ = window.fb.query(window.fb.collection(window.fb.db, "users", user.uid, "daily_stats"));
+                    const statsSnap = await window.fb.getDocs(statsQ);
+                    const batch2 = window.fb.writeBatch(window.fb.db);
+                    statsSnap.forEach(d => batch2.delete(d.ref));
+                    await batch2.commit();
+
+                    alert("All data has been cleared.");
+                    setLog([]);
+                    setDailyWeight("");
+                    setScores({ adherence: 0, consistency: 0 });
+                    if(window.myChart) window.myChart.destroy();
+                    
+                } catch(e) {
+                    console.error(e);
+                    alert("Error clearing data. Please try again.");
+                } finally {
+                    setLoading(false);
+                }
             };
 
             const handleSearch = async (e, overrideQuery = null) => {
@@ -717,6 +752,13 @@
                             </div>
                         </div>
                     )}
+                    
+                    {/* HARD RESET BUTTON */}
+                    <div className="mt-12 pt-8 border-t border-slate-800 text-center">
+                        <button onClick={hardReset} className="text-xs text-red-500 hover:text-red-400 font-bold uppercase tracking-widest border border-red-900/50 bg-red-900/10 px-6 py-3 rounded-xl transition-all hover:bg-red-900/30">
+                            ⚠ Reset All Data
+                        </button>
+                    </div>
                 </div>
             );
         };
