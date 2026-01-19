@@ -139,7 +139,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 <div class="space-y-2">
                     <label class="text-xs font-bold text-brand-muted uppercase tracking-wider">Gender</label>
-                    <select id="gender" class="w-full p-4 bg-brand-input border border-slate-600 rounded-xl font-bold text-white focus:outline-none focus:border-brand-green transition-colors cursor-pointer text-base">
+                    <select id="gender" onchange="hideResults()" class="w-full p-4 bg-brand-input border border-slate-600 rounded-xl font-bold text-white focus:outline-none focus:border-brand-green transition-colors cursor-pointer text-base">
                         <option value="male" selected>Male</option>
                         <option value="female">Female</option>
                     </select>
@@ -147,23 +147,23 @@
                 
                 <div class="space-y-2">
                     <label class="text-xs font-bold text-brand-muted uppercase tracking-wider">Age</label>
-                    <input type="number" id="age" value="35" class="w-full p-4 bg-brand-input border border-slate-600 rounded-xl font-bold text-white focus:outline-none focus:border-brand-green transition-colors text-base">
+                    <input type="number" id="age" value="35" oninput="hideResults()" class="w-full p-4 bg-brand-input border border-slate-600 rounded-xl font-bold text-white focus:outline-none focus:border-brand-green transition-colors text-base">
                 </div>
 
                 <div class="space-y-2">
                     <label class="text-xs font-bold text-brand-muted uppercase tracking-wider">Weight (lbs)</label>
-                    <input type="number" id="weight" value="155" class="w-full p-4 bg-brand-input border border-slate-600 rounded-xl font-bold text-white focus:outline-none focus:border-brand-green transition-colors text-base">
+                    <input type="number" id="weight" value="155" oninput="hideResults()" class="w-full p-4 bg-brand-input border border-slate-600 rounded-xl font-bold text-white focus:outline-none focus:border-brand-green transition-colors text-base">
                 </div>
 
                 <div class="space-y-2">
                     <label class="text-xs font-bold text-brand-muted uppercase tracking-wider">Height (inches)</label>
-                    <input type="number" id="height" value="66.5" class="w-full p-4 bg-brand-input border border-slate-600 rounded-xl font-bold text-white focus:outline-none focus:border-brand-green transition-colors text-base">
+                    <input type="number" id="height" value="66.5" oninput="hideResults()" class="w-full p-4 bg-brand-input border border-slate-600 rounded-xl font-bold text-white focus:outline-none focus:border-brand-green transition-colors text-base">
                 </div>
             </div>
 
             <div class="space-y-2 mb-6">
                 <label class="text-xs font-bold text-brand-muted uppercase tracking-wider">Metabolic Chassis (Body Type)</label>
-                <select id="bodyType" class="w-full p-4 bg-brand-input border border-slate-600 rounded-xl font-bold text-white focus:outline-none focus:border-brand-green transition-colors cursor-pointer text-base">
+                <select id="bodyType" onchange="hideResults()" class="w-full p-4 bg-brand-input border border-slate-600 rounded-xl font-bold text-white focus:outline-none focus:border-brand-green transition-colors cursor-pointer text-base">
                     <option value="meso" selected>🦍 The Gorilla (Athletic/Balanced)</option>
                     <option value="ecto">🏎️ The Greyhound (Hard Gainer)</option>
                     <option value="endo">🐻 The Bear (Easy Gainer)</option>
@@ -174,7 +174,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                 <div class="space-y-2">
                     <label class="text-xs font-bold text-brand-muted uppercase tracking-wider">Activity Level</label>
-                    <select id="activity" class="w-full p-4 bg-brand-input border border-slate-600 rounded-xl font-bold text-white focus:outline-none focus:border-brand-green transition-colors cursor-pointer text-base">
+                    <select id="activity" onchange="hideResults()" class="w-full p-4 bg-brand-input border border-slate-600 rounded-xl font-bold text-white focus:outline-none focus:border-brand-green transition-colors cursor-pointer text-base">
                         <option value="1.2">🪑 Desk Jockey (Sedentary)</option>
                         <option value="1.55" selected>🏃 Mover & Shaker (Moderate)</option>
                         <option value="1.725">🔥 Human Machine (Very Active)</option>
@@ -183,7 +183,7 @@
 
                 <div class="space-y-2">
                     <label class="text-xs font-bold text-brand-muted uppercase tracking-wider">Current Goal</label>
-                    <select id="goal" class="w-full p-4 bg-brand-input border border-slate-600 rounded-xl font-bold text-white focus:outline-none focus:border-brand-green transition-colors cursor-pointer text-base">
+                    <select id="goal" onchange="hideResults()" class="w-full p-4 bg-brand-input border border-slate-600 rounded-xl font-bold text-white focus:outline-none focus:border-brand-green transition-colors cursor-pointer text-base">
                         <option value="0">⚓ Cruise Control (Maintain)</option>
                         <option value="-500">✂️ Shred Mode (Lose Fat)</option>
                         <option value="250">💪 Gains Train (Build Muscle)</option>
@@ -192,16 +192,16 @@
             </div>
 
             <div class="flex gap-3">
-                <button onclick="resetCalculator()" class="w-1/3 py-4 bg-slate-800 border border-slate-600 hover:bg-slate-700 text-white rounded-xl font-bold text-lg transition-all active:scale-[0.98]">
+                <button type="button" onclick="resetCalculator()" class="w-1/3 py-4 bg-slate-800 border border-slate-600 hover:bg-slate-700 text-white rounded-xl font-bold text-lg transition-all active:scale-[0.98]">
                     RESET
                 </button>
-                <button id="calcBtn" onclick="calculate()" class="w-2/3 py-4 bg-gradient-to-r from-brand-green to-lime-600 hover:to-brand-green text-brand-navy rounded-xl font-extrabold text-xl shadow-glow transition-all active:scale-[0.98]">
+                <button type="button" id="calcBtn" onclick="calculate()" class="w-2/3 py-4 bg-gradient-to-r from-brand-green to-lime-600 hover:to-brand-green text-brand-navy rounded-xl font-extrabold text-xl shadow-glow transition-all active:scale-[0.98]">
                     GENERATE
                 </button>
             </div>
         </div>
 
-        <div id="results" class="hidden animate-up">
+        <div id="results" class="hidden">
             
             <div class="bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 text-white rounded-[2rem] p-8 text-center shadow-2xl mb-6 relative overflow-hidden">
                 <div class="absolute top-0 right-0 w-64 h-64 bg-brand-teal rounded-full blur-[100px] opacity-10"></div>
@@ -335,50 +335,44 @@
     </div>
 
     <script>
+        // 1. Force a full page reload when Reset is clicked
         function resetCalculator() {
-            // Reset to defaults
-            document.getElementById('gender').value = 'male';
-            document.getElementById('age').value = '35';
-            document.getElementById('weight').value = '155';
-            document.getElementById('height').value = '66.5';
-            document.getElementById('bodyType').value = 'meso';
-            document.getElementById('activity').value = '1.55';
-            document.getElementById('goal').value = '0';
+            window.location.reload();
+        }
 
-            // Hide results
+        // 2. Hide results immediately if user changes an input
+        function hideResults() {
             const resultsDiv = document.getElementById('results');
+            const btn = document.getElementById('calcBtn');
+            
+            // Hide the results
             resultsDiv.classList.add('hidden');
             resultsDiv.classList.remove('animate-up');
-
-            // Reset Generate button state
-            const btn = document.getElementById('calcBtn');
+            
+            // Ensure button is ready to go
             btn.disabled = false;
             btn.innerText = "GENERATE TARGETS";
             btn.classList.remove('opacity-75', 'cursor-not-allowed');
-
-            // Scroll up
-            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         function calculate() {
-            // 1. Grab Buttons & Elements
+            // Grab UI Elements
             const btn = document.getElementById('calcBtn');
             const resultsDiv = document.getElementById('results');
             const originalBtnText = "GENERATE TARGETS";
 
-            // 2. Lock UI
+            // Visual feedback - Processing
             btn.disabled = true;
             btn.innerText = "Processing...";
             btn.classList.add('opacity-75', 'cursor-not-allowed');
             
-            // Hide old results
+            // Hide old results briefly to trigger animation restart
             resultsDiv.classList.add('hidden');
             resultsDiv.classList.remove('animate-up');
 
-            // 3. Wait 300ms then Calculate
             setTimeout(() => {
                 try {
-                    // --- DATA GATHERING ---
+                    // --- DATA GATHERING (Always gets fresh values) ---
                     const gender = document.getElementById('gender').value;
                     const wVal = document.getElementById('weight').value;
                     const hVal = document.getElementById('height').value;
@@ -387,20 +381,28 @@
                     const goalVal = document.getElementById('goal').value;
                     const bodyType = document.getElementById('bodyType').value;
 
-                    // Parse Floats
-                    const w = parseFloat(wVal) || 0;
-                    const h = parseFloat(hVal) || 0;
-                    const a = parseFloat(aVal) || 0;
+                    // Parse & Validate
+                    const w = parseFloat(wVal);
+                    const h = parseFloat(hVal);
+                    const a = parseFloat(aVal);
+                    
+                    if (!w || !h || !a || w <= 0 || h <= 0) {
+                        alert("Please enter valid positive numbers for Weight, Height, and Age.");
+                        // Reset button
+                        btn.disabled = false;
+                        btn.innerText = originalBtnText;
+                        btn.classList.remove('opacity-75', 'cursor-not-allowed');
+                        return; // Stop execution
+                    }
+
                     const act = parseFloat(actVal) || 1.2;
                     const goal = parseFloat(goalVal) || 0;
 
                     // --- CALCULATIONS ---
-                    // Conversions
                     const kg = w * 0.453592;
                     const cm = h * 2.54;
-                    const heightM = cm / 100;
                     
-                    // Zone 2 Heart Rate Calculation (60-70% Max HR)
+                    // Zone 2 Heart Rate
                     const maxHeartRate = 220 - a;
                     const zone2Low = Math.round(maxHeartRate * 0.60);
                     const zone2High = Math.round(maxHeartRate * 0.70);
@@ -419,7 +421,7 @@
                     const tdee = Math.round(bmr * act);
                     const targetCal = tdee + goal;
 
-                    // Protein Threshold
+                    // Protein Threshold (Safety)
                     const minProteinGrams = Math.round(1.6 * kg);
 
                     // Ratios
@@ -482,12 +484,11 @@
                     document.getElementById('val-water').innerText = waterOz + " oz";
                     document.getElementById('val-fiber').innerText = fiberTarget;
                     
-                    // Update Zone 2 Display with Range
                     document.getElementById('val-zone2').innerText = `${zone2Low}-${zone2High}`;
 
                     // --- SHOW RESULTS ---
                     resultsDiv.classList.remove('hidden');
-                    void resultsDiv.offsetWidth; // Force reflow
+                    void resultsDiv.offsetWidth; // Force Reflow
                     resultsDiv.classList.add('animate-up');
                     resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
@@ -495,12 +496,12 @@
                     console.error("Calculator Error:", err);
                     alert("Something went wrong with the calculation. Please check your inputs.");
                 } finally {
-                    // --- RESET BUTTON ---
+                    // Reset Button State
                     btn.disabled = false;
                     btn.innerText = originalBtnText;
                     btn.classList.remove('opacity-75', 'cursor-not-allowed');
                 }
-            }, 300);
+            }, 150); // Short delay for UX
         }
     </script>
 </body>
