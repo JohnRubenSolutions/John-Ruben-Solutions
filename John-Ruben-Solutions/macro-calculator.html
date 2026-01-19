@@ -208,12 +208,13 @@
     </div>
 
     <script>
-        // 1. HARD RESET: Reloads the page to clear everything
+        // 1. RESET BUTTON: Redirects to the specific URL provided
         function resetCalculator() {
-            window.location.reload();
+            window.location.href = 'https://johnrubensolutions.github.io/John-Ruben-Solutions/John-Ruben-Solutions/macro-calculator.html';
         }
 
-        // 2. INPUT LISTENER: Hides results immediately when any input changes
+        // 2. INPUT LISTENER: 
+        // When any input changes, this hides the results and re-enables the Generate button.
         function hideResults() {
             const resultsDiv = document.getElementById('results');
             const btn = document.getElementById('calcBtn');
@@ -222,164 +223,157 @@
             resultsDiv.classList.add('hidden');
             resultsDiv.classList.remove('animate-up');
             
-            // Reset Generate button to ready state
+            // Unlock the button so they can generate again
             btn.disabled = false;
             btn.innerText = "GENERATE TARGETS";
             btn.classList.remove('opacity-75', 'cursor-not-allowed');
         }
 
+        // 3. CALCULATE: 
+        // Performs math, shows results, and locks the button to prevent re-clicks.
         function calculate() {
-            // Grab UI Elements
             const btn = document.getElementById('calcBtn');
             const resultsDiv = document.getElementById('results');
-            const originalBtnText = "GENERATE TARGETS";
 
-            // Visual feedback - Processing state
+            // --- LOCK BUTTON IMMEDIATELY ---
             btn.disabled = true;
-            btn.innerText = "Processing...";
+            btn.innerText = "GENERATING...";
             btn.classList.add('opacity-75', 'cursor-not-allowed');
-            
-            // CRITICAL FIX: Hide previous results to allow animation to replay
-            resultsDiv.classList.add('hidden');
-            resultsDiv.classList.remove('animate-up');
 
-            // Small delay to allow UI to update and user to see "Processing"
-            setTimeout(() => {
-                try {
-                    // --- 1. DATA GATHERING ---
-                    const gender = document.getElementById('gender').value;
-                    const wVal = document.getElementById('weight').value;
-                    const hVal = document.getElementById('height').value;
-                    const aVal = document.getElementById('age').value;
-                    const actVal = document.getElementById('activity').value;
-                    const goalVal = document.getElementById('goal').value;
-                    const bodyType = document.getElementById('bodyType').value;
+            try {
+                // --- 1. DATA GATHERING ---
+                const gender = document.getElementById('gender').value;
+                const wVal = document.getElementById('weight').value;
+                const hVal = document.getElementById('height').value;
+                const aVal = document.getElementById('age').value;
+                const actVal = document.getElementById('activity').value;
+                const goalVal = document.getElementById('goal').value;
+                const bodyType = document.getElementById('bodyType').value;
 
-                    // Parse & Validate
-                    const w = parseFloat(wVal);
-                    const h = parseFloat(hVal);
-                    const a = parseFloat(aVal);
-                    
-                    if (!w || !h || !a || w <= 0 || h <= 0) {
-                        alert("Please enter valid numbers for Weight, Height, and Age.");
-                        throw new Error("Invalid Input"); // Stop execution
-                    }
-
-                    const act = parseFloat(actVal) || 1.2;
-                    const goal = parseFloat(goalVal) || 0;
-
-                    // --- 2. CALCULATIONS ---
-                    const kg = w * 0.453592;
-                    const cm = h * 2.54;
-                    
-                    // Zone 2 Heart Rate
-                    const maxHeartRate = 220 - a;
-                    const zone2Low = Math.round(maxHeartRate * 0.60);
-                    const zone2High = Math.round(maxHeartRate * 0.70);
-
-                    // Water
-                    const waterOz = Math.round(w * 0.75);
-
-                    // Fiber
-                    let fiberTarget = (gender === 'male') ? 45 : 30;
-
-                    // BMR (Mifflin-St Jeor)
-                    let bmr = (10 * kg) + (6.25 * cm) - (5 * a);
-                    bmr = (gender === 'male') ? bmr + 5 : bmr - 161;
-
-                    // TDEE & Target
-                    const tdee = Math.round(bmr * act);
-                    const targetCal = tdee + goal;
-
-                    // Protein Threshold (Safety)
-                    const minProteinGrams = Math.round(1.6 * kg);
-
-                    // Ratios
-                    let pRatio, cRatio, fRatio;
-                    let ratioText = "";
-
-                    if (bodyType === 'ecto') {
-                        pRatio = 0.30; cRatio = 0.50; fRatio = 0.20;
-                        ratioText = "High Carb (30/50/20)";
-                    } else if (bodyType === 'endo') {
-                        pRatio = 0.40; cRatio = 0.20; fRatio = 0.40;
-                        ratioText = "Low Carb (40/20/40)";
-                    } else {
-                        // Meso or Default
-                        pRatio = 0.40; cRatio = 0.30; fRatio = 0.30;
-                        ratioText = "Balanced (40/30/30)";
-                    }
-
-                    // Initial Split
-                    let pGrams = Math.round((targetCal * pRatio) / 4);
-                    let cGrams = Math.round((targetCal * cRatio) / 4);
-                    let fGrams = Math.round((targetCal * fRatio) / 9);
-
-                    // --- 3. UI UPDATE LOGIC ---
-                    const alertBox = document.getElementById('protein-alert');
-                    const alertMsg = document.getElementById('protein-msg');
-                    const alertTitle = document.querySelector('#protein-alert .alert-title');
-                    const macroHeader = document.getElementById('macro-header');
-                    
-                    alertBox.classList.remove('hidden'); // Ensure alert is visible
-
-                    // Safety Check Adjustment
-                    if (pGrams < minProteinGrams) {
-                        pGrams = minProteinGrams;
-                        const pCals = pGrams * 4;
-                        const cCals = Math.round(targetCal * cRatio); 
-                        cGrams = Math.round(cCals / 4);
-                        const fCals = targetCal - pCals - cCals;
-                        fGrams = (fCals < 0) ? 0 : Math.round(fCals / 9);
-
-                        alertBox.className = "p-4 bg-red-900/20 text-red-200 border border-red-800 rounded-xl text-sm leading-relaxed mb-4 border-l-4 border-red-500";
-                        alertTitle.innerText = "⚠️ Auto-Adjustment Active";
-                        alertTitle.className = "block mb-1 text-base font-bold text-red-400";
-                        alertMsg.innerText = `Protein adjusted to meet safety threshold (${pGrams}g).`;
-                        alertMsg.className = "text-red-100";
-                        macroHeader.innerText = `Macro Requirements (Adjusted)`;
-                    } else {
-                        alertBox.className = "p-4 bg-green-900/20 text-green-200 border border-green-800 rounded-xl text-sm leading-relaxed mb-4 border-l-4 border-brand-green";
-                        alertTitle.innerText = "✅ Protein Optimized";
-                        alertTitle.className = "block mb-1 text-base font-bold text-brand-green";
-                        alertMsg.innerText = `Target (${pGrams}g) is optimal.`;
-                        alertMsg.className = "text-green-100";
-                        macroHeader.innerText = `Macro Requirements - ${ratioText}`;
-                    }
-
-                    // --- 4. WRITE TO DOM ---
-                    document.getElementById('tdee-base').innerText = tdee;
-                    document.getElementById('target-cal').innerText = targetCal;
-                    document.getElementById('val-pro').innerText = pGrams + "g";
-                    document.getElementById('val-carb').innerText = cGrams + "g";
-                    document.getElementById('val-fat').innerText = fGrams + "g";
-                    document.getElementById('val-water').innerText = waterOz + " oz";
-                    document.getElementById('val-fiber').innerText = fiberTarget;
-                    document.getElementById('val-zone2').innerText = `${zone2Low}-${zone2High}`;
-
-                    // --- 5. SHOW RESULTS (FORCE REFLOW) ---
-                    resultsDiv.classList.remove('hidden');
-                    
-                    // This line forces the browser to recognize the element was hidden and is now shown, 
-                    // which restarts the CSS animation
-                    void resultsDiv.offsetWidth; 
-                    
-                    resultsDiv.classList.add('animate-up');
-                    resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
-
-                } catch (err) {
-                    console.error("Calculator Error:", err);
-                    // Only alert if it wasn't the intentional "Invalid Input" error
-                    if(err.message !== "Invalid Input") {
-                        alert("An error occurred. Please refresh the page.");
-                    }
-                } finally {
-                    // Reset Button State
+                // Parse & Validate
+                const w = parseFloat(wVal);
+                const h = parseFloat(hVal);
+                const a = parseFloat(aVal);
+                
+                if (!w || !h || !a || w <= 0 || h <= 0) {
+                    alert("Please enter valid numbers for Weight, Height, and Age.");
+                    // If invalid, unlock button so they can try again
                     btn.disabled = false;
-                    btn.innerText = originalBtnText;
+                    btn.innerText = "GENERATE TARGETS";
                     btn.classList.remove('opacity-75', 'cursor-not-allowed');
+                    return; 
                 }
-            }, 100);
+
+                const act = parseFloat(actVal) || 1.2;
+                const goal = parseFloat(goalVal) || 0;
+
+                // --- 2. CALCULATIONS ---
+                const kg = w * 0.453592;
+                const cm = h * 2.54;
+                
+                // Zone 2 Heart Rate
+                const maxHeartRate = 220 - a;
+                const zone2Low = Math.round(maxHeartRate * 0.60);
+                const zone2High = Math.round(maxHeartRate * 0.70);
+
+                // Water
+                const waterOz = Math.round(w * 0.75);
+
+                // Fiber
+                let fiberTarget = (gender === 'male') ? 45 : 30;
+
+                // BMR (Mifflin-St Jeor)
+                let bmr = (10 * kg) + (6.25 * cm) - (5 * a);
+                bmr = (gender === 'male') ? bmr + 5 : bmr - 161;
+
+                // TDEE & Target
+                const tdee = Math.round(bmr * act);
+                const targetCal = tdee + goal;
+
+                // Protein Threshold (Safety)
+                const minProteinGrams = Math.round(1.6 * kg);
+
+                // Ratios
+                let pRatio, cRatio, fRatio;
+                let ratioText = "";
+
+                if (bodyType === 'ecto') {
+                    pRatio = 0.30; cRatio = 0.50; fRatio = 0.20;
+                    ratioText = "High Carb (30/50/20)";
+                } else if (bodyType === 'endo') {
+                    pRatio = 0.40; cRatio = 0.20; fRatio = 0.40;
+                    ratioText = "Low Carb (40/20/40)";
+                } else {
+                    // Meso or Default
+                    pRatio = 0.40; cRatio = 0.30; fRatio = 0.30;
+                    ratioText = "Balanced (40/30/30)";
+                }
+
+                // Initial Split
+                let pGrams = Math.round((targetCal * pRatio) / 4);
+                let cGrams = Math.round((targetCal * cRatio) / 4);
+                let fGrams = Math.round((targetCal * fRatio) / 9);
+
+                // --- 3. UI UPDATE LOGIC ---
+                const alertBox = document.getElementById('protein-alert');
+                const alertMsg = document.getElementById('protein-msg');
+                const alertTitle = document.querySelector('#protein-alert .alert-title');
+                const macroHeader = document.getElementById('macro-header');
+                
+                alertBox.classList.remove('hidden');
+
+                // Safety Check Adjustment
+                if (pGrams < minProteinGrams) {
+                    pGrams = minProteinGrams;
+                    const pCals = pGrams * 4;
+                    const cCals = Math.round(targetCal * cRatio); 
+                    cGrams = Math.round(cCals / 4);
+                    const fCals = targetCal - pCals - cCals;
+                    fGrams = (fCals < 0) ? 0 : Math.round(fCals / 9);
+
+                    alertBox.className = "p-4 bg-red-900/20 text-red-200 border border-red-800 rounded-xl text-sm leading-relaxed mb-4 border-l-4 border-red-500";
+                    alertTitle.innerText = "⚠️ Auto-Adjustment Active";
+                    alertTitle.className = "block mb-1 text-base font-bold text-red-400";
+                    alertMsg.innerText = `Protein adjusted to meet safety threshold (${pGrams}g).`;
+                    alertMsg.className = "text-red-100";
+                    macroHeader.innerText = `Macro Requirements (Adjusted)`;
+                } else {
+                    alertBox.className = "p-4 bg-green-900/20 text-green-200 border border-green-800 rounded-xl text-sm leading-relaxed mb-4 border-l-4 border-brand-green";
+                    alertTitle.innerText = "✅ Protein Optimized";
+                    alertTitle.className = "block mb-1 text-base font-bold text-brand-green";
+                    alertMsg.innerText = `Target (${pGrams}g) is optimal.`;
+                    alertMsg.className = "text-green-100";
+                    macroHeader.innerText = `Macro Requirements - ${ratioText}`;
+                }
+
+                // --- 4. WRITE TO DOM ---
+                document.getElementById('tdee-base').innerText = tdee;
+                document.getElementById('target-cal').innerText = targetCal;
+                document.getElementById('val-pro').innerText = pGrams + "g";
+                document.getElementById('val-carb').innerText = cGrams + "g";
+                document.getElementById('val-fat').innerText = fGrams + "g";
+                document.getElementById('val-water').innerText = waterOz + " oz";
+                document.getElementById('val-fiber').innerText = fiberTarget;
+                document.getElementById('val-zone2').innerText = `${zone2Low}-${zone2High}`;
+
+                // --- 5. SHOW RESULTS ---
+                resultsDiv.classList.remove('hidden');
+                resultsDiv.classList.add('animate-up');
+                resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+                // Update Button Text to indicate completion
+                btn.innerText = "TARGETS GENERATED";
+                // NOTE: Button remains DISABLED here. User must change inputs to reset.
+
+            } catch (err) {
+                console.error("Calculator Error:", err);
+                alert("An error occurred. Please refresh the page.");
+                
+                // Unlock button on error
+                btn.disabled = false;
+                btn.innerText = "GENERATE TARGETS";
+                btn.classList.remove('opacity-75', 'cursor-not-allowed');
+            }
         }
     </script>
 </body>
