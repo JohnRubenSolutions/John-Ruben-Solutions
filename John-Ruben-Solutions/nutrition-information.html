@@ -685,7 +685,7 @@
             const selectFood = async (food) => {
                 if (food.userGrams || food.nutrients_packed) {
                     if (food.nutrients_packed) {
-                         setSelectedFood({
+                          setSelectedFood({
                             name: food.description,
                             calories: food.nutrients_packed.calories,
                             protein: food.nutrients_packed.protein,
@@ -693,8 +693,8 @@
                             fat: food.nutrients_packed.fat,
                             fiber: food.nutrients_packed.fiber,
                             userGrams: 100
-                         });
-                         setResults([]); setQuery("");
+                          });
+                          setResults([]); setQuery("");
                     }
                     return; 
                 } 
@@ -871,22 +871,27 @@
                         <div className="bg-brand-card p-3 rounded-xl border border-slate-700">
                             <span className="text-[10px] text-slate-400 uppercase">Calories</span>
                             <div className={`text-lg font-bold ${totals.cals > targets.calories ? 'text-red-400' : 'text-white'}`}>{Math.round(totals.cals)} / {targets.calories}</div>
+                            <div className="text-xs text-slate-500 mt-1">{targets.calories > 0 ? Math.round((totals.cals / targets.calories) * 100) : 0}%</div>
                         </div>
                         <div className="bg-brand-card p-3 rounded-xl border border-slate-700">
                             <span className="text-[10px] text-brand-teal uppercase">Protein</span>
                             <div className="text-sm font-bold">{Math.round(totals.pro)} / {targets.protein}g</div>
+                            <div className="text-[10px] text-slate-500 mt-1">{targets.protein > 0 ? Math.round((totals.pro / targets.protein) * 100) : 0}%</div>
                         </div>
                         <div className="bg-brand-card p-3 rounded-xl border border-slate-700">
                             <span className="text-[10px] text-brand-green uppercase">Carbs</span>
                             <div className="text-sm font-bold">{Math.round(totals.carb)} / {targets.carbs}g</div>
+                            <div className="text-[10px] text-slate-500 mt-1">{targets.carbs > 0 ? Math.round((totals.carb / targets.carbs) * 100) : 0}%</div>
                         </div>
                         <div className="bg-brand-card p-3 rounded-xl border border-slate-700">
                             <span className="text-[10px] text-yellow-400 uppercase">Fat</span>
                             <div className="text-sm font-bold">{Math.round(totals.fat)} / {targets.fat}g</div>
+                            <div className="text-[10px] text-slate-500 mt-1">{targets.fat > 0 ? Math.round((totals.fat / targets.fat) * 100) : 0}%</div>
                         </div>
                         <div className="bg-brand-card p-3 rounded-xl border border-slate-700">
                             <span className="text-[10px] text-purple-400 uppercase">Fiber</span>
                             <div className="text-sm font-bold">{Math.round(totals.fib)} / 45g</div>
+                            <div className="text-[10px] text-slate-500 mt-1">{Math.round((totals.fib / 45) * 100)}%</div>
                         </div>
                         <div className="bg-brand-card p-3 rounded-xl border border-slate-700">
                             <span className="text-[10px] text-slate-400 uppercase">Goal Weight</span>
