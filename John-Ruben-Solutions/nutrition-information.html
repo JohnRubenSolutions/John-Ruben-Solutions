@@ -110,7 +110,7 @@
 
         const App = () => {
             const [user, setUser] = useState(null);
-            const [profile, setProfile] = useState(null); // Stores gender, age, height, goal, etc.
+            const [profile, setProfile] = useState(null);
             const [view, setView] = useState("daily");
             
             // Dynamic Targets State
@@ -130,6 +130,7 @@
             const [measureUnit, setMeasureUnit] = useState('g');
             const [isScanning, setIsScanning] = useState(false);
             const [loading, setLoading] = useState(false);
+            const [cameraError, setCameraError] = useState("");
             
             const scannerRef = useRef(null);
             const chartRef = useRef(null);
@@ -148,34 +149,21 @@
                 return () => clearInterval(check);
             }, []);
 
-            // 1. Fetch Profile (Gender, Age, Height, Goal Settings)
             const loadProfile = async (uid) => {
                 const docRef = window.fb.doc(window.fb.db, "users", uid, "data", "profile");
                 const snap = await window.fb.getDoc(docRef);
                 if (snap.exists()) {
                     setProfile(snap.data());
                 }
-                // Also try to load static targets as fallback
                 const targetRef = window.fb.doc(window.fb.db, "users", uid, "data", "targets");
                 const targetSnap = await window.fb.getDoc(targetRef);
                 if (targetSnap.exists()) setTargets(targetSnap.data());
             };
 
-            // 2. DYNAMIC CALCULATION ENGINE
-            // Re-runs whenever Daily Weight or Profile changes
+            // DYNAMIC CALCULATION
             useEffect(() => {
                 if (profile && dailyWeight) {
                     const weightKg = parseFloat(dailyWeight) * 0.453592;
-                    const heightCm = profile.height * (profile.height > 100 ? 1 : 2.54); // Assume profile stores in cm or in, detect? Usually calc stores in cm or raw. Let's assume Profile inputs: if height is small (<100) it's unlikely cm. Code from calc used inches->cm.
-                    // Actually, the calculator stored inputs. Let's use the same logic as the calculator.
-                    // Calculator logic: if input was inches, it stored raw. 
-                    // Let's assume standard Metric for calculation to be safe, deriving from Profile data.
-                    
-                    // RE-DERIVING CONSTANTS from Profile Data
-                    // Note: Profile stores raw inputs (e.g. height: 70). We need to know if it was in/cm. 
-                    // To keep it simple and robust: The calculator previously saved "height" as the raw input number.
-                    // We will estimate: if height < 100, assume inches. If > 100 assume cm.
-                    
                     const h_cm = profile.height < 100 ? profile.height * 2.54 : profile.height;
                     const age = profile.age;
                     const gender = profile.gender;
@@ -183,15 +171,12 @@
                     const goalAdj = profile.goal;
                     const bodyType = profile.bodyType || 'meso';
 
-                    // BMR (Mifflin-St Jeor)
                     let bmr = (10 * weightKg) + (6.25 * h_cm) - (5 * age);
                     bmr = (gender === 'male') ? bmr + 5 : bmr - 161;
 
-                    // TDEE & Target
                     const tdee = bmr * activity;
                     const targetCals = Math.round(tdee + goalAdj);
 
-                    // Macro Ratios
                     let pRatio = 0.40, cRatio = 0.30, fRatio = 0.30;
                     if (bodyType === 'ecto') { pRatio = 0.30; cRatio = 0.50; fRatio = 0.20; }
                     else if (bodyType === 'endo') { pRatio = 0.40; cRatio = 0.20; fRatio = 0.40; }
@@ -200,28 +185,19 @@
                     const cGrams = Math.round((targetCals * cRatio) / 4);
                     let fGrams = Math.round((targetCals * fRatio) / 9);
 
-                    // Protein Safety Floor (1.6g/kg)
                     const minPro = Math.round(1.6 * weightKg);
                     if (pGrams < minPro) {
                         pGrams = minPro;
-                        // Recalculate fat/carb balance? Or just let calories float slightly? 
-                        // Calculator logic was: set P to min, recalc C, dump rest in F.
                         const pCals = pGrams * 4;
                         const cCals = Math.round(targetCals * cRatio);
                         const fCals = targetCals - pCals - cCals;
                         fGrams = Math.max(0, Math.round(fCals / 9));
                     }
 
-                    setTargets({
-                        calories: targetCals,
-                        protein: pGrams,
-                        carbs: cGrams,
-                        fat: fGrams
-                    });
+                    setTargets({ calories: targetCals, protein: pGrams, carbs: cGrams, fat: fGrams });
                 }
             }, [dailyWeight, profile]);
 
-            // DATA FETCHING
             useEffect(() => {
                 if (!user || !window.fb) return;
                 const q = window.fb.query(window.fb.collection(window.fb.db, "users", user.uid, "logs"), window.fb.where("date", "==", currentDate));
@@ -547,7 +523,6 @@
                 if (!qTerm) return;
                 setLoading(true); setResults([]); setSelectedFood(null);
 
-                // BARCODE
                 if (/^\d+$/.test(qTerm)) {
                     try {
                         let res = await fetch(`https://api.nal.usda.gov/fdc/v1/foods/search?api_key=${API_KEY}&query=${qTerm}&pageSize=1&dataType=Branded,SR Legacy`);
@@ -573,7 +548,6 @@
                     } catch (e) {}
                 }
 
-                // TEXT
                 try {
                     const res = await fetch(`https://api.nal.usda.gov/fdc/v1/foods/search?api_key=${API_KEY}&query=${qTerm}&pageSize=10&dataType=Foundation,SR Legacy,Branded`);
                     const data = await res.json();
@@ -670,23 +644,25 @@
                 fib: acc.fib + (i.fiber||0)
             }), { cals: 0, pro: 0, carb: 0, fat: 0, fib: 0 });
 
-            // --- SCANNER SETUP ---
+            // --- SCANNER SETUP (SAFE START) ---
             useEffect(() => {
                 if (isScanning) {
-                    const html5QrCode = new Html5Qrcode("reader");
-                    scannerRef.current = html5QrCode;
-                    
-                    const config = { 
-                        fps: 10, qrbox: { width: 250, height: 250 }, 
-                        videoConstraints: { facingMode: { exact: "environment" } } 
-                    };
-                    const fallbackConfig = { fps: 10, qrbox: { width: 250, height: 250 }, videoConstraints: { facingMode: "environment" } };
+                    setTimeout(() => {
+                        const html5QrCode = new Html5Qrcode("reader");
+                        scannerRef.current = html5QrCode;
+                        
+                        const config = { 
+                            fps: 10, qrbox: { width: 250, height: 250 }, 
+                            videoConstraints: { facingMode: { exact: "environment" } } 
+                        };
+                        const fallbackConfig = { fps: 10, qrbox: { width: 250, height: 250 }, videoConstraints: { facingMode: "environment" } };
 
-                    html5QrCode.start({ facingMode: { exact: "environment" } }, config, (decodedText) => { 
-                        stopScanner(decodedText); 
-                    }, (err) => {}).catch(err => {
-                        html5QrCode.start({ facingMode: "environment" }, fallbackConfig, (decodedText) => { stopScanner(decodedText); }, ()=>{});
-                    });
+                        html5QrCode.start({ facingMode: { exact: "environment" } }, config, (decodedText) => { 
+                            stopScanner(decodedText); 
+                        }, (err) => {}).catch(err => {
+                            html5QrCode.start({ facingMode: "environment" }, fallbackConfig, (decodedText) => { stopScanner(decodedText); }, ()=>{});
+                        });
+                    }, 100); // 100ms safe delay
                 }
                 return () => { if(scannerRef.current && scannerRef.current.isScanning) scannerRef.current.stop().catch(e=>{}); }
             }, [isScanning]);
@@ -906,6 +882,17 @@
                             ⚠ Reset All Data
                         </button>
                     </div>
+                    
+                    {/* SCANNER OVERLAY */}
+                    {isScanning && (
+                        <div className="fixed inset-0 z-[60] bg-black/90 flex flex-col items-center justify-center p-4">
+                            <div className="bg-brand-card p-6 rounded-2xl w-full max-w-sm border border-slate-700 relative">
+                                <h3 className="text-center font-bold text-white mb-4">Scan Barcode</h3>
+                                <div id="reader" className="w-full bg-black rounded-xl overflow-hidden"></div>
+                                <button onClick={() => setIsScanning(false)} className="absolute top-2 right-2 text-slate-400 p-2">Close</button>
+                            </div>
+                        </div>
+                    )}
                 </div>
             );
         };
