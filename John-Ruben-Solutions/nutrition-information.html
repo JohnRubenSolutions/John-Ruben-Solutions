@@ -66,7 +66,6 @@
         const { useState, useEffect, useRef } = React;
         const API_KEY = '4FRpc4urF9W2UedPH6agara8y52PR0efkZRmoPvv'; 
 
-        // --- HELPER FUNCTIONS ---
         const getWeekNumber = (d) => {
             d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
             d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
@@ -80,7 +79,6 @@
              return `Week ${parts[1]}, ${parts[0]}`;
         };
 
-        // --- AUTH COMPONENT ---
         const AuthScreen = () => {
             const [isRegister, setIsRegister] = useState(false);
             const [email, setEmail] = useState("");
@@ -110,73 +108,129 @@
             );
         };
 
-        // --- MAIN APP ---
         const App = () => {
             const [user, setUser] = useState(null);
+            const [profile, setProfile] = useState(null); // Stores gender, age, height, goal, etc.
             const [view, setView] = useState("daily");
+            
+            // Dynamic Targets State
             const [targets, setTargets] = useState({ calories: 2000, protein: 150, carbs: 200, fat: 60 });
+            
             const [query, setQuery] = useState("");
             const [results, setResults] = useState([]);
             const [currentDate, setCurrentDate] = useState(new Date().toISOString().split('T')[0]);
             const [log, setLog] = useState([]);
             const [dailyWeight, setDailyWeight] = useState("");
             
-            // Gamification States
             const [scores, setScores] = useState({ adherence: 0, consistency: 0 });
-            
-            // Food Selection States
+            const [showManual, setShowManual] = useState(false);
+            const [manualForm, setManualForm] = useState({ name: "", p: "", c: "", f: "", fib: "" });
             const [selectedFood, setSelectedFood] = useState(null);
             const [displayAmount, setDisplayAmount] = useState(100);
             const [measureUnit, setMeasureUnit] = useState('g');
-            
-            // Manual Entry States
-            const [showManual, setShowManual] = useState(false);
-            const [manualForm, setManualForm] = useState({ name: "", p: "", c: "", f: "", fib: "" });
-            
-            // UI States
             const [isScanning, setIsScanning] = useState(false);
             const [loading, setLoading] = useState(false);
-            const [error, setError] = useState("");
             
-            // Refs
             const scannerRef = useRef(null);
             const chartRef = useRef(null);
             const chartInstance = useRef(null); 
 
-            // 1. Initial Load & Auth
             useEffect(() => {
                 const check = setInterval(() => {
                     if (window.fb) {
                         clearInterval(check);
                         window.fb.onAuthStateChanged(window.fb.auth, (u) => {
                             setUser(u);
-                            if(u) loadTargets(u.uid);
+                            if(u) loadProfile(u.uid);
                         });
                     }
                 }, 500);
                 return () => clearInterval(check);
             }, []);
 
-            const loadTargets = async (uid) => {
-                const docRef = window.fb.doc(window.fb.db, "users", uid, "data", "targets");
+            // 1. Fetch Profile (Gender, Age, Height, Goal Settings)
+            const loadProfile = async (uid) => {
+                const docRef = window.fb.doc(window.fb.db, "users", uid, "data", "profile");
                 const snap = await window.fb.getDoc(docRef);
-                if (snap.exists()) setTargets(snap.data());
+                if (snap.exists()) {
+                    setProfile(snap.data());
+                }
+                // Also try to load static targets as fallback
+                const targetRef = window.fb.doc(window.fb.db, "users", uid, "data", "targets");
+                const targetSnap = await window.fb.getDoc(targetRef);
+                if (targetSnap.exists()) setTargets(targetSnap.data());
             };
 
-            // 2. Fetch Data (Log + Weight) for Current Day
+            // 2. DYNAMIC CALCULATION ENGINE
+            // Re-runs whenever Daily Weight or Profile changes
+            useEffect(() => {
+                if (profile && dailyWeight) {
+                    const weightKg = parseFloat(dailyWeight) * 0.453592;
+                    const heightCm = profile.height * (profile.height > 100 ? 1 : 2.54); // Assume profile stores in cm or in, detect? Usually calc stores in cm or raw. Let's assume Profile inputs: if height is small (<100) it's unlikely cm. Code from calc used inches->cm.
+                    // Actually, the calculator stored inputs. Let's use the same logic as the calculator.
+                    // Calculator logic: if input was inches, it stored raw. 
+                    // Let's assume standard Metric for calculation to be safe, deriving from Profile data.
+                    
+                    // RE-DERIVING CONSTANTS from Profile Data
+                    // Note: Profile stores raw inputs (e.g. height: 70). We need to know if it was in/cm. 
+                    // To keep it simple and robust: The calculator previously saved "height" as the raw input number.
+                    // We will estimate: if height < 100, assume inches. If > 100 assume cm.
+                    
+                    const h_cm = profile.height < 100 ? profile.height * 2.54 : profile.height;
+                    const age = profile.age;
+                    const gender = profile.gender;
+                    const activity = profile.activity;
+                    const goalAdj = profile.goal;
+                    const bodyType = profile.bodyType || 'meso';
+
+                    // BMR (Mifflin-St Jeor)
+                    let bmr = (10 * weightKg) + (6.25 * h_cm) - (5 * age);
+                    bmr = (gender === 'male') ? bmr + 5 : bmr - 161;
+
+                    // TDEE & Target
+                    const tdee = bmr * activity;
+                    const targetCals = Math.round(tdee + goalAdj);
+
+                    // Macro Ratios
+                    let pRatio = 0.40, cRatio = 0.30, fRatio = 0.30;
+                    if (bodyType === 'ecto') { pRatio = 0.30; cRatio = 0.50; fRatio = 0.20; }
+                    else if (bodyType === 'endo') { pRatio = 0.40; cRatio = 0.20; fRatio = 0.40; }
+
+                    let pGrams = Math.round((targetCals * pRatio) / 4);
+                    const cGrams = Math.round((targetCals * cRatio) / 4);
+                    let fGrams = Math.round((targetCals * fRatio) / 9);
+
+                    // Protein Safety Floor (1.6g/kg)
+                    const minPro = Math.round(1.6 * weightKg);
+                    if (pGrams < minPro) {
+                        pGrams = minPro;
+                        // Recalculate fat/carb balance? Or just let calories float slightly? 
+                        // Calculator logic was: set P to min, recalc C, dump rest in F.
+                        const pCals = pGrams * 4;
+                        const cCals = Math.round(targetCals * cRatio);
+                        const fCals = targetCals - pCals - cCals;
+                        fGrams = Math.max(0, Math.round(fCals / 9));
+                    }
+
+                    setTargets({
+                        calories: targetCals,
+                        protein: pGrams,
+                        carbs: cGrams,
+                        fat: fGrams
+                    });
+                }
+            }, [dailyWeight, profile]);
+
+            // DATA FETCHING
             useEffect(() => {
                 if (!user || !window.fb) return;
-                
-                // Fetch Logs for specific date
                 const q = window.fb.query(window.fb.collection(window.fb.db, "users", user.uid, "logs"), window.fb.where("date", "==", currentDate));
                 const unsub = window.fb.onSnapshot(q, (snap) => {
                     const raw = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-                    // Client-side sort (Ascending order by created time)
                     raw.sort((a,b) => (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0)); 
                     setLog(raw);
                 });
                 
-                // Fetch Daily Weight
                 const fetchWeight = async () => {
                     const docRef = window.fb.doc(window.fb.db, "users", user.uid, "daily_stats", currentDate);
                     const docSnap = await window.fb.getDoc(docRef);
@@ -186,7 +240,6 @@
                 return () => unsub();
             }, [user, currentDate]);
 
-            // 3. Analytics Engine (Runs when view switches to 'trends')
             useEffect(() => {
                 if (view === 'trends' && user) {
                     setTimeout(calculateAnalytics, 200); 
@@ -195,8 +248,6 @@
 
             const calculateAnalytics = async () => {
                 if(!chartRef.current) return;
-
-                // Fetch ALL history for analytics
                 const logSnap = await window.fb.getDocs(window.fb.collection(window.fb.db, "users", user.uid, "logs"));
                 const weightSnap = await window.fb.getDocs(window.fb.collection(window.fb.db, "users", user.uid, "daily_stats"));
                 
@@ -212,7 +263,6 @@
                     dailyData[d.date].weight = parseFloat(d.weight);
                 });
 
-                // Calculate Scores
                 const dates = Object.keys(dailyData).sort();
                 if (dates.length > 0) {
                     const firstDate = new Date(dates[0]);
@@ -237,7 +287,6 @@
                     setScores({ adherence: adherenceScore, consistency: consistencyScore });
                 }
 
-                // Prepare Chart Data (Group by Week)
                 const weeklyData = {};
                 Object.keys(dailyData).forEach(dateStr => {
                     const weekKey = getWeekNumber(new Date(dateStr));
@@ -258,7 +307,6 @@
                 const avgCals = sortedWeeks.map(w => weeklyData[w].daysWithCals ? weeklyData[w].totalCals / weeklyData[w].daysWithCals : 0);
                 const avgWeights = sortedWeeks.map(w => weeklyData[w].daysWithWeight ? weeklyData[w].totalWeight / weeklyData[w].daysWithWeight : null);
 
-                // Render Chart
                 if (chartInstance.current) chartInstance.current.destroy();
                 const ctx = chartRef.current.getContext('2d');
                 chartInstance.current = new Chart(ctx, {
@@ -282,9 +330,7 @@
                 });
             };
 
-            // 4. PDF Export Logic
             const exportFullHistory = async () => {
-                // Switch to trends view to ensure chart is rendered for capture
                 setView('trends');
                 await new Promise(r => setTimeout(r, 1500)); 
 
@@ -292,7 +338,6 @@
                 const doc = new jsPDF();
                 const navy = [15, 23, 42]; 
                 
-                // Footer Function
                 const addFooter = (docPage) => {
                     const pageCount = docPage.internal.getNumberOfPages();
                     for (let i = 1; i <= pageCount; i++) {
@@ -303,11 +348,9 @@
                     }
                 };
 
-                // Header
                 doc.setFontSize(18); doc.setTextColor(...navy); doc.text("JOHN RUBEN SOLUTIONS", 14, 20);
                 doc.setFontSize(12); doc.setTextColor(100); doc.text(`Full Nutrition & Performance Report`, 14, 28);
                 
-                // Recalculate Scores locally for PDF (in case view wasn't loaded)
                 let localAdherence = 0;
                 let localConsistency = 0;
                 
@@ -348,14 +391,12 @@
                 doc.text(`Adherence Score: ${localAdherence}%`, 14, 38);
                 doc.text(`Consistency Score: ${localConsistency}%`, 70, 38);
 
-                // Add Graph Image
                 const canvas = document.getElementById('trendChart');
                 if (canvas) {
                     const imgData = canvas.toDataURL("image/png");
                     doc.addImage(imgData, 'PNG', 14, 45, 180, 80);
                 }
 
-                // Prepare Data Tables
                 const rawLogs = [];
                 logSnap.forEach(doc => rawLogs.push(doc.data()));
                 rawLogs.sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -379,7 +420,6 @@
                     7: { cellWidth: 15, halign: 'right' }
                 };
 
-                // Generate Tables per Day
                 Object.keys(grouped).forEach(date => {
                     if (finalY > 250) { doc.addPage(); finalY = 20; }
                     const items = grouped[date];
@@ -425,7 +465,6 @@
 
                 if (finalY > 230) { doc.addPage(); finalY = 20; }
                 
-                // Weekly Summary
                 doc.setFontSize(14);
                 doc.text("Weekly Averages Summary", 14, finalY);
                 
@@ -447,7 +486,6 @@
 
                 const summaryBody = Object.keys(weeklyAgg).sort().map(w => {
                     const d = weeklyAgg[w];
-                    // Format: Actual / Goal
                     const fmt = (val, target) => `${(val / d.days).toFixed(1)} / ${target}`;
                     
                     return [
@@ -694,7 +732,7 @@
                     </div>
 
                     {/* MACRO DASHBOARD */}
-                    <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mb-6 text-center">
+                    <div className="grid grid-cols-2 md:grid-cols-6 gap-2 mb-6 text-center">
                         <div className="bg-brand-card p-3 rounded-xl border border-slate-700">
                             <span className="text-[10px] text-slate-400 uppercase">Calories</span>
                             <div className={`text-lg font-bold ${totals.cals > targets.calories ? 'text-red-400' : 'text-white'}`}>{Math.round(totals.cals)} / {targets.calories}</div>
@@ -714,6 +752,10 @@
                         <div className="bg-brand-card p-3 rounded-xl border border-slate-700">
                             <span className="text-[10px] text-purple-400 uppercase">Fiber</span>
                             <div className="text-sm font-bold">{Math.round(totals.fib)} / 45g</div>
+                        </div>
+                        <div className="bg-brand-card p-3 rounded-xl border border-slate-700">
+                            <span className="text-[10px] text-slate-400 uppercase">Goal Weight</span>
+                            <div className="text-sm font-bold">{profile ? profile.goalWeight + ' lbs' : '--'}</div>
                         </div>
                     </div>
 
