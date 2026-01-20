@@ -819,7 +819,7 @@
                                 </div>
                             )}
 
-                            {/* LOG */}
+                            {/* LOG TABLE */}
                             <div className="bg-brand-card rounded-2xl border border-slate-700 overflow-hidden">
                                 <div className="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-800/50">
                                     <h3 className="font-bold text-white text-sm uppercase tracking-wide">Daily Log</h3>
@@ -852,7 +852,7 @@
                                                     <td className="px-4 py-3 text-yellow-400">{item.fat.toFixed(1)}</td>
                                                     <td className="px-4 py-3 text-purple-400">{(item.fiber || 0).toFixed(1)}</td>
                                                     <td className="px-4 py-3 text-right">
-                                                        <button onClick={() => deleteItem(item.id)} className="text-red-400 hover:text-red-300 p-2 transition-colors">x</button>
+                                                        <button onClick={() => deleteItem(item.id)} className="text-red-400 hover:text-red-300 transition-colors">x</button>
                                                     </td>
                                                 </tr>
                                             ))}
@@ -878,7 +878,6 @@
                                     <span className="text-xs text-slate-400 uppercase tracking-widest">Adherence Score</span>
                                     <div className="text-4xl font-extrabold text-brand-teal mt-2">{scores.adherence}%</div>
                                     <div className="text-[10px] text-slate-500 mt-2">Days within ±10% of calorie goal</div>
-                                    
                                     <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-800 p-2 rounded text-[10px] w-40 text-left z-10 border border-slate-600 pointer-events-none">
                                         Measures how often you land within 10% of your daily calorie target. Precision matters!
                                     </div>
@@ -887,7 +886,6 @@
                                     <span className="text-xs text-slate-400 uppercase tracking-widest">Consistency Score</span>
                                     <div className="text-4xl font-extrabold text-brand-green mt-2">{scores.consistency}%</div>
                                     <div className="text-[10px] text-slate-500 mt-2">Days tracked / Total days</div>
-                                    
                                     <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-800 p-2 rounded text-[10px] w-40 text-left z-10 border border-slate-600 pointer-events-none">
                                         Measures how often you log data. Missing days lowers this score. Consistency is key!
                                     </div>
