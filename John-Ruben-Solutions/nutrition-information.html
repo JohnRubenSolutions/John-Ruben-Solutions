@@ -67,9 +67,6 @@
         const { useState, useEffect, useRef } = React;
         const API_KEY = '4FRpc4urF9W2UedPH6agara8y52PR0efkZRmoPvv'; 
 
-        // REPLACE THIS WITH YOUR STRIPE PAYMENT LINK
-        const STRIPE_LINK = "https://buy.stripe.com/test_..."; 
-
         const getWeekNumber = (d) => {
             d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
             d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
@@ -82,31 +79,6 @@
              const parts = weekStr.split('-');
              return `Week ${parts[1]}, ${parts[0]}`;
         };
-
-        const PaymentScreen = ({ email }) => (
-            <div className="min-h-screen flex items-center justify-center p-4">
-                <div className="bg-brand-card p-8 rounded-3xl w-full max-w-sm border border-slate-700 text-center">
-                    <div className="text-4xl mb-4">💎</div>
-                    <h2 className="text-xl font-bold text-white mb-2">Premium Access Required</h2>
-                    <p className="text-slate-400 text-sm mb-6">
-                        This advanced tracker is available for <strong>$20/year</strong>. 
-                        Your account <strong>{email}</strong> is currently pending activation.
-                    </p>
-                    
-                    <a href={STRIPE_LINK} target="_blank" className="block w-full py-3 bg-brand-green text-brand-navy font-bold rounded-xl mb-4 hover:bg-white transition-colors">
-                        Subscribe Now ($20)
-                    </a>
-                    
-                    <button onClick={() => window.location.reload()} className="text-brand-teal text-sm hover:underline mb-6">
-                        I've already paid (Refresh)
-                    </button>
-
-                    <button onClick={() => window.fb.signOut(window.fb.auth)} className="text-red-400 text-xs">
-                        Sign Out
-                    </button>
-                </div>
-            </div>
-        );
 
         const AuthScreen = () => {
             const [isRegister, setIsRegister] = useState(false);
@@ -125,7 +97,6 @@
                     const snap = await window.fb.getDoc(docRef);
                     if (!snap.exists()) {
                         await window.fb.setDoc(docRef, {
-                            isPremium: false,
                             joined: new Date().toISOString()
                         }, { merge: true });
                     }
@@ -142,7 +113,6 @@
                     if (isRegister) {
                         userCred = await window.fb.createUserWithEmailAndPassword(window.fb.auth, email, password);
                         await window.fb.setDoc(window.fb.doc(window.fb.db, "users", userCred.user.uid, "data", "profile"), {
-                            isPremium: false,
                             joined: new Date().toISOString()
                         }, { merge: true });
                     } else {
@@ -201,7 +171,6 @@
             const [measureUnit, setMeasureUnit] = useState('g');
             const [isScanning, setIsScanning] = useState(false);
             const [loading, setLoading] = useState(false);
-            const [isPremium, setIsPremium] = useState(null); 
             
             const scannerRef = useRef(null);
             const chartRef = useRef(null);
@@ -214,7 +183,6 @@
                         window.fb.onAuthStateChanged(window.fb.auth, (u) => {
                             setUser(u);
                             if(u) loadProfile(u.uid);
-                            else setIsPremium(null);
                         });
                     }
                 }, 500);
@@ -224,14 +192,7 @@
             const loadProfile = async (uid) => {
                 const docRef = window.fb.doc(window.fb.db, "users", uid, "data", "profile");
                 const snap = await window.fb.getDoc(docRef);
-                if (snap.exists()) {
-                    const data = snap.data();
-                    setProfile(data);
-                    setIsPremium(data.isPremium === true); 
-                } else {
-                    await window.fb.setDoc(docRef, { isPremium: false }, { merge: true });
-                    setIsPremium(false);
-                }
+                if (snap.exists()) setProfile(snap.data());
                 
                 const targetRef = window.fb.doc(window.fb.db, "users", uid, "data", "targets");
                 const targetSnap = await window.fb.getDoc(targetRef);
@@ -277,7 +238,7 @@
             }, [dailyWeight, profile]);
 
             useEffect(() => {
-                if (!user || !window.fb || !isPremium) return; 
+                if (!user || !window.fb) return;
                 const q = window.fb.query(window.fb.collection(window.fb.db, "users", user.uid, "logs"), window.fb.where("date", "==", currentDate));
                 const unsub = window.fb.onSnapshot(q, (snap) => {
                     const raw = snap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -292,13 +253,13 @@
                 };
                 fetchWeight();
                 return () => unsub();
-            }, [user, currentDate, isPremium]);
+            }, [user, currentDate]);
 
             useEffect(() => {
-                if (view === 'trends' && user && isPremium) {
+                if (view === 'trends' && user) {
                     setTimeout(calculateAnalytics, 200); 
                 }
-            }, [view, user, isPremium]);
+            }, [view, user]);
 
             const calculateAnalytics = async () => {
                 if(!chartRef.current) return;
@@ -788,7 +749,6 @@
             };
 
             if (!user) return <AuthScreen />;
-            if (isPremium === false) return <PaymentScreen email={user.email} />; 
 
             return (
                 <div className="max-w-4xl mx-auto px-4 pt-6 pb-20 font-sans text-white">
