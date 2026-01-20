@@ -93,7 +93,10 @@
                 } catch (err) { setError(err.message); }
             };
             return (
-                <div className="min-h-screen flex items-center justify-center p-4">
+                <div className="min-h-screen flex items-center justify-center p-4 relative">
+                    <a href="https://johnrubensolutions.github.io/John-Ruben-Solutions/John-Ruben-Solutions/home.html" className="absolute top-4 left-4 text-xs text-slate-400 hover:text-white flex items-center gap-1">
+                        <span>&larr;</span> Back Home
+                    </a>
                     <div className="bg-brand-card p-8 rounded-3xl w-full max-w-sm border border-slate-700">
                         <h2 className="text-xl font-bold text-white mb-6 text-center">{isRegister ? "Create Account" : "Tracker Login"}</h2>
                         <form onSubmit={handleSubmit}>
@@ -400,7 +403,7 @@
                     const dayTotal = items.reduce((acc, i) => ({ cals: acc.cals + i.calories, pro: acc.pro + i.protein, carbs: acc.carbs + i.carbs, fat: acc.fat + i.fat }), { cals: 0, pro: 0, carbs: 0, fat: 0 });
                     
                     doc.setFontSize(10); doc.setTextColor(...navy); doc.setFont("helvetica", "bold");
-                    doc.text(`Date: ${date}   |   Weight: ${weights[date] ? weights[date] + ' lbs' : 'N/A'}`, 14, finalY);
+                    doc.text(`Date: ${date}    |    Weight: ${weights[date] ? weights[date] + ' lbs' : 'N/A'}`, 14, finalY);
                     
                     const tableBody = items.map(i => [
                         i.time || '--',
@@ -695,6 +698,10 @@
 
             return (
                 <div className="max-w-4xl mx-auto px-4 pt-6 pb-20 font-sans text-white">
+                    <a href="https://johnrubensolutions.github.io/John-Ruben-Solutions/John-Ruben-Solutions/home.html" className="text-xs text-slate-400 hover:text-white flex items-center gap-1 mb-4">
+                        <span>&larr;</span> Back Home
+                    </a>
+                    
                     {/* TOP BAR */}
                     <div className="flex justify-between items-center mb-6 border-b border-slate-700 pb-4">
                         <h1 className="text-xl font-bold">Food Tracker</h1>
