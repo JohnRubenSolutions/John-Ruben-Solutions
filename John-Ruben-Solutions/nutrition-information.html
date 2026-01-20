@@ -556,26 +556,38 @@
                 } catch(e) { console.error(e); alert("Error clearing data."); } finally { setLoading(false); }
             };
 
+            // ---- NEW SEARCH LOGIC ----
             const handleSearch = async (e, overrideQuery = null) => {
                 if (e) e.preventDefault();
                 const qTerm = overrideQuery || query;
                 if (!qTerm) return;
                 setLoading(true); setResults([]); setSelectedFood(null);
 
-                // BARCODE
+                // BARCODE LOGIC (Numeric)
                 if (/^\d+$/.test(qTerm)) {
+                    // Try USDA First
                     try {
                         let res = await fetch(`https://api.nal.usda.gov/fdc/v1/foods/search?api_key=${API_KEY}&query=${qTerm}&pageSize=1&dataType=Branded,SR Legacy`);
                         let data = await res.json();
-                        if (data.foods && data.foods.length > 0) { selectFood(data.foods[0]); setLoading(false); return; }
-                        
-                        res = await fetch(`https://world.openfoodfacts.org/api/v0/product/${qTerm}.json`);
-                        data = await res.json();
+                        if (data.foods && data.foods.length > 0) { 
+                            // Add source tag for UI clarity
+                            const food = data.foods[0];
+                            food.description = `(USDA) ${food.description}`;
+                            selectFood(food); 
+                            setLoading(false); 
+                            return; 
+                        }
+                    } catch (e) { console.warn("USDA Barcode fail", e); }
+
+                    // Try OpenFoodFacts Second (Fallback)
+                    try {
+                        const res = await fetch(`https://world.openfoodfacts.org/api/v0/product/${qTerm}.json`);
+                        const data = await res.json();
                         if(data.status === 1) {
                              const p = data.product;
                              const n = p.nutriments;
                              setSelectedFood({
-                                name: p.product_name,
+                                name: `(OFF) ${p.product_name}`,
                                 calories: n['energy-kcal_100g'] || 0,
                                 protein: n.proteins_100g || 0,
                                 carbs: n.carbohydrates_100g || 0,
@@ -585,37 +597,95 @@
                              });
                              setQuery(""); setLoading(false); return;
                         }
-                    } catch (e) {}
+                    } catch (e) { console.warn("OFF Barcode fail", e); }
+                    
+                    alert("Barcode not found in USDA or OpenFoodFacts.");
+                    setLoading(false);
+                    return;
                 }
 
-                // TEXT
+                // TEXT SEARCH LOGIC (Hybrid: USDA + OFF)
+                let combinedResults = [];
+                
+                // 1. Fetch USDA
                 try {
                     const res = await fetch(`https://api.nal.usda.gov/fdc/v1/foods/search?api_key=${API_KEY}&query=${qTerm}&pageSize=10&dataType=Foundation,SR Legacy,Branded`);
                     const data = await res.json();
-                    setResults(data.foods);
-                } catch (e) {}
+                    if (data.foods) {
+                        // Tag source
+                        const usdaFoods = data.foods.map(f => ({ ...f, description: `(USDA) ${f.description}`, source: 'usda' }));
+                        combinedResults = [...usdaFoods];
+                    }
+                } catch (e) { console.warn("USDA Search Error", e); }
+
+                // 2. Fetch OpenFoodFacts (Best Available/Popularity Sort)
+                try {
+                    // sort_by=unique_scans_n ensures "most likely to be picked" items appear first
+                    const offRes = await fetch(`https://world.openfoodfacts.org/cgi/search.pl?search_terms=${qTerm}&search_simple=1&action=process&json=1&page_size=10&sort_by=unique_scans_n`);
+                    const offData = await offRes.json();
+                    if (offData.products) {
+                        const offFoods = offData.products.map(p => ({
+                            fdcId: `OFF_${p.id || Math.random()}`, // Fake ID for keying
+                            description: `(OFF) ${p.product_name}`,
+                            source: 'off',
+                            // Pre-pack nutrients so we don't need a second fetch for OFF items
+                            nutrients_packed: {
+                                calories: p.nutriments['energy-kcal_100g'] || 0,
+                                protein: p.nutriments.proteins_100g || 0,
+                                carbs: p.nutriments.carbohydrates_100g || 0,
+                                fat: p.nutriments.fat_100g || 0,
+                                fiber: p.nutriments.fiber_100g || 0
+                            }
+                        }));
+                        combinedResults = [...combinedResults, ...offFoods];
+                    }
+                } catch (e) { console.warn("OFF Search Error", e); }
+
+                setResults(combinedResults);
                 setLoading(false);
             };
 
             const selectFood = async (food) => {
-                if (food.userGrams) return; 
+                // Case 1: Already processed OFF Item or Manual Entry
+                if (food.userGrams || food.nutrients_packed) {
+                    if (food.nutrients_packed) {
+                         setSelectedFood({
+                            name: food.description,
+                            calories: food.nutrients_packed.calories,
+                            protein: food.nutrients_packed.protein,
+                            carbs: food.nutrients_packed.carbs,
+                            fat: food.nutrients_packed.fat,
+                            fiber: food.nutrients_packed.fiber,
+                            userGrams: 100
+                         });
+                         setResults([]); setQuery("");
+                    }
+                    return; 
+                } 
+                
+                // Case 2: USDA Item (Needs detail fetch)
                 setLoading(true);
-                const res = await fetch(`https://api.nal.usda.gov/fdc/v1/food/${food.fdcId}?api_key=${API_KEY}`);
-                const d = await res.json();
-                const getN = (id) => {
-                    const n = d.foodNutrients.find(x => (x.nutrient?.id === id || x.nutrientId === id));
-                    return n ? (n.amount || n.value) : 0;
-                };
-                setSelectedFood({
-                    name: d.description,
-                    calories: getN(1008) || getN(208),
-                    protein: getN(1003) || getN(203),
-                    carbs: getN(1005) || getN(205),
-                    fat: getN(1004) || getN(204),
-                    fiber: getN(1079) || getN(291),
-                    userGrams: 100
-                });
-                setResults([]); setQuery("");
+                try {
+                    const res = await fetch(`https://api.nal.usda.gov/fdc/v1/food/${food.fdcId}?api_key=${API_KEY}`);
+                    const d = await res.json();
+                    const getN = (id) => {
+                        const n = d.foodNutrients.find(x => (x.nutrient?.id === id || x.nutrientId === id));
+                        return n ? (n.amount || n.value) : 0;
+                    };
+                    setSelectedFood({
+                        name: d.description,
+                        calories: getN(1008) || getN(208),
+                        protein: getN(1003) || getN(203),
+                        carbs: getN(1005) || getN(205),
+                        fat: getN(1004) || getN(204),
+                        fiber: getN(1079) || getN(291),
+                        userGrams: 100
+                    });
+                    setResults([]); setQuery("");
+                } catch (err) {
+                    console.error("Error fetching details", err);
+                    alert("Could not fetch food details.");
+                }
                 setLoading(false);
             };
 
@@ -706,10 +776,16 @@
                         const html5QrCode = new Html5Qrcode("reader");
                         scannerRef.current = html5QrCode;
                         
+                        // Config optimized for environment camera & focus
                         const config = { 
-                            fps: 10, qrbox: { width: 250, height: 250 }, 
-                            videoConstraints: { facingMode: { exact: "environment" } } 
+                            fps: 10, 
+                            qrbox: { width: 250, height: 250 }, 
+                            videoConstraints: { 
+                                facingMode: "environment",
+                                focusMode: "continuous" // Attempt to force continuous focus
+                            } 
                         };
+                        // Fallback config
                         const fallbackConfig = { fps: 10, qrbox: { width: 250, height: 250 }, videoConstraints: { facingMode: "environment" } };
 
                         html5QrCode.start({ facingMode: { exact: "environment" } }, config, (decodedText) => { 
@@ -844,8 +920,9 @@
                             {results.length > 0 && (
                                 <div className="bg-brand-card rounded-xl border border-slate-700 mb-6 max-h-60 overflow-y-auto">
                                     {results.map(food => (
-                                        <div key={food.fdcId} onClick={() => selectFood(food)} className="p-3 border-b border-slate-700 text-slate-300 hover:bg-slate-700 cursor-pointer transition-colors">
-                                            {food.description}
+                                        <div key={food.fdcId} onClick={() => selectFood(food)} className="p-3 border-b border-slate-700 text-slate-300 hover:bg-slate-700 cursor-pointer transition-colors flex justify-between">
+                                            <span>{food.description}</span>
+                                            {food.source === 'off' && <span className="text-[10px] text-brand-teal border border-brand-teal px-1 rounded ml-2 h-fit">COMMUNITY</span>}
                                         </div>
                                     ))}
                                 </div>
