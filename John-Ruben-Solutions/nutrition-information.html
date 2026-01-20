@@ -67,6 +67,35 @@
         const { useState, useEffect, useRef } = React;
         const API_KEY = '4FRpc4urF9W2UedPH6agara8y52PR0efkZRmoPvv'; 
 
+        // Common spelling dictionary for fallback suggestions
+        const COMMON_FOODS = [
+            'avocado', 'apple', 'almond', 'asparagus', 'banana', 'beef', 'bacon', 'bread', 'broccoli', 'blueberry', 
+            'burger', 'butter', 'carrot', 'cheese', 'chicken', 'chocolate', 'coffee', 'corn', 'cucumber', 
+            'egg', 'fish', 'garlic', 'grape', 'ham', 'honey', 'lemon', 'lettuce', 'milk', 'mushroom', 'mango',
+            'nuts', 'oats', 'oil', 'onion', 'orange', 'pasta', 'peanut', 'pear', 'pepper', 'pineapple', 
+            'pizza', 'pork', 'potato', 'rice', 'salmon', 'salt', 'shrimp', 'spinach', 'steak', 'strawberry', 
+            'sugar', 'tomato', 'tuna', 'turkey', 'water', 'yogurt', 'zucchini', 'quinoa', 'lentils', 'beans'
+        ];
+
+        // Levenshtein Distance Algorithm (Fuzzy Logic)
+        const getDistance = (a, b) => {
+            if(a.length === 0) return b.length;
+            if(b.length === 0) return a.length;
+            const matrix = [];
+            for(let i = 0; i <= b.length; i++){ matrix[i] = [i]; }
+            for(let j = 0; j <= a.length; j++){ matrix[0][j] = j; }
+            for(let i = 1; i <= b.length; i++){
+                for(let j = 1; j <= a.length; j++){
+                    if(b.charAt(i-1) === a.charAt(j-1)){
+                        matrix[i][j] = matrix[i-1][j-1];
+                    } else {
+                        matrix[i][j] = Math.min(matrix[i-1][j-1] + 1, Math.min(matrix[i][j-1] + 1, matrix[i-1][j] + 1));
+                    }
+                }
+            }
+            return matrix[b.length][a.length];
+        };
+
         const getWeekNumber = (d) => {
             d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
             d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
@@ -158,6 +187,7 @@
             
             const [targets, setTargets] = useState({ calories: 2000, protein: 150, carbs: 200, fat: 60 });
             const [query, setQuery] = useState("");
+            const [suggestion, setSuggestion] = useState(null);
             const [results, setResults] = useState([]);
             const [currentDate, setCurrentDate] = useState(new Date().toISOString().split('T')[0]);
             const [log, setLog] = useState([]);
@@ -199,7 +229,6 @@
                 if (targetSnap.exists()) setTargets(targetSnap.data());
             };
 
-            // Dynamic Targets
             useEffect(() => {
                 if (profile && dailyWeight) {
                     const weightKg = parseFloat(dailyWeight) * 0.453592;
@@ -556,21 +585,18 @@
                 } catch(e) { console.error(e); alert("Error clearing data."); } finally { setLoading(false); }
             };
 
-            // ---- NEW SEARCH LOGIC ----
             const handleSearch = async (e, overrideQuery = null) => {
                 if (e) e.preventDefault();
                 const qTerm = overrideQuery || query;
                 if (!qTerm) return;
-                setLoading(true); setResults([]); setSelectedFood(null);
+                setLoading(true); setResults([]); setSelectedFood(null); setSuggestion(null);
 
-                // BARCODE LOGIC (Numeric)
+                // BARCODE
                 if (/^\d+$/.test(qTerm)) {
-                    // Try USDA First
                     try {
                         let res = await fetch(`https://api.nal.usda.gov/fdc/v1/foods/search?api_key=${API_KEY}&query=${qTerm}&pageSize=1&dataType=Branded,SR Legacy`);
                         let data = await res.json();
                         if (data.foods && data.foods.length > 0) { 
-                            // Add source tag for UI clarity
                             const food = data.foods[0];
                             food.description = `(USDA) ${food.description}`;
                             selectFood(food); 
@@ -579,7 +605,6 @@
                         }
                     } catch (e) { console.warn("USDA Barcode fail", e); }
 
-                    // Try OpenFoodFacts Second (Fallback)
                     try {
                         const res = await fetch(`https://world.openfoodfacts.org/api/v0/product/${qTerm}.json`);
                         const data = await res.json();
@@ -599,36 +624,30 @@
                         }
                     } catch (e) { console.warn("OFF Barcode fail", e); }
                     
-                    alert("Barcode not found in USDA or OpenFoodFacts.");
+                    alert("Barcode not found.");
                     setLoading(false);
                     return;
                 }
 
-                // TEXT SEARCH LOGIC (Hybrid: USDA + OFF)
+                // TEXT SEARCH
                 let combinedResults = [];
-                
-                // 1. Fetch USDA
                 try {
                     const res = await fetch(`https://api.nal.usda.gov/fdc/v1/foods/search?api_key=${API_KEY}&query=${qTerm}&pageSize=10&dataType=Foundation,SR Legacy,Branded`);
                     const data = await res.json();
                     if (data.foods) {
-                        // Tag source
                         const usdaFoods = data.foods.map(f => ({ ...f, description: `(USDA) ${f.description}`, source: 'usda' }));
                         combinedResults = [...usdaFoods];
                     }
-                } catch (e) { console.warn("USDA Search Error", e); }
+                } catch (e) {}
 
-                // 2. Fetch OpenFoodFacts (Best Available/Popularity Sort)
                 try {
-                    // sort_by=unique_scans_n ensures "most likely to be picked" items appear first
                     const offRes = await fetch(`https://world.openfoodfacts.org/cgi/search.pl?search_terms=${qTerm}&search_simple=1&action=process&json=1&page_size=10&sort_by=unique_scans_n`);
                     const offData = await offRes.json();
                     if (offData.products) {
                         const offFoods = offData.products.map(p => ({
-                            fdcId: `OFF_${p.id || Math.random()}`, // Fake ID for keying
+                            fdcId: `OFF_${p.id || Math.random()}`, 
                             description: `(OFF) ${p.product_name}`,
                             source: 'off',
-                            // Pre-pack nutrients so we don't need a second fetch for OFF items
                             nutrients_packed: {
                                 calories: p.nutriments['energy-kcal_100g'] || 0,
                                 protein: p.nutriments.proteins_100g || 0,
@@ -639,14 +658,32 @@
                         }));
                         combinedResults = [...combinedResults, ...offFoods];
                     }
-                } catch (e) { console.warn("OFF Search Error", e); }
+                } catch (e) {}
 
                 setResults(combinedResults);
                 setLoading(false);
+
+                // --- SMART SPELL CHECKER ---
+                if (combinedResults.length === 0) {
+                    // Try to find a close match in our dictionary
+                    let bestMatch = null;
+                    let minDistance = 3; // Tolerance threshold
+
+                    COMMON_FOODS.forEach(word => {
+                        const dist = getDistance(qTerm.toLowerCase(), word);
+                        if (dist < minDistance) {
+                            minDistance = dist;
+                            bestMatch = word;
+                        }
+                    });
+
+                    if (bestMatch) {
+                        setSuggestion(bestMatch);
+                    }
+                }
             };
 
             const selectFood = async (food) => {
-                // Case 1: Already processed OFF Item or Manual Entry
                 if (food.userGrams || food.nutrients_packed) {
                     if (food.nutrients_packed) {
                          setSelectedFood({
@@ -663,7 +700,6 @@
                     return; 
                 } 
                 
-                // Case 2: USDA Item (Needs detail fetch)
                 setLoading(true);
                 try {
                     const res = await fetch(`https://api.nal.usda.gov/fdc/v1/food/${food.fdcId}?api_key=${API_KEY}`);
@@ -699,14 +735,14 @@
                 try {
                     let finalItem = {};
                     
-                    if (manualItem && manualItem.name) { // Manual entry
+                    if (manualItem && manualItem.name) { 
                         finalItem = {
                             ...manualItem,
                             date: currentDate,
                             time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
                             createdAt: window.fb.serverTimestamp()
                         }
-                    } else if (item.userGrams) { // Selected search item
+                    } else if (item.userGrams) { 
                         const f = item.userGrams / 100;
                         finalItem = {
                             name: item.name,
@@ -726,8 +762,6 @@
                     }
 
                     await window.fb.addDoc(window.fb.collection(window.fb.db, "users", user.uid, "logs"), finalItem);
-                    
-                    // Clear state only after successful add
                     setSelectedFood(null);
                     setShowManual(false);
                     setManualForm({ name: "", p: "", c: "", f: "", fib: "" });
@@ -769,23 +803,16 @@
                 fib: acc.fib + (i.fiber||0)
             }), { cals: 0, pro: 0, carb: 0, fat: 0, fib: 0 });
 
-            // --- SCANNER SETUP (SAFE START) ---
             useEffect(() => {
                 if (isScanning) {
                     setTimeout(() => {
                         const html5QrCode = new Html5Qrcode("reader");
                         scannerRef.current = html5QrCode;
-                        
-                        // Config optimized for environment camera & focus
                         const config = { 
                             fps: 10, 
                             qrbox: { width: 250, height: 250 }, 
-                            videoConstraints: { 
-                                facingMode: "environment",
-                                focusMode: "continuous" // Attempt to force continuous focus
-                            } 
+                            videoConstraints: { facingMode: "environment", focusMode: "continuous" } 
                         };
-                        // Fallback config
                         const fallbackConfig = { fps: 10, qrbox: { width: 250, height: 250 }, videoConstraints: { facingMode: "environment" } };
 
                         html5QrCode.start({ facingMode: { exact: "environment" } }, config, (decodedText) => { 
@@ -793,7 +820,7 @@
                         }, (err) => {}).catch(err => {
                             html5QrCode.start({ facingMode: "environment" }, fallbackConfig, (decodedText) => { stopScanner(decodedText); }, ()=>{});
                         });
-                    }, 100); // 100ms safe delay
+                    }, 100); 
                 }
                 return () => { if(scannerRef.current && scannerRef.current.isScanning) scannerRef.current.stop().catch(e=>{}); }
             }, [isScanning]);
@@ -832,7 +859,6 @@
                         <span>&larr;</span> Back Home
                     </a>
                     
-                    {/* TOP BAR */}
                     <div className="flex justify-between items-center mb-6 border-b border-slate-700 pb-4">
                         <h1 className="text-xl font-bold">Food Tracker</h1>
                         <div className="flex gap-4">
@@ -842,7 +868,6 @@
                         </div>
                     </div>
 
-                    {/* MACRO DASHBOARD */}
                     <div className="grid grid-cols-2 md:grid-cols-6 gap-2 mb-6 text-center">
                         <div className="bg-brand-card p-3 rounded-xl border border-slate-700">
                             <span className="text-[10px] text-slate-400 uppercase">Calories</span>
@@ -870,10 +895,8 @@
                         </div>
                     </div>
 
-                    {/* MAIN VIEW */}
                     {view === 'daily' ? (
                         <>
-                            {/* DATE & WEIGHT */}
                             <div className="flex flex-col md:flex-row justify-between gap-4 mb-6">
                                 <div className="flex items-center bg-brand-card p-2 rounded-xl border border-slate-700">
                                     <button onClick={()=>{const d=new Date(currentDate);d.setDate(d.getDate()-1);setCurrentDate(d.toISOString().split('T')[0])}} className="p-2 hover:text-brand-green">&lt;</button>
@@ -887,7 +910,6 @@
                                 </div>
                             </div>
 
-                            {/* SEARCH BAR */}
                             <div className="flex gap-2 mb-6">
                                 <div className="flex-1 relative">
                                     <form onSubmit={handleSearch} className="flex-1">
@@ -901,7 +923,16 @@
                                 <button onClick={()=>setShowManual(!showManual)} className="bg-brand-card border border-slate-600 px-4 rounded-xl font-bold text-slate-300 hover:text-white">Custom</button>
                             </div>
 
-                            {/* MANUAL ENTRY FORM */}
+                            {/* SPELL CHECK SUGGESTION */}
+                            {suggestion && results.length === 0 && (
+                                <div className="mb-6 animate-fade">
+                                    <button onClick={() => { setQuery(suggestion); handleSearch(null, suggestion); }} className="w-full p-4 bg-yellow-900/30 border border-yellow-700/50 rounded-xl text-yellow-200 hover:bg-yellow-900/50 transition-colors flex items-center justify-center gap-2">
+                                        <span className="text-lg">Did you mean: <strong>{suggestion}</strong>?</span>
+                                        <span className="text-xs uppercase bg-yellow-600 text-black px-2 py-1 rounded font-bold">Fix It</span>
+                                    </button>
+                                </div>
+                            )}
+
                             {showManual && (
                                 <div className="bg-brand-card p-4 rounded-2xl border border-slate-600 mb-6 animate-fade">
                                     <h3 className="font-bold mb-3">Add Custom Food</h3>
@@ -916,7 +947,6 @@
                                 </div>
                             )}
 
-                            {/* RESULTS LIST */}
                             {results.length > 0 && (
                                 <div className="bg-brand-card rounded-xl border border-slate-700 mb-6 max-h-60 overflow-y-auto">
                                     {results.map(food => (
@@ -928,7 +958,6 @@
                                 </div>
                             )}
                             
-                            {/* STAGING AREA */}
                             {selectedFood && (
                                 <div className="bg-brand-card rounded-2xl border border-slate-700 p-4 mb-6 animate-fade">
                                     <div className="flex justify-between items-start mb-4">
@@ -957,7 +986,6 @@
                                 </div>
                             )}
 
-                            {/* LOG TABLE */}
                             <div className="bg-brand-card rounded-2xl border border-slate-700 overflow-hidden">
                                 <div className="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-800/50">
                                     <h3 className="font-bold text-white text-sm uppercase tracking-wide">Daily Log</h3>
@@ -1009,7 +1037,6 @@
                             </div>
                         </>
                     ) : (
-                        /* TRENDS & SCORES */
                         <div className="space-y-6">
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="bg-brand-card p-6 rounded-2xl border border-slate-700 text-center relative group">
@@ -1039,14 +1066,12 @@
                         </div>
                     )}
                     
-                    {/* HARD RESET BUTTON */}
                     <div className="mt-12 pt-8 border-t border-slate-800 text-center">
                         <button onClick={hardReset} className="text-xs text-red-500 hover:text-red-400 font-bold uppercase tracking-widest border border-red-900/50 bg-red-900/10 px-6 py-3 rounded-xl transition-all hover:bg-red-900/30">
                             ⚠ Reset All Data
                         </button>
                     </div>
                     
-                    {/* SCANNER OVERLAY */}
                     {isScanning && (
                         <div className="fixed inset-0 z-[60] bg-black/90 flex flex-col items-center justify-center p-4">
                             <div className="bg-brand-card p-6 rounded-2xl w-full max-w-sm border border-slate-700 relative">
