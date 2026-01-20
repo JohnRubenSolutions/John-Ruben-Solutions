@@ -66,6 +66,7 @@
         const { useState, useEffect, useRef } = React;
         const API_KEY = '4FRpc4urF9W2UedPH6agara8y52PR0efkZRmoPvv'; 
 
+        // --- HELPER FUNCTIONS ---
         const getWeekNumber = (d) => {
             d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
             d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
@@ -79,6 +80,7 @@
              return `Week ${parts[1]}, ${parts[0]}`;
         };
 
+        // --- AUTH COMPONENT ---
         const AuthScreen = () => {
             const [isRegister, setIsRegister] = useState(false);
             const [email, setEmail] = useState("");
@@ -100,7 +102,7 @@
                             <input type="email" placeholder="Email" className="w-full p-3 mb-4 bg-brand-input rounded-xl text-white outline-none focus:border-brand-green border border-transparent" value={email} onChange={e=>setEmail(e.target.value)} />
                             <input type="password" placeholder="Password" className="w-full p-3 mb-6 bg-brand-input rounded-xl text-white outline-none focus:border-brand-green border border-transparent" value={password} onChange={e=>setPassword(e.target.value)} />
                             {error && <p className="text-red-500 text-xs mb-4 text-center">{error}</p>}
-                            <button type="submit" className="w-full py-3 bg-brand-green text-brand-navy font-bold rounded-xl">{isRegister ? "Sign Up" : "Log In"}</button>
+                            <button type="submit" className="w-full py-3 bg-brand-green text-brand-navy font-bold rounded-xl">{isRegister ? "Sign Up" : "Log In"} </button>
                         </form>
                         <button onClick={()=>setIsRegister(!isRegister)} className="w-full mt-4 text-xs text-slate-400 hover:text-white underline">{isRegister ? "Already have an account? Log In" : "Need account? Sign Up"}</button>
                     </div>
@@ -108,6 +110,7 @@
             );
         };
 
+        // --- MAIN APP ---
         const App = () => {
             const [user, setUser] = useState(null);
             const [view, setView] = useState("daily");
@@ -117,19 +120,30 @@
             const [currentDate, setCurrentDate] = useState(new Date().toISOString().split('T')[0]);
             const [log, setLog] = useState([]);
             const [dailyWeight, setDailyWeight] = useState("");
+            
+            // Gamification States
             const [scores, setScores] = useState({ adherence: 0, consistency: 0 });
-            const [showManual, setShowManual] = useState(false);
-            const [manualForm, setManualForm] = useState({ name: "", p: "", c: "", f: "", fib: "" });
+            
+            // Food Selection States
             const [selectedFood, setSelectedFood] = useState(null);
             const [displayAmount, setDisplayAmount] = useState(100);
             const [measureUnit, setMeasureUnit] = useState('g');
+            
+            // Manual Entry States
+            const [showManual, setShowManual] = useState(false);
+            const [manualForm, setManualForm] = useState({ name: "", p: "", c: "", f: "", fib: "" });
+            
+            // UI States
             const [isScanning, setIsScanning] = useState(false);
             const [loading, setLoading] = useState(false);
+            const [error, setError] = useState("");
             
+            // Refs
             const scannerRef = useRef(null);
             const chartRef = useRef(null);
             const chartInstance = useRef(null); 
 
+            // 1. Initial Load & Auth
             useEffect(() => {
                 const check = setInterval(() => {
                     if (window.fb) {
@@ -149,16 +163,20 @@
                 if (snap.exists()) setTargets(snap.data());
             };
 
-            // DATA FETCHING
+            // 2. Fetch Data (Log + Weight) for Current Day
             useEffect(() => {
                 if (!user || !window.fb) return;
+                
+                // Fetch Logs for specific date
                 const q = window.fb.query(window.fb.collection(window.fb.db, "users", user.uid, "logs"), window.fb.where("date", "==", currentDate));
                 const unsub = window.fb.onSnapshot(q, (snap) => {
                     const raw = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                    // Client-side sort (Ascending order by created time)
                     raw.sort((a,b) => (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0)); 
                     setLog(raw);
                 });
                 
+                // Fetch Daily Weight
                 const fetchWeight = async () => {
                     const docRef = window.fb.doc(window.fb.db, "users", user.uid, "daily_stats", currentDate);
                     const docSnap = await window.fb.getDoc(docRef);
@@ -168,7 +186,7 @@
                 return () => unsub();
             }, [user, currentDate]);
 
-            // ANALYTICS & GRAPH
+            // 3. Analytics Engine (Runs when view switches to 'trends')
             useEffect(() => {
                 if (view === 'trends' && user) {
                     setTimeout(calculateAnalytics, 200); 
@@ -178,6 +196,7 @@
             const calculateAnalytics = async () => {
                 if(!chartRef.current) return;
 
+                // Fetch ALL history for analytics
                 const logSnap = await window.fb.getDocs(window.fb.collection(window.fb.db, "users", user.uid, "logs"));
                 const weightSnap = await window.fb.getDocs(window.fb.collection(window.fb.db, "users", user.uid, "daily_stats"));
                 
@@ -193,7 +212,7 @@
                     dailyData[d.date].weight = parseFloat(d.weight);
                 });
 
-                // --- SCORES ---
+                // Calculate Scores
                 const dates = Object.keys(dailyData).sort();
                 if (dates.length > 0) {
                     const firstDate = new Date(dates[0]);
@@ -218,7 +237,7 @@
                     setScores({ adherence: adherenceScore, consistency: consistencyScore });
                 }
 
-                // --- CHART DATA ---
+                // Prepare Chart Data (Group by Week)
                 const weeklyData = {};
                 Object.keys(dailyData).forEach(dateStr => {
                     const weekKey = getWeekNumber(new Date(dateStr));
@@ -239,11 +258,8 @@
                 const avgCals = sortedWeeks.map(w => weeklyData[w].daysWithCals ? weeklyData[w].totalCals / weeklyData[w].daysWithCals : 0);
                 const avgWeights = sortedWeeks.map(w => weeklyData[w].daysWithWeight ? weeklyData[w].totalWeight / weeklyData[w].daysWithWeight : null);
 
-                // --- DESTROY & RE-RENDER ---
-                if (chartInstance.current) {
-                    chartInstance.current.destroy();
-                }
-
+                // Render Chart
+                if (chartInstance.current) chartInstance.current.destroy();
                 const ctx = chartRef.current.getContext('2d');
                 chartInstance.current = new Chart(ctx, {
                     type: 'line',
@@ -266,8 +282,9 @@
                 });
             };
 
+            // 4. PDF Export Logic
             const exportFullHistory = async () => {
-                // Force Render Graph
+                // Switch to trends view to ensure chart is rendered for capture
                 setView('trends');
                 await new Promise(r => setTimeout(r, 1500)); 
 
@@ -275,7 +292,7 @@
                 const doc = new jsPDF();
                 const navy = [15, 23, 42]; 
                 
-                // --- FOOTER FUNCTION ---
+                // Footer Function
                 const addFooter = (docPage) => {
                     const pageCount = docPage.internal.getNumberOfPages();
                     for (let i = 1; i <= pageCount; i++) {
@@ -286,10 +303,11 @@
                     }
                 };
 
+                // Header
                 doc.setFontSize(18); doc.setTextColor(...navy); doc.text("JOHN RUBEN SOLUTIONS", 14, 20);
                 doc.setFontSize(12); doc.setTextColor(100); doc.text(`Full Nutrition & Performance Report`, 14, 28);
                 
-                // Recalculate Scores locally
+                // Recalculate Scores locally for PDF (in case view wasn't loaded)
                 let localAdherence = 0;
                 let localConsistency = 0;
                 
@@ -326,18 +344,18 @@
                     localAdherence = loggedDays > 0 ? Math.round((adherenceDays / loggedDays) * 100) : 0;
                 }
 
-                // Add Scores
                 doc.setFontSize(10); doc.setTextColor(0);
                 doc.text(`Adherence Score: ${localAdherence}%`, 14, 38);
                 doc.text(`Consistency Score: ${localConsistency}%`, 70, 38);
 
+                // Add Graph Image
                 const canvas = document.getElementById('trendChart');
                 if (canvas) {
                     const imgData = canvas.toDataURL("image/png");
                     doc.addImage(imgData, 'PNG', 14, 45, 180, 80);
                 }
 
-                // DATA PREP
+                // Prepare Data Tables
                 const rawLogs = [];
                 logSnap.forEach(doc => rawLogs.push(doc.data()));
                 rawLogs.sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -350,7 +368,6 @@
 
                 let finalY = 135; 
 
-                // --- COLUMNS ---
                 const columnStyles = {
                     0: { cellWidth: 20 }, 
                     1: { cellWidth: 'auto' }, 
@@ -362,6 +379,7 @@
                     7: { cellWidth: 15, halign: 'right' }
                 };
 
+                // Generate Tables per Day
                 Object.keys(grouped).forEach(date => {
                     if (finalY > 250) { doc.addPage(); finalY = 20; }
                     const items = grouped[date];
@@ -407,6 +425,7 @@
 
                 if (finalY > 230) { doc.addPage(); finalY = 20; }
                 
+                // Weekly Summary
                 doc.setFontSize(14);
                 doc.text("Weekly Averages Summary", 14, finalY);
                 
@@ -428,6 +447,7 @@
 
                 const summaryBody = Object.keys(weeklyAgg).sort().map(w => {
                     const d = weeklyAgg[w];
+                    // Format: Actual / Goal
                     const fmt = (val, target) => `${(val / d.days).toFixed(1)} / ${target}`;
                     
                     return [
@@ -708,7 +728,7 @@
                                     <button onClick={()=>{const d=new Date(currentDate);d.setDate(d.getDate()+1);setCurrentDate(d.toISOString().split('T')[0])}} className="p-2 hover:text-brand-green">&gt;</button>
                                 </div>
                                 <div className="flex items-center bg-brand-input rounded-xl px-4 border border-slate-600">
-                                    <span className="text-xs text-slate-400 mr-2 uppercase">Weight:</span>
+                                    <span className="text-xs text-slate-400 mr-2 uppercase">TODAY'S WEIGHT:</span>
                                     <input type="number" value={dailyWeight} onChange={(e)=>setDailyWeight(e.target.value)} onBlur={saveWeight} className="bg-transparent text-white font-bold w-16 text-right focus:outline-none" placeholder="0.0" />
                                     <span className="text-xs text-brand-green ml-1">lbs</span>
                                 </div>
@@ -747,82 +767,61 @@
                             {results.length > 0 && (
                                 <div className="bg-brand-card rounded-xl border border-slate-700 mb-6 max-h-60 overflow-y-auto">
                                     {results.map(food => (
-                                        <div key={food.fdcId} onClick={() => selectFood(food)} className="p-3 border-b border-slate-700 text-slate-300 hover:bg-slate-700 cursor-pointer">
+                                        <div key={food.fdcId} onClick={() => selectFood(food)} className="p-3 border-b border-slate-700 text-slate-300 hover:bg-slate-700 cursor-pointer transition-colors">
                                             {food.description}
                                         </div>
                                     ))}
                                 </div>
                             )}
-
+                            
                             {/* STAGING AREA */}
                             {selectedFood && (
-                                <div className="bg-brand-card rounded-2xl border border-slate-700 p-4 mb-6">
-                                    <div className="flex justify-between mb-4">
-                                        <h3 className="font-bold text-lg">{selectedFood.name}</h3>
-                                        <button onClick={()=>setSelectedFood(null)} className="text-slate-500">x</button>
+                                <div className="bg-brand-card rounded-2xl border border-slate-700 p-4 mb-6 animate-fade">
+                                    <div className="flex justify-between items-start mb-4">
+                                        <h3 className="font-bold text-white text-lg flex-1 mr-2">{selectedFood.name}</h3>
+                                        <button onClick={() => setSelectedFood(null)} className="text-slate-500 hover:text-white">x</button>
                                     </div>
-                                    <div className="flex items-center gap-4 mb-4">
-                                        <input type="number" value={displayAmount} onChange={e=>{
-                                            setDisplayAmount(e.target.value);
-                                            const val = parseFloat(e.target.value)||0;
-                                            const g = measureUnit === 'oz' ? val*28.35 : val;
-                                            setSelectedFood({...selectedFood, userGrams: g});
-                                        }} className="w-20 bg-brand-input text-center p-2 rounded-lg text-white" />
-                                        <button onClick={toggleUnit} className="text-brand-green font-bold uppercase">{measureUnit}</button>
-                                        <div className="ml-auto text-xl font-bold">{Math.round(selectedFood.calories * (selectedFood.userGrams/100))} <span className="text-xs font-normal">kcal</span></div>
+                                    
+                                    <div className="flex items-center justify-between mb-4 bg-brand-input rounded-xl p-2 border border-slate-600">
+                                         <div className="flex items-center gap-2">
+                                            <input type="number" value={displayAmount} onFocus={(e)=>setDisplayAmount('')} onChange={(e)=>updateAmount(e.target.value)} className="w-20 bg-transparent text-white font-bold text-2xl text-center focus:outline-none placeholder-slate-500" placeholder="0" />
+                                            <button onClick={toggleUnit} className="px-3 py-1 bg-brand-card text-brand-green border border-brand-green rounded-lg font-bold text-xs uppercase hover:bg-brand-green hover:text-brand-navy transition-colors">{measureUnit}</button>
+                                        </div>
+                                        <div className="text-right">
+                                            <span className="block text-2xl font-bold text-white">{Math.round(selectedFood.calories * (selectedFood.userGrams/100))}</span>
+                                            <span className="text-[10px] text-slate-400 uppercase tracking-wider">Calories</span>
+                                        </div>
                                     </div>
-                                    <button onClick={()=>addToLog()} className="w-full py-3 bg-brand-green text-brand-navy font-bold rounded-xl hover:bg-white">Add to Log</button>
+                                    
+                                    <div className="grid grid-cols-3 gap-2 mb-4 text-center text-xs text-slate-300">
+                                        <div className="bg-slate-800 p-2 rounded-lg">Pro: {(selectedFood.protein * (selectedFood.userGrams/100)).toFixed(1)}g</div>
+                                        <div className="bg-slate-800 p-2 rounded-lg">Carb: {(selectedFood.carbs * (selectedFood.userGrams/100)).toFixed(1)}g</div>
+                                        <div className="bg-slate-800 p-2 rounded-lg">Fat: {(selectedFood.fat * (selectedFood.userGrams/100)).toFixed(1)}g</div>
+                                    </div>
+
+                                    <button onClick={addToLog} className="w-full py-3 bg-brand-green text-brand-navy font-bold rounded-xl hover:bg-white transition-colors">Add to Daily Log</button>
                                 </div>
                             )}
 
-                            {/* DATA TABLE LOG */}
+                            {/* LOG */}
                             <div className="bg-brand-card rounded-2xl border border-slate-700 overflow-hidden">
                                 <div className="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-800/50">
-                                    <h3 className="font-bold text-sm uppercase">Daily Entries</h3>
-                                    <button onClick={exportFullHistory} className="text-xs text-brand-teal hover:underline">Export Full History</button>
+                                    <h3 className="font-bold text-white text-sm uppercase tracking-wide">Daily Log</h3>
+                                    <button onClick={exportFullHistory} className="text-xs font-bold text-brand-navy bg-brand-green px-3 py-1 rounded-full hover:bg-white transition-colors">Download PDF</button>
                                 </div>
-                                <div className="overflow-x-auto table-scroll">
-                                    <table className="w-full text-xs text-left text-slate-300">
-                                        <thead className="text-xs text-slate-400 uppercase bg-slate-800">
-                                            <tr>
-                                                <th className="px-4 py-3">Time</th>
-                                                <th className="px-4 py-3">Food</th>
-                                                <th className="px-4 py-3">Grams</th>
-                                                <th className="px-4 py-3 text-brand-green">Cals</th>
-                                                <th className="px-4 py-3">Pro</th>
-                                                <th className="px-4 py-3">Carb</th>
-                                                <th className="px-4 py-3">Fat</th>
-                                                <th className="px-4 py-3">Fib</th>
-                                                <th className="px-4 py-3"></th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {log.map(item => (
-                                                <tr key={item.id} className="border-b border-slate-700 hover:bg-slate-700/30">
-                                                    <td className="px-4 py-3 font-mono text-slate-500">{item.time}</td>
-                                                    <td className="px-4 py-3 font-medium text-white max-w-[150px] truncate">{item.name}</td>
-                                                    <td className="px-4 py-3">{item.grams > 0 ? Math.round(item.grams) : '-'}</td>
-                                                    <td className="px-4 py-3 font-bold text-white">{item.calories.toFixed(1)}</td>
-                                                    <td className="px-4 py-3 text-brand-teal">{item.protein.toFixed(1)}</td>
-                                                    <td className="px-4 py-3 text-brand-green">{item.carbs.toFixed(1)}</td>
-                                                    <td className="px-4 py-3 text-yellow-400">{item.fat.toFixed(1)}</td>
-                                                    <td className="px-4 py-3 text-purple-400">{(item.fiber || 0).toFixed(1)}</td>
-                                                    <td className="px-4 py-3 text-right">
-                                                        <button onClick={() => deleteItem(item.id)} className="text-red-400 hover:text-red-300">x</button>
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                            <tr className="bg-slate-800 font-bold text-white">
-                                                <td colSpan="3" className="px-4 py-3 text-right uppercase text-slate-400">Totals</td>
-                                                <td className="px-4 py-3">{totals.cals.toFixed(1)}</td>
-                                                <td className="px-4 py-3">{totals.pro.toFixed(1)}</td>
-                                                <td className="px-4 py-3">{totals.carb.toFixed(1)}</td>
-                                                <td className="px-4 py-3">{totals.fat.toFixed(1)}</td>
-                                                <td className="px-4 py-3">{totals.fib.toFixed(1)}</td>
-                                                <td></td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
+                                <div className="max-h-[400px] overflow-y-auto">
+                                    {log.map(item => (
+                                        <div key={item.id} className="p-4 border-b border-slate-700 flex justify-between items-center hover:bg-slate-700/30 transition-colors">
+                                            <div className="flex-1 pr-2">
+                                                <div className="text-white text-sm font-bold leading-tight">{item.name}</div>
+                                                <div className="text-xs text-brand-teal mt-1">
+                                                    {Math.round(item.grams)}g <span className="text-slate-500">|</span> {Math.round(item.calories)} kcal <span className="text-slate-500">|</span> P: {Math.round(item.protein)}g
+                                                </div>
+                                            </div>
+                                            <button onClick={() => deleteItem(item.id)} className="text-red-400 hover:text-red-300 p-2 transition-colors">x</button>
+                                        </div>
+                                    ))}
+                                    {log.length === 0 && <div className="p-8 text-center text-slate-500 text-sm">No foods logged for {currentDate}.</div>}
                                 </div>
                             </div>
                         </>
@@ -859,17 +858,6 @@
                         </div>
                     )}
                     
-                    {/* SCANNER OVERLAY */}
-                    {isScanning && (
-                        <div className="fixed inset-0 z-[60] bg-black/90 flex flex-col items-center justify-center p-4">
-                            <div className="bg-brand-card p-6 rounded-2xl w-full max-w-sm border border-slate-700 relative">
-                                <h3 className="text-center font-bold text-white mb-4">Scan Barcode</h3>
-                                <div id="reader" className="w-full bg-black rounded-xl overflow-hidden"></div>
-                                <button onClick={() => setIsScanning(false)} className="absolute top-2 right-2 text-slate-400 p-2">Close</button>
-                            </div>
-                        </div>
-                    )}
-
                     {/* HARD RESET BUTTON */}
                     <div className="mt-12 pt-8 border-t border-slate-800 text-center">
                         <button onClick={hardReset} className="text-xs text-red-500 hover:text-red-400 font-bold uppercase tracking-widest border border-red-900/50 bg-red-900/10 px-6 py-3 rounded-xl transition-all hover:bg-red-900/30">
