@@ -19,7 +19,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, query, where, onSnapshot, deleteDoc, doc, setDoc, getDoc, orderBy, serverTimestamp, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         
         const firebaseConfig = {
@@ -35,8 +35,9 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
+        const googleProvider = new GoogleAuthProvider();
         
-        window.fb = { auth, db, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, collection, addDoc, query, where, onSnapshot, deleteDoc, doc, setDoc, getDoc, getDocs, orderBy, serverTimestamp, writeBatch };
+        window.fb = { auth, db, googleProvider, signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, collection, addDoc, query, where, onSnapshot, deleteDoc, doc, setDoc, getDoc, getDocs, orderBy, serverTimestamp, writeBatch };
     </script>
     
     <script>
@@ -66,6 +67,9 @@
         const { useState, useEffect, useRef } = React;
         const API_KEY = '4FRpc4urF9W2UedPH6agara8y52PR0efkZRmoPvv'; 
 
+        // REPLACE THIS WITH YOUR STRIPE PAYMENT LINK
+        const STRIPE_LINK = "https://buy.stripe.com/test_..."; 
+
         const getWeekNumber = (d) => {
             d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
             d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
@@ -79,19 +83,74 @@
              return `Week ${parts[1]}, ${parts[0]}`;
         };
 
+        const PaymentScreen = ({ email }) => (
+            <div className="min-h-screen flex items-center justify-center p-4">
+                <div className="bg-brand-card p-8 rounded-3xl w-full max-w-sm border border-slate-700 text-center">
+                    <div className="text-4xl mb-4">💎</div>
+                    <h2 className="text-xl font-bold text-white mb-2">Premium Access Required</h2>
+                    <p className="text-slate-400 text-sm mb-6">
+                        This advanced tracker is available for <strong>$20/year</strong>. 
+                        Your account <strong>{email}</strong> is currently pending activation.
+                    </p>
+                    
+                    <a href={STRIPE_LINK} target="_blank" className="block w-full py-3 bg-brand-green text-brand-navy font-bold rounded-xl mb-4 hover:bg-white transition-colors">
+                        Subscribe Now ($20)
+                    </a>
+                    
+                    <button onClick={() => window.location.reload()} className="text-brand-teal text-sm hover:underline mb-6">
+                        I've already paid (Refresh)
+                    </button>
+
+                    <button onClick={() => window.fb.signOut(window.fb.auth)} className="text-red-400 text-xs">
+                        Sign Out
+                    </button>
+                </div>
+            </div>
+        );
+
         const AuthScreen = () => {
             const [isRegister, setIsRegister] = useState(false);
             const [email, setEmail] = useState("");
             const [password, setPassword] = useState("");
             const [error, setError] = useState("");
+
+            const handleGoogleLogin = async () => {
+                setError("");
+                if(!window.fb) return setError("Firebase loading...");
+                try {
+                    const result = await window.fb.signInWithPopup(window.fb.auth, window.fb.googleProvider);
+                    const user = result.user;
+                    
+                    const docRef = window.fb.doc(window.fb.db, "users", user.uid, "data", "profile");
+                    const snap = await window.fb.getDoc(docRef);
+                    if (!snap.exists()) {
+                        await window.fb.setDoc(docRef, {
+                            isPremium: false,
+                            joined: new Date().toISOString()
+                        }, { merge: true });
+                    }
+                } catch (err) {
+                    setError(err.message);
+                }
+            };
+
             const handleSubmit = async (e) => {
                 e.preventDefault(); setError("");
                 if(!window.fb) return setError("Firebase loading...");
                 try {
-                    if (isRegister) await window.fb.createUserWithEmailAndPassword(window.fb.auth, email, password);
-                    else await window.fb.signInWithEmailAndPassword(window.fb.auth, email, password);
+                    let userCred;
+                    if (isRegister) {
+                        userCred = await window.fb.createUserWithEmailAndPassword(window.fb.auth, email, password);
+                        await window.fb.setDoc(window.fb.doc(window.fb.db, "users", userCred.user.uid, "data", "profile"), {
+                            isPremium: false,
+                            joined: new Date().toISOString()
+                        }, { merge: true });
+                    } else {
+                        await window.fb.signInWithEmailAndPassword(window.fb.auth, email, password);
+                    }
                 } catch (err) { setError(err.message); }
             };
+
             return (
                 <div className="min-h-screen flex items-center justify-center p-4 relative">
                     <a href="https://johnrubensolutions.github.io/John-Ruben-Solutions/John-Ruben-Solutions/home.html" className="absolute top-4 left-4 text-xs text-slate-400 hover:text-white flex items-center gap-1">
@@ -99,11 +158,22 @@
                     </a>
                     <div className="bg-brand-card p-8 rounded-3xl w-full max-w-sm border border-slate-700">
                         <h2 className="text-xl font-bold text-white mb-6 text-center">{isRegister ? "Create Account" : "Tracker Login"}</h2>
+                        
+                        <button onClick={handleGoogleLogin} className="w-full py-3 bg-white text-slate-900 font-bold rounded-xl mb-4 flex items-center justify-center gap-2 hover:bg-slate-100 transition-colors">
+                            <svg className="w-5 h-5" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+                            Continue with Google
+                        </button>
+
+                        <div className="relative mb-6">
+                            <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-600"></div></div>
+                            <div className="relative flex justify-center text-xs uppercase"><span className="bg-brand-card px-2 text-slate-400">Or use email</span></div>
+                        </div>
+
                         <form onSubmit={handleSubmit}>
                             <input type="email" placeholder="Email" className="w-full p-3 mb-4 bg-brand-input rounded-xl text-white outline-none focus:border-brand-green border border-transparent" value={email} onChange={e=>setEmail(e.target.value)} />
                             <input type="password" placeholder="Password" className="w-full p-3 mb-6 bg-brand-input rounded-xl text-white outline-none focus:border-brand-green border border-transparent" value={password} onChange={e=>setPassword(e.target.value)} />
                             {error && <p className="text-red-500 text-xs mb-4 text-center">{error}</p>}
-                            <button type="submit" className="w-full py-3 bg-brand-green text-brand-navy font-bold rounded-xl">{isRegister ? "Sign Up" : "Log In"} </button>
+                            <button type="submit" className="w-full py-3 bg-brand-navy border border-brand-green text-brand-green font-bold rounded-xl hover:bg-brand-green hover:text-brand-navy transition-colors">{isRegister ? "Sign Up" : "Log In"} </button>
                         </form>
                         <button onClick={()=>setIsRegister(!isRegister)} className="w-full mt-4 text-xs text-slate-400 hover:text-white underline">{isRegister ? "Already have an account? Log In" : "Need account? Sign Up"}</button>
                     </div>
@@ -131,6 +201,7 @@
             const [measureUnit, setMeasureUnit] = useState('g');
             const [isScanning, setIsScanning] = useState(false);
             const [loading, setLoading] = useState(false);
+            const [isPremium, setIsPremium] = useState(null); 
             
             const scannerRef = useRef(null);
             const chartRef = useRef(null);
@@ -143,6 +214,7 @@
                         window.fb.onAuthStateChanged(window.fb.auth, (u) => {
                             setUser(u);
                             if(u) loadProfile(u.uid);
+                            else setIsPremium(null);
                         });
                     }
                 }, 500);
@@ -152,7 +224,14 @@
             const loadProfile = async (uid) => {
                 const docRef = window.fb.doc(window.fb.db, "users", uid, "data", "profile");
                 const snap = await window.fb.getDoc(docRef);
-                if (snap.exists()) setProfile(snap.data());
+                if (snap.exists()) {
+                    const data = snap.data();
+                    setProfile(data);
+                    setIsPremium(data.isPremium === true); 
+                } else {
+                    await window.fb.setDoc(docRef, { isPremium: false }, { merge: true });
+                    setIsPremium(false);
+                }
                 
                 const targetRef = window.fb.doc(window.fb.db, "users", uid, "data", "targets");
                 const targetSnap = await window.fb.getDoc(targetRef);
@@ -198,7 +277,7 @@
             }, [dailyWeight, profile]);
 
             useEffect(() => {
-                if (!user || !window.fb) return;
+                if (!user || !window.fb || !isPremium) return; 
                 const q = window.fb.query(window.fb.collection(window.fb.db, "users", user.uid, "logs"), window.fb.where("date", "==", currentDate));
                 const unsub = window.fb.onSnapshot(q, (snap) => {
                     const raw = snap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -213,13 +292,13 @@
                 };
                 fetchWeight();
                 return () => unsub();
-            }, [user, currentDate]);
+            }, [user, currentDate, isPremium]);
 
             useEffect(() => {
-                if (view === 'trends' && user) {
+                if (view === 'trends' && user && isPremium) {
                     setTimeout(calculateAnalytics, 200); 
                 }
-            }, [view, user]);
+            }, [view, user, isPremium]);
 
             const calculateAnalytics = async () => {
                 if(!chartRef.current) return;
@@ -581,37 +660,51 @@
 
             const addToLog = async (manualItem = null) => {
                 const item = manualItem || selectedFood;
-                if(!item) return;
-                
-                let finalItem = {};
-                
-                if (manualItem) {
-                    finalItem = {
-                        ...manualItem,
-                        date: currentDate,
-                        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                        createdAt: window.fb.serverTimestamp()
-                    }
-                } else {
-                    const f = item.userGrams / 100;
-                    finalItem = {
-                        name: item.name,
-                        grams: item.userGrams,
-                        calories: item.calories * f,
-                        protein: parseFloat((item.protein * f).toFixed(1)),
-                        carbs: parseFloat((item.carbs * f).toFixed(1)),
-                        fat: parseFloat((item.fat * f).toFixed(1)),
-                        fiber: parseFloat((item.fiber * f).toFixed(1)),
-                        date: currentDate,
-                        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                        createdAt: window.fb.serverTimestamp()
-                    };
+                if(!item) {
+                    console.error("No item selected or created.");
+                    return;
                 }
+                
+                try {
+                    let finalItem = {};
+                    
+                    if (manualItem && manualItem.name) { // Manual entry
+                        finalItem = {
+                            ...manualItem,
+                            date: currentDate,
+                            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                            createdAt: window.fb.serverTimestamp()
+                        }
+                    } else if (item.userGrams) { // Selected search item
+                        const f = item.userGrams / 100;
+                        finalItem = {
+                            name: item.name,
+                            grams: item.userGrams,
+                            calories: item.calories * f,
+                            protein: parseFloat((item.protein * f).toFixed(1)),
+                            carbs: parseFloat((item.carbs * f).toFixed(1)),
+                            fat: parseFloat((item.fat * f).toFixed(1)),
+                            fiber: parseFloat((item.fiber * f).toFixed(1)),
+                            date: currentDate,
+                            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                            createdAt: window.fb.serverTimestamp()
+                        };
+                    } else {
+                        console.error("Invalid item structure", item);
+                        return;
+                    }
 
-                await window.fb.addDoc(window.fb.collection(window.fb.db, "users", user.uid, "logs"), finalItem);
-                setSelectedFood(null);
-                setShowManual(false);
-                setManualForm({ name: "", p: "", c: "", f: "", fib: "" });
+                    await window.fb.addDoc(window.fb.collection(window.fb.db, "users", user.uid, "logs"), finalItem);
+                    
+                    // Clear state only after successful add
+                    setSelectedFood(null);
+                    setShowManual(false);
+                    setManualForm({ name: "", p: "", c: "", f: "", fib: "" });
+                    
+                } catch (err) {
+                    console.error("Error adding to log:", err);
+                    alert("Failed to add log. Check console for details.");
+                }
             };
 
             const deleteItem = async (id) => {
@@ -695,6 +788,7 @@
             };
 
             if (!user) return <AuthScreen />;
+            if (isPremium === false) return <PaymentScreen email={user.email} />; 
 
             return (
                 <div className="max-w-4xl mx-auto px-4 pt-6 pb-20 font-sans text-white">
@@ -822,7 +916,7 @@
                                         <div className="bg-slate-800 p-2 rounded-lg">Fat: {(selectedFood.fat * (selectedFood.userGrams/100)).toFixed(1)}g</div>
                                     </div>
 
-                                    <button onClick={addToLog} className="w-full py-3 bg-brand-green text-brand-navy font-bold rounded-xl hover:bg-white transition-colors">Add to Daily Log</button>
+                                    <button onClick={() => addToLog()} className="w-full py-3 bg-brand-green text-brand-navy font-bold rounded-xl hover:bg-white transition-colors">Add to Daily Log</button>
                                 </div>
                             )}
 
