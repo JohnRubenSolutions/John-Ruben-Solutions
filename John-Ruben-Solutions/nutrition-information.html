@@ -100,7 +100,7 @@
                             <input type="email" placeholder="Email" className="w-full p-3 mb-4 bg-brand-input rounded-xl text-white outline-none focus:border-brand-green border border-transparent" value={email} onChange={e=>setEmail(e.target.value)} />
                             <input type="password" placeholder="Password" className="w-full p-3 mb-6 bg-brand-input rounded-xl text-white outline-none focus:border-brand-green border border-transparent" value={password} onChange={e=>setPassword(e.target.value)} />
                             {error && <p className="text-red-500 text-xs mb-4 text-center">{error}</p>}
-                            <button type="submit" className="w-full py-3 bg-brand-green text-brand-navy font-bold rounded-xl">{isRegister ? "Sign Up" : "Log In"} </button>
+                            <button type="submit" className="w-full py-3 bg-brand-green text-brand-navy font-bold rounded-xl">{isRegister ? "Sign Up" : "Log In"}</button>
                         </form>
                         <button onClick={()=>setIsRegister(!isRegister)} className="w-full mt-4 text-xs text-slate-400 hover:text-white underline">{isRegister ? "Already have an account? Log In" : "Need account? Sign Up"}</button>
                     </div>
@@ -110,18 +110,13 @@
 
         const App = () => {
             const [user, setUser] = useState(null);
-            const [profile, setProfile] = useState(null);
             const [view, setView] = useState("daily");
-            
-            // Dynamic Targets State
             const [targets, setTargets] = useState({ calories: 2000, protein: 150, carbs: 200, fat: 60 });
-            
             const [query, setQuery] = useState("");
             const [results, setResults] = useState([]);
             const [currentDate, setCurrentDate] = useState(new Date().toISOString().split('T')[0]);
             const [log, setLog] = useState([]);
             const [dailyWeight, setDailyWeight] = useState("");
-            
             const [scores, setScores] = useState({ adherence: 0, consistency: 0 });
             const [showManual, setShowManual] = useState(false);
             const [manualForm, setManualForm] = useState({ name: "", p: "", c: "", f: "", fib: "" });
@@ -130,7 +125,6 @@
             const [measureUnit, setMeasureUnit] = useState('g');
             const [isScanning, setIsScanning] = useState(false);
             const [loading, setLoading] = useState(false);
-            const [cameraError, setCameraError] = useState("");
             
             const scannerRef = useRef(null);
             const chartRef = useRef(null);
@@ -142,62 +136,20 @@
                         clearInterval(check);
                         window.fb.onAuthStateChanged(window.fb.auth, (u) => {
                             setUser(u);
-                            if(u) loadProfile(u.uid);
+                            if(u) loadTargets(u.uid);
                         });
                     }
                 }, 500);
                 return () => clearInterval(check);
             }, []);
 
-            const loadProfile = async (uid) => {
-                const docRef = window.fb.doc(window.fb.db, "users", uid, "data", "profile");
+            const loadTargets = async (uid) => {
+                const docRef = window.fb.doc(window.fb.db, "users", uid, "data", "targets");
                 const snap = await window.fb.getDoc(docRef);
-                if (snap.exists()) {
-                    setProfile(snap.data());
-                }
-                const targetRef = window.fb.doc(window.fb.db, "users", uid, "data", "targets");
-                const targetSnap = await window.fb.getDoc(targetRef);
-                if (targetSnap.exists()) setTargets(targetSnap.data());
+                if (snap.exists()) setTargets(snap.data());
             };
 
-            // DYNAMIC CALCULATION
-            useEffect(() => {
-                if (profile && dailyWeight) {
-                    const weightKg = parseFloat(dailyWeight) * 0.453592;
-                    const h_cm = profile.height < 100 ? profile.height * 2.54 : profile.height;
-                    const age = profile.age;
-                    const gender = profile.gender;
-                    const activity = profile.activity;
-                    const goalAdj = profile.goal;
-                    const bodyType = profile.bodyType || 'meso';
-
-                    let bmr = (10 * weightKg) + (6.25 * h_cm) - (5 * age);
-                    bmr = (gender === 'male') ? bmr + 5 : bmr - 161;
-
-                    const tdee = bmr * activity;
-                    const targetCals = Math.round(tdee + goalAdj);
-
-                    let pRatio = 0.40, cRatio = 0.30, fRatio = 0.30;
-                    if (bodyType === 'ecto') { pRatio = 0.30; cRatio = 0.50; fRatio = 0.20; }
-                    else if (bodyType === 'endo') { pRatio = 0.40; cRatio = 0.20; fRatio = 0.40; }
-
-                    let pGrams = Math.round((targetCals * pRatio) / 4);
-                    const cGrams = Math.round((targetCals * cRatio) / 4);
-                    let fGrams = Math.round((targetCals * fRatio) / 9);
-
-                    const minPro = Math.round(1.6 * weightKg);
-                    if (pGrams < minPro) {
-                        pGrams = minPro;
-                        const pCals = pGrams * 4;
-                        const cCals = Math.round(targetCals * cRatio);
-                        const fCals = targetCals - pCals - cCals;
-                        fGrams = Math.max(0, Math.round(fCals / 9));
-                    }
-
-                    setTargets({ calories: targetCals, protein: pGrams, carbs: cGrams, fat: fGrams });
-                }
-            }, [dailyWeight, profile]);
-
+            // DATA FETCHING
             useEffect(() => {
                 if (!user || !window.fb) return;
                 const q = window.fb.query(window.fb.collection(window.fb.db, "users", user.uid, "logs"), window.fb.where("date", "==", currentDate));
@@ -216,6 +168,7 @@
                 return () => unsub();
             }, [user, currentDate]);
 
+            // ANALYTICS & GRAPH
             useEffect(() => {
                 if (view === 'trends' && user) {
                     setTimeout(calculateAnalytics, 200); 
@@ -224,6 +177,7 @@
 
             const calculateAnalytics = async () => {
                 if(!chartRef.current) return;
+
                 const logSnap = await window.fb.getDocs(window.fb.collection(window.fb.db, "users", user.uid, "logs"));
                 const weightSnap = await window.fb.getDocs(window.fb.collection(window.fb.db, "users", user.uid, "daily_stats"));
                 
@@ -239,6 +193,7 @@
                     dailyData[d.date].weight = parseFloat(d.weight);
                 });
 
+                // --- SCORES ---
                 const dates = Object.keys(dailyData).sort();
                 if (dates.length > 0) {
                     const firstDate = new Date(dates[0]);
@@ -263,6 +218,7 @@
                     setScores({ adherence: adherenceScore, consistency: consistencyScore });
                 }
 
+                // --- CHART DATA ---
                 const weeklyData = {};
                 Object.keys(dailyData).forEach(dateStr => {
                     const weekKey = getWeekNumber(new Date(dateStr));
@@ -283,7 +239,11 @@
                 const avgCals = sortedWeeks.map(w => weeklyData[w].daysWithCals ? weeklyData[w].totalCals / weeklyData[w].daysWithCals : 0);
                 const avgWeights = sortedWeeks.map(w => weeklyData[w].daysWithWeight ? weeklyData[w].totalWeight / weeklyData[w].daysWithWeight : null);
 
-                if (chartInstance.current) chartInstance.current.destroy();
+                // --- DESTROY & RE-RENDER ---
+                if (chartInstance.current) {
+                    chartInstance.current.destroy();
+                }
+
                 const ctx = chartRef.current.getContext('2d');
                 chartInstance.current = new Chart(ctx, {
                     type: 'line',
@@ -307,6 +267,7 @@
             };
 
             const exportFullHistory = async () => {
+                // Force Render Graph
                 setView('trends');
                 await new Promise(r => setTimeout(r, 1500)); 
 
@@ -314,6 +275,7 @@
                 const doc = new jsPDF();
                 const navy = [15, 23, 42]; 
                 
+                // --- FOOTER FUNCTION ---
                 const addFooter = (docPage) => {
                     const pageCount = docPage.internal.getNumberOfPages();
                     for (let i = 1; i <= pageCount; i++) {
@@ -327,6 +289,7 @@
                 doc.setFontSize(18); doc.setTextColor(...navy); doc.text("JOHN RUBEN SOLUTIONS", 14, 20);
                 doc.setFontSize(12); doc.setTextColor(100); doc.text(`Full Nutrition & Performance Report`, 14, 28);
                 
+                // Recalculate Scores locally
                 let localAdherence = 0;
                 let localConsistency = 0;
                 
@@ -363,6 +326,7 @@
                     localAdherence = loggedDays > 0 ? Math.round((adherenceDays / loggedDays) * 100) : 0;
                 }
 
+                // Add Scores
                 doc.setFontSize(10); doc.setTextColor(0);
                 doc.text(`Adherence Score: ${localAdherence}%`, 14, 38);
                 doc.text(`Consistency Score: ${localConsistency}%`, 70, 38);
@@ -373,6 +337,7 @@
                     doc.addImage(imgData, 'PNG', 14, 45, 180, 80);
                 }
 
+                // DATA PREP
                 const rawLogs = [];
                 logSnap.forEach(doc => rawLogs.push(doc.data()));
                 rawLogs.sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -385,6 +350,7 @@
 
                 let finalY = 135; 
 
+                // --- COLUMNS ---
                 const columnStyles = {
                     0: { cellWidth: 20 }, 
                     1: { cellWidth: 'auto' }, 
@@ -523,6 +489,7 @@
                 if (!qTerm) return;
                 setLoading(true); setResults([]); setSelectedFood(null);
 
+                // BARCODE
                 if (/^\d+$/.test(qTerm)) {
                     try {
                         let res = await fetch(`https://api.nal.usda.gov/fdc/v1/foods/search?api_key=${API_KEY}&query=${qTerm}&pageSize=1&dataType=Branded,SR Legacy`);
@@ -548,6 +515,7 @@
                     } catch (e) {}
                 }
 
+                // TEXT
                 try {
                     const res = await fetch(`https://api.nal.usda.gov/fdc/v1/foods/search?api_key=${API_KEY}&query=${qTerm}&pageSize=10&dataType=Foundation,SR Legacy,Branded`);
                     const data = await res.json();
@@ -644,25 +612,23 @@
                 fib: acc.fib + (i.fiber||0)
             }), { cals: 0, pro: 0, carb: 0, fat: 0, fib: 0 });
 
-            // --- SCANNER SETUP (SAFE START) ---
+            // --- SCANNER SETUP ---
             useEffect(() => {
                 if (isScanning) {
-                    setTimeout(() => {
-                        const html5QrCode = new Html5Qrcode("reader");
-                        scannerRef.current = html5QrCode;
-                        
-                        const config = { 
-                            fps: 10, qrbox: { width: 250, height: 250 }, 
-                            videoConstraints: { facingMode: { exact: "environment" } } 
-                        };
-                        const fallbackConfig = { fps: 10, qrbox: { width: 250, height: 250 }, videoConstraints: { facingMode: "environment" } };
+                    const html5QrCode = new Html5Qrcode("reader");
+                    scannerRef.current = html5QrCode;
+                    
+                    const config = { 
+                        fps: 10, qrbox: { width: 250, height: 250 }, 
+                        videoConstraints: { facingMode: { exact: "environment" } } 
+                    };
+                    const fallbackConfig = { fps: 10, qrbox: { width: 250, height: 250 }, videoConstraints: { facingMode: "environment" } };
 
-                        html5QrCode.start({ facingMode: { exact: "environment" } }, config, (decodedText) => { 
-                            stopScanner(decodedText); 
-                        }, (err) => {}).catch(err => {
-                            html5QrCode.start({ facingMode: "environment" }, fallbackConfig, (decodedText) => { stopScanner(decodedText); }, ()=>{});
-                        });
-                    }, 100); // 100ms safe delay
+                    html5QrCode.start({ facingMode: { exact: "environment" } }, config, (decodedText) => { 
+                        stopScanner(decodedText); 
+                    }, (err) => {}).catch(err => {
+                        html5QrCode.start({ facingMode: "environment" }, fallbackConfig, (decodedText) => { stopScanner(decodedText); }, ()=>{});
+                    });
                 }
                 return () => { if(scannerRef.current && scannerRef.current.isScanning) scannerRef.current.stop().catch(e=>{}); }
             }, [isScanning]);
@@ -708,7 +674,7 @@
                     </div>
 
                     {/* MACRO DASHBOARD */}
-                    <div className="grid grid-cols-2 md:grid-cols-6 gap-2 mb-6 text-center">
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mb-6 text-center">
                         <div className="bg-brand-card p-3 rounded-xl border border-slate-700">
                             <span className="text-[10px] text-slate-400 uppercase">Calories</span>
                             <div className={`text-lg font-bold ${totals.cals > targets.calories ? 'text-red-400' : 'text-white'}`}>{Math.round(totals.cals)} / {targets.calories}</div>
@@ -729,10 +695,6 @@
                             <span className="text-[10px] text-purple-400 uppercase">Fiber</span>
                             <div className="text-sm font-bold">{Math.round(totals.fib)} / 45g</div>
                         </div>
-                        <div className="bg-brand-card p-3 rounded-xl border border-slate-700">
-                            <span className="text-[10px] text-slate-400 uppercase">Goal Weight</span>
-                            <div className="text-sm font-bold">{profile ? profile.goalWeight + ' lbs' : '--'}</div>
-                        </div>
                     </div>
 
                     {/* MAIN VIEW */}
@@ -746,7 +708,7 @@
                                     <button onClick={()=>{const d=new Date(currentDate);d.setDate(d.getDate()+1);setCurrentDate(d.toISOString().split('T')[0])}} className="p-2 hover:text-brand-green">&gt;</button>
                                 </div>
                                 <div className="flex items-center bg-brand-input rounded-xl px-4 border border-slate-600">
-                                    <span className="text-xs text-slate-400 mr-2 uppercase">TODAY'S WEIGHT:</span>
+                                    <span className="text-xs text-slate-400 mr-2 uppercase">Weight:</span>
                                     <input type="number" value={dailyWeight} onChange={(e)=>setDailyWeight(e.target.value)} onBlur={saveWeight} className="bg-transparent text-white font-bold w-16 text-right focus:outline-none" placeholder="0.0" />
                                     <span className="text-xs text-brand-green ml-1">lbs</span>
                                 </div>
@@ -785,61 +747,82 @@
                             {results.length > 0 && (
                                 <div className="bg-brand-card rounded-xl border border-slate-700 mb-6 max-h-60 overflow-y-auto">
                                     {results.map(food => (
-                                        <div key={food.fdcId} onClick={() => selectFood(food)} className="p-3 border-b border-slate-700 text-slate-300 hover:bg-slate-700 cursor-pointer transition-colors">
+                                        <div key={food.fdcId} onClick={() => selectFood(food)} className="p-3 border-b border-slate-700 text-slate-300 hover:bg-slate-700 cursor-pointer">
                                             {food.description}
                                         </div>
                                     ))}
                                 </div>
                             )}
-                            
+
                             {/* STAGING AREA */}
                             {selectedFood && (
-                                <div className="bg-brand-card rounded-2xl border border-slate-700 p-4 mb-6 animate-fade">
-                                    <div className="flex justify-between items-start mb-4">
-                                        <h3 className="font-bold text-white text-lg flex-1 mr-2">{selectedFood.name}</h3>
-                                        <button onClick={() => setSelectedFood(null)} className="text-slate-500 hover:text-white">x</button>
+                                <div className="bg-brand-card rounded-2xl border border-slate-700 p-4 mb-6">
+                                    <div className="flex justify-between mb-4">
+                                        <h3 className="font-bold text-lg">{selectedFood.name}</h3>
+                                        <button onClick={()=>setSelectedFood(null)} className="text-slate-500">x</button>
                                     </div>
-                                    
-                                    <div className="flex items-center justify-between mb-4 bg-brand-input rounded-xl p-2 border border-slate-600">
-                                         <div className="flex items-center gap-2">
-                                            <input type="number" value={displayAmount} onFocus={(e)=>setDisplayAmount('')} onChange={(e)=>updateAmount(e.target.value)} className="w-20 bg-transparent text-white font-bold text-2xl text-center focus:outline-none placeholder-slate-500" placeholder="0" />
-                                            <button onClick={toggleUnit} className="px-3 py-1 bg-brand-card text-brand-green border border-brand-green rounded-lg font-bold text-xs uppercase hover:bg-brand-green hover:text-brand-navy transition-colors">{measureUnit}</button>
-                                        </div>
-                                        <div className="text-right">
-                                            <span className="block text-2xl font-bold text-white">{Math.round(selectedFood.calories * (selectedFood.userGrams/100))}</span>
-                                            <span className="text-[10px] text-slate-400 uppercase tracking-wider">Calories</span>
-                                        </div>
+                                    <div className="flex items-center gap-4 mb-4">
+                                        <input type="number" value={displayAmount} onChange={e=>{
+                                            setDisplayAmount(e.target.value);
+                                            const val = parseFloat(e.target.value)||0;
+                                            const g = measureUnit === 'oz' ? val*28.35 : val;
+                                            setSelectedFood({...selectedFood, userGrams: g});
+                                        }} className="w-20 bg-brand-input text-center p-2 rounded-lg text-white" />
+                                        <button onClick={toggleUnit} className="text-brand-green font-bold uppercase">{measureUnit}</button>
+                                        <div className="ml-auto text-xl font-bold">{Math.round(selectedFood.calories * (selectedFood.userGrams/100))} <span className="text-xs font-normal">kcal</span></div>
                                     </div>
-                                    
-                                    <div className="grid grid-cols-3 gap-2 mb-4 text-center text-xs text-slate-300">
-                                        <div className="bg-slate-800 p-2 rounded-lg">Pro: {(selectedFood.protein * (selectedFood.userGrams/100)).toFixed(1)}g</div>
-                                        <div className="bg-slate-800 p-2 rounded-lg">Carb: {(selectedFood.carbs * (selectedFood.userGrams/100)).toFixed(1)}g</div>
-                                        <div className="bg-slate-800 p-2 rounded-lg">Fat: {(selectedFood.fat * (selectedFood.userGrams/100)).toFixed(1)}g</div>
-                                    </div>
-
-                                    <button onClick={addToLog} className="w-full py-3 bg-brand-green text-brand-navy font-bold rounded-xl hover:bg-white transition-colors">Add to Daily Log</button>
+                                    <button onClick={()=>addToLog()} className="w-full py-3 bg-brand-green text-brand-navy font-bold rounded-xl hover:bg-white">Add to Log</button>
                                 </div>
                             )}
 
-                            {/* LOG */}
+                            {/* DATA TABLE LOG */}
                             <div className="bg-brand-card rounded-2xl border border-slate-700 overflow-hidden">
                                 <div className="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-800/50">
-                                    <h3 className="font-bold text-white text-sm uppercase tracking-wide">Daily Log</h3>
-                                    <button onClick={exportFullHistory} className="text-xs font-bold text-brand-navy bg-brand-green px-3 py-1 rounded-full hover:bg-white transition-colors">Download PDF</button>
+                                    <h3 className="font-bold text-sm uppercase">Daily Entries</h3>
+                                    <button onClick={exportFullHistory} className="text-xs text-brand-teal hover:underline">Export Full History</button>
                                 </div>
-                                <div className="max-h-[400px] overflow-y-auto">
-                                    {log.map(item => (
-                                        <div key={item.id} className="p-4 border-b border-slate-700 flex justify-between items-center hover:bg-slate-700/30 transition-colors">
-                                            <div className="flex-1 pr-2">
-                                                <div className="text-white text-sm font-bold leading-tight">{item.name}</div>
-                                                <div className="text-xs text-brand-teal mt-1">
-                                                    {Math.round(item.grams)}g <span className="text-slate-500">|</span> {Math.round(item.calories)} kcal <span className="text-slate-500">|</span> P: {Math.round(item.protein)}g
-                                                </div>
-                                            </div>
-                                            <button onClick={() => deleteItem(item.id)} className="text-red-400 hover:text-red-300 p-2 transition-colors">x</button>
-                                        </div>
-                                    ))}
-                                    {log.length === 0 && <div className="p-8 text-center text-slate-500 text-sm">No foods logged for {currentDate}.</div>}
+                                <div className="overflow-x-auto table-scroll">
+                                    <table className="w-full text-xs text-left text-slate-300">
+                                        <thead className="text-xs text-slate-400 uppercase bg-slate-800">
+                                            <tr>
+                                                <th className="px-4 py-3">Time</th>
+                                                <th className="px-4 py-3">Food</th>
+                                                <th className="px-4 py-3">Grams</th>
+                                                <th className="px-4 py-3 text-brand-green">Cals</th>
+                                                <th className="px-4 py-3">Pro</th>
+                                                <th className="px-4 py-3">Carb</th>
+                                                <th className="px-4 py-3">Fat</th>
+                                                <th className="px-4 py-3">Fib</th>
+                                                <th className="px-4 py-3"></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {log.map(item => (
+                                                <tr key={item.id} className="border-b border-slate-700 hover:bg-slate-700/30">
+                                                    <td className="px-4 py-3 font-mono text-slate-500">{item.time}</td>
+                                                    <td className="px-4 py-3 font-medium text-white max-w-[150px] truncate">{item.name}</td>
+                                                    <td className="px-4 py-3">{item.grams > 0 ? Math.round(item.grams) : '-'}</td>
+                                                    <td className="px-4 py-3 font-bold text-white">{item.calories.toFixed(1)}</td>
+                                                    <td className="px-4 py-3 text-brand-teal">{item.protein.toFixed(1)}</td>
+                                                    <td className="px-4 py-3 text-brand-green">{item.carbs.toFixed(1)}</td>
+                                                    <td className="px-4 py-3 text-yellow-400">{item.fat.toFixed(1)}</td>
+                                                    <td className="px-4 py-3 text-purple-400">{(item.fiber || 0).toFixed(1)}</td>
+                                                    <td className="px-4 py-3 text-right">
+                                                        <button onClick={() => deleteItem(item.id)} className="text-red-400 hover:text-red-300">x</button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                            <tr className="bg-slate-800 font-bold text-white">
+                                                <td colSpan="3" className="px-4 py-3 text-right uppercase text-slate-400">Totals</td>
+                                                <td className="px-4 py-3">{totals.cals.toFixed(1)}</td>
+                                                <td className="px-4 py-3">{totals.pro.toFixed(1)}</td>
+                                                <td className="px-4 py-3">{totals.carb.toFixed(1)}</td>
+                                                <td className="px-4 py-3">{totals.fat.toFixed(1)}</td>
+                                                <td className="px-4 py-3">{totals.fib.toFixed(1)}</td>
+                                                <td></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
                                 </div>
                             </div>
                         </>
@@ -876,13 +859,6 @@
                         </div>
                     )}
                     
-                    {/* HARD RESET BUTTON */}
-                    <div className="mt-12 pt-8 border-t border-slate-800 text-center">
-                        <button onClick={hardReset} className="text-xs text-red-500 hover:text-red-400 font-bold uppercase tracking-widest border border-red-900/50 bg-red-900/10 px-6 py-3 rounded-xl transition-all hover:bg-red-900/30">
-                            ⚠ Reset All Data
-                        </button>
-                    </div>
-                    
                     {/* SCANNER OVERLAY */}
                     {isScanning && (
                         <div className="fixed inset-0 z-[60] bg-black/90 flex flex-col items-center justify-center p-4">
@@ -893,6 +869,13 @@
                             </div>
                         </div>
                     )}
+
+                    {/* HARD RESET BUTTON */}
+                    <div className="mt-12 pt-8 border-t border-slate-800 text-center">
+                        <button onClick={hardReset} className="text-xs text-red-500 hover:text-red-400 font-bold uppercase tracking-widest border border-red-900/50 bg-red-900/10 px-6 py-3 rounded-xl transition-all hover:bg-red-900/30">
+                            ⚠ Reset All Data
+                        </button>
+                    </div>
                 </div>
             );
         };
