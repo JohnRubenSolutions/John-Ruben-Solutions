@@ -947,7 +947,10 @@
 
                             {showManual && (
                                 <div className="bg-brand-card p-4 rounded-2xl border border-slate-600 mb-6 animate-fade">
-                                    <h3 className="font-bold mb-3">Add Custom Food</h3>
+                                    <div className="flex justify-between items-center mb-3">
+                                        <h3 className="font-bold">Add Custom Food</h3>
+                                        <button onClick={() => setShowManual(false)} className="text-slate-400 hover:text-white">✕</button>
+                                    </div>
                                     <form onSubmit={submitManual} className="grid grid-cols-2 md:grid-cols-5 gap-3">
                                         <input className="col-span-2 md:col-span-5 p-2 bg-brand-input rounded-lg text-white" placeholder="Food Name" required value={manualForm.name} onChange={e=>setManualForm({...manualForm, name: e.target.value})} />
                                         <input type="number" className="p-2 bg-brand-input rounded-lg text-white" placeholder="Protein (g)" required value={manualForm.p} onChange={e=>setManualForm({...manualForm, p: e.target.value})} />
