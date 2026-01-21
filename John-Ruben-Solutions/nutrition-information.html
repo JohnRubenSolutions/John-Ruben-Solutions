@@ -317,7 +317,6 @@
                     const consistencyScore = totalDays > 0 ? Math.round((loggedDays / totalDays) * 100) : 0;
 
                     let adherenceDays = 0;
-                    let daysWithFood = 0;
                     const target = targets.calories || 2000;
                     const range = target * 0.10; 
                     const minCal = target - range;
@@ -325,13 +324,10 @@
 
                     dates.forEach(d => {
                         const intake = dailyData[d].cals;
-                        if (intake > 0) {
-                            daysWithFood++;
-                            if (intake >= minCal && intake <= maxCal) adherenceDays++;
-                        }
+                        if (intake > 0 && intake >= minCal && intake <= maxCal) adherenceDays++;
                     });
                     
-                    const adherenceScore = daysWithFood > 0 ? Math.round((adherenceDays / daysWithFood) * 100) : 0;
+                    const adherenceScore = totalDays > 0 ? Math.round((adherenceDays / totalDays) * 100) : 0;
                     setScores({ adherence: adherenceScore, consistency: consistencyScore });
                 }
 
@@ -423,7 +419,6 @@
                     localConsistency = totalDays > 0 ? Math.round((loggedDays / totalDays) * 100) : 0;
 
                     let adherenceDays = 0;
-                    let daysWithFood = 0;
                     const target = targets.calories || 2000;
                     const range = target * 0.10; 
                     const minCal = target - range;
@@ -431,12 +426,9 @@
 
                     dates.forEach(d => {
                         const intake = dailyData[d].cals;
-                        if (intake > 0) {
-                            daysWithFood++;
-                            if (intake >= minCal && intake <= maxCal) adherenceDays++;
-                        }
+                        if (intake > 0 && intake >= minCal && intake <= maxCal) adherenceDays++;
                     });
-                    localAdherence = daysWithFood > 0 ? Math.round((adherenceDays / daysWithFood) * 100) : 0;
+                    localAdherence = totalDays > 0 ? Math.round((adherenceDays / totalDays) * 100) : 0;
                 }
 
                 doc.setFontSize(10); doc.setTextColor(0);
