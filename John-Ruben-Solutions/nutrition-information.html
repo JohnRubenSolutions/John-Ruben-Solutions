@@ -317,6 +317,7 @@
                     const consistencyScore = totalDays > 0 ? Math.round((loggedDays / totalDays) * 100) : 0;
 
                     let adherenceDays = 0;
+                    let daysWithFood = 0;
                     const target = targets.calories || 2000;
                     const range = target * 0.10; 
                     const minCal = target - range;
@@ -324,10 +325,13 @@
 
                     dates.forEach(d => {
                         const intake = dailyData[d].cals;
-                        if (intake >= minCal && intake <= maxCal) adherenceDays++;
+                        if (intake > 0) {
+                            daysWithFood++;
+                            if (intake >= minCal && intake <= maxCal) adherenceDays++;
+                        }
                     });
                     
-                    const adherenceScore = loggedDays > 0 ? Math.round((adherenceDays / loggedDays) * 100) : 0;
+                    const adherenceScore = daysWithFood > 0 ? Math.round((adherenceDays / daysWithFood) * 100) : 0;
                     setScores({ adherence: adherenceScore, consistency: consistencyScore });
                 }
 
@@ -348,7 +352,7 @@
 
                 const sortedWeeks = Object.keys(weeklyData).sort(); 
                 const labels = sortedWeeks.map(formatWeekLabel);
-                const avgCals = sortedWeeks.map(w => weeklyData[w].daysWithCals ? weeklyData[w].totalCals / weeklyData[w].daysWithCals : 0);
+                const avgCals = sortedWeeks.map(w => weeklyData[w].daysWithCals ? weeklyData[w].totalCals / weeklyData[w].daysWithCals : null);
                 const avgWeights = sortedWeeks.map(w => weeklyData[w].daysWithWeight ? weeklyData[w].totalWeight / weeklyData[w].daysWithWeight : null);
 
                 if (chartInstance.current) chartInstance.current.destroy();
@@ -358,8 +362,8 @@
                     data: {
                         labels: labels,
                         datasets: [
-                            { label: 'Avg Calories', data: avgCals, borderColor: '#84cc16', yAxisID: 'y', tension: 0.3 },
-                            { label: 'Avg Weight (lbs)', data: avgWeights, borderColor: '#22d3ee', yAxisID: 'y1', tension: 0.3 }
+                            { label: 'Avg Calories', data: avgCals, borderColor: '#84cc16', yAxisID: 'y', tension: 0.3, spanGaps: true },
+                            { label: 'Avg Weight (lbs)', data: avgWeights, borderColor: '#22d3ee', yAxisID: 'y1', tension: 0.3, spanGaps: true }
                         ]
                     },
                     options: {
@@ -419,6 +423,7 @@
                     localConsistency = totalDays > 0 ? Math.round((loggedDays / totalDays) * 100) : 0;
 
                     let adherenceDays = 0;
+                    let daysWithFood = 0;
                     const target = targets.calories || 2000;
                     const range = target * 0.10; 
                     const minCal = target - range;
@@ -426,9 +431,12 @@
 
                     dates.forEach(d => {
                         const intake = dailyData[d].cals;
-                        if (intake >= minCal && intake <= maxCal) adherenceDays++;
+                        if (intake > 0) {
+                            daysWithFood++;
+                            if (intake >= minCal && intake <= maxCal) adherenceDays++;
+                        }
                     });
-                    localAdherence = loggedDays > 0 ? Math.round((adherenceDays / loggedDays) * 100) : 0;
+                    localAdherence = daysWithFood > 0 ? Math.round((adherenceDays / daysWithFood) * 100) : 0;
                 }
 
                 doc.setFontSize(10); doc.setTextColor(0);
