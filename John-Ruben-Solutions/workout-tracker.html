@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>John Ruben Solutions - Advanced Workout Tracker</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, query, where, onSnapshot, deleteDoc, doc, setDoc, getDoc, orderBy, serverTimestamp, getDocs, limit, writeBatch } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        
+        const firebaseConfig = {
+            apiKey: "AIzaSyD2h_sejv6lB8sFC15xHSgqxfdD2hLd5Kg",
+            authDomain: "john-ruben-solutions.firebaseapp.com",
+            projectId: "john-ruben-solutions",
+            storageBucket: "john-ruben-solutions.firebasestorage.app",
+            messagingSenderId: "761855596159",
+            appId: "1:761855596159:web:a4bbe805663c2304c5d14a"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const googleProvider = new GoogleAuthProvider();
+        
+        window.fb = { auth, db, googleProvider, signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, collection, addDoc, query, where, onSnapshot, deleteDoc, doc, setDoc, getDoc, getDocs, orderBy, serverTimestamp, limit, writeBatch };
+    </script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: { navy: '#0f172a', dark: '#020617', card: '#1e293b', green: '#84cc16', teal: '#22d3ee', input: '#334155' }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #0f172a; color: #f8fafc; font-family: 'Plus Jakarta Sans', sans-serif; }
+        .active-timer { animation: pulse 2s infinite; color: #84cc16; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        const SCHEDULE = {
+            1: { name: "Monday", exercises: [
+                { name: "Jog in place", type: "timer-sets", sets: 5, time: 120 },
+                { name: "Dumbbell Front Raise", type: "lifting", sets: 3 },
+                { name: "Dumbbell Lateral Raise", type: "lifting", sets: 3 },
+                { name: "Dumbbell Bicep Curl", type: "lifting", sets: 3 },
+                { name: "Cable Tricep Pushdown", type: "lifting", sets: 3 },
+                { name: "Stability Ball Hyperextension", type: "lifting", sets: 3 },
+                { name: "Exercise Ball Crunch", type: "lifting", sets: 3 }
+            ]},
+            2: { name: "Tuesday", exercises: [{ name: "Running", type: "cardio-hr", time: 3600 }] },
+            3: { name: "Wednesday", exercises: [
+                { name: "Pull Ups", type: "lifting", sets: 3 },
+                { name: "Pushups", type: "lifting", sets: 5 }
+            ]},
+            4: { name: "Thursday", exercises: [{ name: "Running", type: "cardio", time: 3600 }] },
+            5: { name: "Friday", exercises: [
+                { name: "Hip Bridge Thrusts", type: "lifting", sets: 3 },
+                { name: "Air Squats", type: "lifting", sets: 3 },
+                { name: "Side Leg Raises", type: "lifting", sets: 3 },
+                { name: "Standing Hip Adduction", type: "lifting", sets: 3 },
+                { name: "Leg Raises", type: "lifting", sets: 3 }
+            ]},
+            6: { name: "Saturday", exercises: [{ name: "Running", type: "cardio", time: 3600 }] },
+            0: { name: "Sunday", exercises: [{ name: "Running", type: "cardio", time: 3600 }] }
+        };
+
+        const AuthScreen = () => {
+            const [isRegister, setIsRegister] = useState(false);
+            const [email, setEmail] = useState("");
+            const [password, setPassword] = useState("");
+            const [error, setError] = useState("");
+
+            const handleGoogleLogin = async () => {
+                try { await window.fb.signInWithPopup(window.fb.auth, window.fb.googleProvider); } 
+                catch (err) { setError(err.message); }
+            };
+
+            const handleSubmit = async (e) => {
+                e.preventDefault();
+                try {
+                    if (isRegister) await window.fb.createUserWithEmailAndPassword(window.fb.auth, email, password);
+                    else await window.fb.signInWithEmailAndPassword(window.fb.auth, email, password);
+                } catch (err) { setError(err.message); }
+            };
+
+            return (
+                <div className="min-h-screen flex items-center justify-center p-4">
+                    <div className="bg-brand-card p-8 rounded-3xl w-full max-w-sm border border-slate-700">
+                        <h2 className="text-xl font-bold text-white mb-6 text-center">{isRegister ? "Join Elite Tracker" : "Workout Login"}</h2>
+                        <button onClick={handleGoogleLogin} className="w-full py-3 bg-white text-slate-900 font-bold rounded-xl mb-4 flex items-center justify-center gap-2">
+                            Continue with Google
+                        </button>
+                        <form onSubmit={handleSubmit}>
+                            <input type="email" placeholder="Email" className="w-full p-3 mb-4 bg-brand-input rounded-xl text-white outline-none" value={email} onChange={e=>setEmail(e.target.value)} />
+                            <input type="password" placeholder="Password" className="w-full p-3 mb-6 bg-brand-input rounded-xl text-white outline-none" value={password} onChange={e=>setPassword(e.target.value)} />
+                            {error && <p className="text-red-500 text-xs mb-4 text-center">{error}</p>}
+                            <button type="submit" className="w-full py-3 bg-brand-navy border border-brand-green text-brand-green font-bold rounded-xl">{isRegister ? "Sign Up" : "Log In"}</button>
+                        </form>
+                        <button onClick={()=>setIsRegister(!isRegister)} className="w-full mt-4 text-xs text-slate-400 underline">{isRegister ? "Have an account? Log In" : "Need account? Sign Up"}</button>
+                    </div>
+                </div>
+            );
+        };
+
+        const Timer = ({ seconds, label }) => {
+            const [timeLeft, setTimeLeft] = useState(seconds);
+            const [isActive, setIsActive] = useState(false);
+            useEffect(() => {
+                let iter = null;
+                if (isActive && timeLeft > 0) iter = setInterval(() => setTimeLeft(t => t - 1), 1000);
+                else clearInterval(iter);
+                return () => clearInterval(iter);
+            }, [isActive, timeLeft]);
+            const fmt = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+            return (
+                <div className="flex items-center justify-between bg-slate-800/50 p-3 rounded-xl border border-slate-700 mb-2">
+                    <span className="text-xs text-slate-400 font-bold">{label}</span>
+                    <div className="flex items-center gap-4">
+                        <span className={`font-mono text-xl ${isActive ? 'active-timer' : 'text-slate-500'}`}>{fmt(timeLeft)}</span>
+                        <button onClick={() => setIsActive(!isActive)} className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase ${isActive ? 'bg-red-500/20 text-red-400' : 'bg-brand-green text-brand-navy'}`}>
+                            {isActive ? 'Stop' : 'Start'}
+                        </button>
+                    </div>
+                </div>
+            );
+        };
+
+        const App = () => {
+            const [user, setUser] = useState(null);
+            const [logs, setLogs] = useState([]);
+            const [history, setHistory] = useState({});
+            const [customSets, setCustomSets] = useState({});
+            const [currentDate] = useState(new Date().toISOString().split('T')[0]);
+            const [day] = useState(new Date().getDay());
+
+            useEffect(() => {
+                const unsubscribe = window.fb.onAuthStateChanged(window.fb.auth, (u) => {
+                    setUser(u);
+                    if(u) loadData(u.uid);
+                });
+                return () => unsubscribe();
+            }, []);
+
+            const loadData = (uid) => {
+                const q = window.fb.query(window.fb.collection(window.fb.db, "users", uid, "workout_logs"), window.fb.where("date", "==", currentDate));
+                window.fb.onSnapshot(q, (snap) => {
+                    setLogs(snap.docs.map(d => ({id: d.id, ...d.data()})));
+                });
+                
+                // Fetch Historical Reminders
+                SCHEDULE[day].exercises.forEach(async (ex) => {
+                    const hQ = window.fb.query(
+                        window.fb.collection(window.fb.db, "users", uid, "workout_logs"),
+                        window.fb.where("exercise", "==", ex.name),
+                        window.fb.orderBy("timestamp", "desc"),
+                        window.fb.limit(1)
+                    );
+                    const hSnap = await window.fb.getDocs(hQ);
+                    if(!hSnap.empty) setHistory(prev => ({...prev, [ex.name]: hSnap.docs[0].data()}));
+                });
+            };
+
+            const saveEntry = async (exName, setIdx, reps, weight) => {
+                if(!user) return;
+                await window.fb.addDoc(window.fb.collection(window.fb.db, "users", user.uid, "workout_logs"), {
+                    exercise: exName,
+                    setIndex: setIdx,
+                    reps: parseInt(reps),
+                    weight: parseFloat(weight),
+                    volume: parseInt(reps) * parseFloat(weight),
+                    date: currentDate,
+                    timestamp: window.fb.serverTimestamp()
+                });
+            };
+
+            const downloadPDF = () => {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                doc.text(`Workout Report: ${currentDate}`, 14, 15);
+                doc.autoTable({
+                    startY: 25,
+                    head: [['Exercise', 'Reps', 'Weight', 'Volume']],
+                    body: logs.map(l => [l.exercise, l.reps, l.weight + ' lbs', l.volume + ' lbs']),
+                });
+                doc.save(`Workout_${currentDate}.pdf`);
+            };
+
+            if (!user) return <AuthScreen />;
+
+            const totalVolume = logs.reduce((acc, curr) => acc + (curr.volume || 0), 0);
+
+            return (
+                <div className="max-w-md mx-auto p-4 pb-20">
+                    <header className="flex justify-between items-end mb-8 border-b border-slate-800 pb-4">
+                        <div>
+                            <h1 className="text-2xl font-black text-brand-green leading-tight">ELITE LOG</h1>
+                            <p className="text-slate-500 text-xs font-bold uppercase">{SCHEDULE[day].name} Routine</p>
+                        </div>
+                        <div className="text-right">
+                            <p className="text-[10px] text-slate-500 uppercase">Daily Volume</p>
+                            <p className="text-xl font-bold text-brand-teal">{totalVolume.toLocaleString()} lbs</p>
+                        </div>
+                    </header>
+
+                    <div className="space-y-6">
+                        {SCHEDULE[day].exercises.map((ex, i) => (
+                            <div key={i} className="bg-brand-card rounded-2xl p-5 border border-slate-700">
+                                <div className="flex justify-between items-center mb-4">
+                                    <h3 className="font-extrabold text-white">{ex.name}</h3>
+                                    <button onClick={() => setCustomSets(p => ({...p, [ex.name]: (p[ex.name]||0)+1}))} className="text-[10px] bg-slate-700 px-2 py-1 rounded">+ Add Set</button>
+                                </div>
+
+                                {ex.type === 'timer-sets' && [...Array(ex.sets)].map((_, s) => <Timer key={s} label={`SET ${s+1}`} seconds={ex.time} />)}
+                                
+                                {ex.type === 'lifting' && (
+                                    <div className="space-y-4">
+                                        {[...Array(ex.sets + (customSets[ex.name] || 0))].map((_, s) => (
+                                            <div key={s} className="grid grid-cols-2 gap-3 p-3 bg-slate-800/30 rounded-xl">
+                                                <div className="relative">
+                                                    <input type="number" placeholder="Reps" className="w-full bg-brand-input p-2 rounded-lg text-center text-sm outline-none" onBlur={(e) => {
+                                                        const w = e.target.closest('.grid').querySelector('.w-in').value;
+                                                        if(e.target.value && w) saveEntry(ex.name, s, e.target.value, w);
+                                                    }} />
+                                                    {history[ex.name] && <p className="text-[9px] text-slate-500 mt-1">Last: {history[ex.name].reps}r</p>}
+                                                </div>
+                                                <div className="relative">
+                                                    <input type="number" placeholder="Lbs" className="w-in w-full bg-brand-input p-2 rounded-lg text-center text-sm outline-none" />
+                                                    {history[ex.name] && <p className="text-[9px] text-slate-500 mt-1">Last: {history[ex.name].weight}lb</p>}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+
+                                {ex.type.includes('cardio') && (
+                                    <div className="space-y-3">
+                                        <Timer label="SESSION" seconds={ex.time} />
+                                        {ex.type === 'cardio-hr' && <input type="number" placeholder="Avg Heart Rate" className="w-full bg-brand-input p-3 rounded-xl text-center outline-none border border-slate-700" onBlur={(e) => saveEntry(ex.name, 0, 0, e.target.value)} />}
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+
+                    <div className="fixed bottom-0 left-0 right-0 p-4 bg-brand-navy/90 flex gap-2">
+                        <button onClick={downloadPDF} className="flex-1 bg-brand-green text-brand-navy font-black py-4 rounded-2xl">DOWNLOAD PDF</button>
+                        <button onClick={() => window.fb.signOut(window.fb.auth)} className="bg-slate-800 p-4 rounded-2xl text-red-400">Exit</button>
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
