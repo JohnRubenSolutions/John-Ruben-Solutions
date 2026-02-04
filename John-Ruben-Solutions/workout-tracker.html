@@ -153,25 +153,32 @@
             const [logs, setLogs] = useState([]);
             const [history, setHistory] = useState({});
             const [customSets, setCustomSets] = useState({});
-            const [currentDate] = useState(new Date().toISOString().split('T')[0]);
-            const [day] = useState(new Date().getDay());
+            const [currentDate, setCurrentDate] = useState(new Date());
+
+            // Derived values
+            const dateStr = currentDate.toISOString().split('T')[0];
+            const dayOfWeek = currentDate.getDay();
 
             useEffect(() => {
                 const unsubscribe = window.fb.onAuthStateChanged(window.fb.auth, (u) => {
                     setUser(u);
-                    if(u) loadData(u.uid);
                 });
                 return () => unsubscribe();
             }, []);
 
+            useEffect(() => {
+                if (user) loadData(user.uid);
+            }, [user, dateStr]);
+
             const loadData = (uid) => {
-                const q = window.fb.query(window.fb.collection(window.fb.db, "users", uid, "workout_logs"), window.fb.where("date", "==", currentDate));
-                window.fb.onSnapshot(q, (snap) => {
+                // Fetch logs for the selected date
+                const q = window.fb.query(window.fb.collection(window.fb.db, "users", uid, "workout_logs"), window.fb.where("date", "==", dateStr));
+                const unsubSnap = window.fb.onSnapshot(q, (snap) => {
                     setLogs(snap.docs.map(d => ({id: d.id, ...d.data()})));
                 });
                 
-                // Fetch Historical Reminders
-                SCHEDULE[day].exercises.forEach(async (ex) => {
+                // Fetch Historical Data (Last session ever) for each exercise in today's routine
+                SCHEDULE[dayOfWeek].exercises.forEach(async (ex) => {
                     const hQ = window.fb.query(
                         window.fb.collection(window.fb.db, "users", uid, "workout_logs"),
                         window.fb.where("exercise", "==", ex.name),
@@ -181,17 +188,25 @@
                     const hSnap = await window.fb.getDocs(hQ);
                     if(!hSnap.empty) setHistory(prev => ({...prev, [ex.name]: hSnap.docs[0].data()}));
                 });
+
+                return unsubSnap;
+            };
+
+            const changeDate = (offset) => {
+                const newDate = new Date(currentDate);
+                newDate.setDate(newDate.getDate() + offset);
+                setCurrentDate(newDate);
             };
 
             const saveEntry = async (exName, setIdx, reps, weight) => {
-                if(!user) return;
+                if(!user || !reps || !weight) return;
                 await window.fb.addDoc(window.fb.collection(window.fb.db, "users", user.uid, "workout_logs"), {
                     exercise: exName,
                     setIndex: setIdx,
                     reps: parseInt(reps),
                     weight: parseFloat(weight),
                     volume: parseInt(reps) * parseFloat(weight),
-                    date: currentDate,
+                    date: dateStr,
                     timestamp: window.fb.serverTimestamp()
                 });
             };
@@ -199,13 +214,13 @@
             const downloadPDF = () => {
                 const { jsPDF } = window.jspdf;
                 const doc = new jsPDF();
-                doc.text(`Workout Report: ${currentDate}`, 14, 15);
+                doc.text(`Workout Report: ${dateStr}`, 14, 15);
                 doc.autoTable({
                     startY: 25,
                     head: [['Exercise', 'Reps', 'Weight', 'Volume']],
                     body: logs.map(l => [l.exercise, l.reps, l.weight + ' lbs', l.volume + ' lbs']),
                 });
-                doc.save(`Workout_${currentDate}.pdf`);
+                doc.save(`Workout_${dateStr}.pdf`);
             };
 
             if (!user) return <AuthScreen />;
@@ -214,58 +229,110 @@
 
             return (
                 <div className="max-w-md mx-auto p-4 pb-20">
-                    <header className="flex justify-between items-end mb-8 border-b border-slate-800 pb-4">
-                        <div>
-                            <h1 className="text-2xl font-black text-brand-green leading-tight">ELITE LOG</h1>
-                            <p className="text-slate-500 text-xs font-bold uppercase">{SCHEDULE[day].name} Routine</p>
+                    <header className="mb-8 border-b border-slate-800 pb-4">
+                        <div className="flex justify-between items-end mb-4">
+                            <div>
+                                <h1 className="text-2xl font-black text-brand-green leading-tight">ELITE LOG</h1>
+                                <p className="text-slate-500 text-xs font-bold uppercase">{SCHEDULE[dayOfWeek].name} Routine</p>
+                            </div>
+                            <div className="text-right">
+                                <p className="text-[10px] text-slate-500 uppercase">Daily Volume</p>
+                                <p className="text-xl font-bold text-brand-teal">{totalVolume.toLocaleString()} lbs</p>
+                            </div>
                         </div>
-                        <div className="text-right">
-                            <p className="text-[10px] text-slate-500 uppercase">Daily Volume</p>
-                            <p className="text-xl font-bold text-brand-teal">{totalVolume.toLocaleString()} lbs</p>
+
+                        {/* Date Navigation */}
+                        <div className="flex items-center justify-between bg-slate-800/50 p-2 rounded-xl border border-slate-700">
+                            <button onClick={() => changeDate(-1)} className="p-2 hover:bg-slate-700 rounded-lg text-brand-green">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+                                </svg>
+                            </button>
+                            <span className="font-bold text-sm text-slate-200">
+                                {currentDate.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
+                            </span>
+                            <button onClick={() => changeDate(1)} className="p-2 hover:bg-slate-700 rounded-lg text-brand-green">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                                </svg>
+                            </button>
                         </div>
                     </header>
 
                     <div className="space-y-6">
-                        {SCHEDULE[day].exercises.map((ex, i) => (
-                            <div key={i} className="bg-brand-card rounded-2xl p-5 border border-slate-700">
-                                <div className="flex justify-between items-center mb-4">
-                                    <h3 className="font-extrabold text-white">{ex.name}</h3>
-                                    <button onClick={() => setCustomSets(p => ({...p, [ex.name]: (p[ex.name]||0)+1}))} className="text-[10px] bg-slate-700 px-2 py-1 rounded">+ Add Set</button>
+                        {SCHEDULE[dayOfWeek].exercises.map((ex, i) => {
+                            // Filter logs for this specific exercise to pre-populate inputs if they exist
+                            const exerciseLogs = logs.filter(l => l.exercise === ex.name);
+                            
+                            return (
+                                <div key={i} className="bg-brand-card rounded-2xl p-5 border border-slate-700">
+                                    <div className="flex justify-between items-center mb-4">
+                                        <h3 className="font-extrabold text-white">{ex.name}</h3>
+                                        <button onClick={() => setCustomSets(p => ({...p, [ex.name]: (p[ex.name]||0)+1}))} className="text-[10px] bg-slate-700 px-2 py-1 rounded">+ Add Set</button>
+                                    </div>
+
+                                    {ex.type === 'timer-sets' && [...Array(ex.sets)].map((_, s) => <Timer key={s} label={`SET ${s+1}`} seconds={ex.time} />)}
+                                    
+                                    {ex.type === 'lifting' && (
+                                        <div className="space-y-4">
+                                            {[...Array(ex.sets + (customSets[ex.name] || 0))].map((_, s) => {
+                                                const existingSet = exerciseLogs.find(l => l.setIndex === s);
+                                                const lastWeight = history[ex.name]?.weight || "";
+
+                                                return (
+                                                    <div key={s} className="grid grid-cols-2 gap-3 p-3 bg-slate-800/30 rounded-xl">
+                                                        <div className="relative">
+                                                            <input 
+                                                                type="number" 
+                                                                placeholder="Reps" 
+                                                                defaultValue={existingSet?.reps || ""}
+                                                                className="w-full bg-brand-input p-2 rounded-lg text-center text-sm outline-none" 
+                                                                onBlur={(e) => {
+                                                                    const w = e.target.closest('.grid').querySelector('.w-in').value;
+                                                                    if(e.target.value && w) saveEntry(ex.name, s, e.target.value, w);
+                                                                }} 
+                                                            />
+                                                            {history[ex.name] && <p className="text-[9px] text-slate-500 mt-1 uppercase tracking-tighter">Last: {history[ex.name].reps} reps</p>}
+                                                        </div>
+                                                        <div className="relative">
+                                                            <input 
+                                                                type="number" 
+                                                                placeholder="Lbs" 
+                                                                defaultValue={existingSet?.weight || lastWeight}
+                                                                className="w-in w-full bg-brand-input p-2 rounded-lg text-center text-sm outline-none" 
+                                                                onBlur={(e) => {
+                                                                    const r = e.target.closest('.grid').querySelector('input[placeholder="Reps"]').value;
+                                                                    if(e.target.value && r) saveEntry(ex.name, s, r, e.target.value);
+                                                                }}
+                                                            />
+                                                            {history[ex.name] && <p className="text-[9px] text-slate-500 mt-1 uppercase tracking-tighter">Last: {history[ex.name].weight} lbs</p>}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+
+                                    {ex.type.includes('cardio') && (
+                                        <div className="space-y-3">
+                                            <Timer label="SESSION" seconds={ex.time} />
+                                            {ex.type === 'cardio-hr' && (
+                                                <input 
+                                                    type="number" 
+                                                    placeholder="Avg Heart Rate" 
+                                                    defaultValue={exerciseLogs[0]?.weight || ""}
+                                                    className="w-full bg-brand-input p-3 rounded-xl text-center outline-none border border-slate-700" 
+                                                    onBlur={(e) => saveEntry(ex.name, 0, 0, e.target.value)} 
+                                                />
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
-
-                                {ex.type === 'timer-sets' && [...Array(ex.sets)].map((_, s) => <Timer key={s} label={`SET ${s+1}`} seconds={ex.time} />)}
-                                
-                                {ex.type === 'lifting' && (
-                                    <div className="space-y-4">
-                                        {[...Array(ex.sets + (customSets[ex.name] || 0))].map((_, s) => (
-                                            <div key={s} className="grid grid-cols-2 gap-3 p-3 bg-slate-800/30 rounded-xl">
-                                                <div className="relative">
-                                                    <input type="number" placeholder="Reps" className="w-full bg-brand-input p-2 rounded-lg text-center text-sm outline-none" onBlur={(e) => {
-                                                        const w = e.target.closest('.grid').querySelector('.w-in').value;
-                                                        if(e.target.value && w) saveEntry(ex.name, s, e.target.value, w);
-                                                    }} />
-                                                    {history[ex.name] && <p className="text-[9px] text-slate-500 mt-1">Last: {history[ex.name].reps}r</p>}
-                                                </div>
-                                                <div className="relative">
-                                                    <input type="number" placeholder="Lbs" className="w-in w-full bg-brand-input p-2 rounded-lg text-center text-sm outline-none" />
-                                                    {history[ex.name] && <p className="text-[9px] text-slate-500 mt-1">Last: {history[ex.name].weight}lb</p>}
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-
-                                {ex.type.includes('cardio') && (
-                                    <div className="space-y-3">
-                                        <Timer label="SESSION" seconds={ex.time} />
-                                        {ex.type === 'cardio-hr' && <input type="number" placeholder="Avg Heart Rate" className="w-full bg-brand-input p-3 rounded-xl text-center outline-none border border-slate-700" onBlur={(e) => saveEntry(ex.name, 0, 0, e.target.value)} />}
-                                    </div>
-                                )}
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
 
-                    <div className="fixed bottom-0 left-0 right-0 p-4 bg-brand-navy/90 flex gap-2">
+                    <div className="fixed bottom-0 left-0 right-0 p-4 bg-brand-navy/90 flex gap-2 backdrop-blur-md">
                         <button onClick={downloadPDF} className="flex-1 bg-brand-green text-brand-navy font-black py-4 rounded-2xl">DOWNLOAD PDF</button>
                         <button onClick={() => window.fb.signOut(window.fb.auth)} className="bg-slate-800 p-4 rounded-2xl text-red-400">Exit</button>
                     </div>
