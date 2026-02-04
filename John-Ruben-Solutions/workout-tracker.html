@@ -200,12 +200,20 @@
 
             const saveEntry = async (exName, setIdx, reps, weight) => {
                 if(!user || !reps || !weight) return;
-                await window.fb.addDoc(window.fb.collection(window.fb.db, "users", user.uid, "workout_logs"), {
+                
+                const repVal = parseInt(reps);
+                const weightVal = parseFloat(weight);
+                const volumeVal = repVal * weightVal;
+
+                // We use setDoc with a deterministic ID to avoid duplicate set entries for the same index on the same day
+                const entryId = `${dateStr}_${exName.replace(/\s+/g, '_')}_set${setIdx}`;
+                
+                await window.fb.setDoc(window.fb.doc(window.fb.db, "users", user.uid, "workout_logs", entryId), {
                     exercise: exName,
                     setIndex: setIdx,
-                    reps: parseInt(reps),
-                    weight: parseFloat(weight),
-                    volume: parseInt(reps) * parseFloat(weight),
+                    reps: repVal,
+                    weight: weightVal,
+                    volume: volumeVal,
                     date: dateStr,
                     timestamp: window.fb.serverTimestamp()
                 });
@@ -225,7 +233,8 @@
 
             if (!user) return <AuthScreen />;
 
-            const totalVolume = logs.reduce((acc, curr) => acc + (curr.volume || 0), 0);
+            // REPAIRED VOLUME CALCULATION: Adding up every logged set's volume for the selected day
+            const totalVolume = logs.reduce((acc, curr) => acc + (Number(curr.volume) || 0), 0);
 
             return (
                 <div className="max-w-md mx-auto p-4 pb-20">
@@ -288,8 +297,8 @@
                                                                 defaultValue={existingSet?.reps || ""}
                                                                 className="w-full bg-brand-input p-2 rounded-lg text-center text-sm outline-none" 
                                                                 onBlur={(e) => {
-                                                                    const w = e.target.closest('.grid').querySelector('.w-in').value;
-                                                                    if(e.target.value && w) saveEntry(ex.name, s, e.target.value, w);
+                                                                    const wIn = e.target.closest('.grid').querySelector('.w-in');
+                                                                    if(e.target.value && wIn.value) saveEntry(ex.name, s, e.target.value, wIn.value);
                                                                 }} 
                                                             />
                                                             {history[ex.name] && <p className="text-[9px] text-slate-500 mt-1 uppercase tracking-tighter">Last: {history[ex.name].reps} reps</p>}
@@ -301,8 +310,8 @@
                                                                 defaultValue={existingSet?.weight || lastWeight}
                                                                 className="w-in w-full bg-brand-input p-2 rounded-lg text-center text-sm outline-none" 
                                                                 onBlur={(e) => {
-                                                                    const r = e.target.closest('.grid').querySelector('input[placeholder="Reps"]').value;
-                                                                    if(e.target.value && r) saveEntry(ex.name, s, r, e.target.value);
+                                                                    const rIn = e.target.closest('.grid').querySelector('input[placeholder="Reps"]');
+                                                                    if(e.target.value && rIn.value) saveEntry(ex.name, s, rIn.value, e.target.value);
                                                                 }}
                                                             />
                                                             {history[ex.name] && <p className="text-[9px] text-slate-500 mt-1 uppercase tracking-tighter">Last: {history[ex.name].weight} lbs</p>}
@@ -322,7 +331,7 @@
                                                     placeholder="Avg Heart Rate" 
                                                     defaultValue={exerciseLogs[0]?.weight || ""}
                                                     className="w-full bg-brand-input p-3 rounded-xl text-center outline-none border border-slate-700" 
-                                                    onBlur={(e) => saveEntry(ex.name, 0, 0, e.target.value)} 
+                                                    onBlur={(e) => saveEntry(ex.name, 0, 1, e.target.value)} 
                                                 />
                                             )}
                                         </div>
