@@ -19,7 +19,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, query, where, onSnapshot, deleteDoc, doc, setDoc, getDoc, orderBy, serverTimestamp, getDocs, limit, writeBatch } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         
         const firebaseConfig = {
@@ -37,7 +37,7 @@
         const db = getFirestore(app);
         const googleProvider = new GoogleAuthProvider();
         
-        window.fb = { auth, db, googleProvider, signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, collection, addDoc, query, where, onSnapshot, deleteDoc, doc, setDoc, getDoc, getDocs, orderBy, serverTimestamp, limit, writeBatch };
+        window.fb = { auth, db, googleProvider, signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, sendPasswordResetEmail, collection, addDoc, query, where, onSnapshot, deleteDoc, doc, setDoc, getDoc, getDocs, orderBy, serverTimestamp, limit, writeBatch };
     </script>
     
     <script>
@@ -96,32 +96,82 @@
 
         const AuthScreen = () => {
             const [isRegister, setIsRegister] = useState(false);
+            const [isReset, setIsReset] = useState(false);
             const [email, setEmail] = useState("");
             const [password, setPassword] = useState("");
             const [error, setError] = useState("");
+            const [successMsg, setSuccessMsg] = useState("");
+
             const handleGoogleLogin = async () => {
                 try { await window.fb.signInWithPopup(window.fb.auth, window.fb.googleProvider); } 
                 catch (err) { setError(err.message); }
             };
+
             const handleSubmit = async (e) => {
                 e.preventDefault();
+                setError(""); setSuccessMsg("");
                 try {
-                    if (isRegister) await window.fb.createUserWithEmailAndPassword(window.fb.auth, email, password);
-                    else await window.fb.signInWithEmailAndPassword(window.fb.auth, email, password);
+                    if (isReset) {
+                        await window.fb.sendPasswordResetEmail(window.fb.auth, email);
+                        setSuccessMsg("Reset link sent! Check your email.");
+                        setTimeout(() => setIsReset(false), 3000);
+                    } else if (isRegister) {
+                        await window.fb.createUserWithEmailAndPassword(window.fb.auth, email, password);
+                    } else {
+                        await window.fb.signInWithEmailAndPassword(window.fb.auth, email, password);
+                    }
                 } catch (err) { setError(err.message); }
             };
+
             return (
                 <div className="min-h-screen flex items-center justify-center p-4">
-                    <div className="bg-brand-card p-8 rounded-3xl w-full max-w-sm border border-slate-700 shadow-2xl">
-                        <h2 className="text-xl font-bold text-white mb-6 text-center">{isRegister ? "Join Elite Tracker" : "Elite Login"}</h2>
-                        <button onClick={handleGoogleLogin} className="w-full py-3 bg-white text-slate-900 font-bold rounded-xl mb-4 flex items-center justify-center gap-2 hover:bg-slate-200 transition-colors">Continue with Google</button>
+                    <div className="bg-brand-card p-8 rounded-3xl w-full max-w-sm border border-slate-700 shadow-2xl animate-fade">
+                        <h2 className="text-xl font-bold text-white mb-6 text-center">
+                            {isReset ? "Reset Password" : (isRegister ? "Join Elite Tracker" : "Elite Login")}
+                        </h2>
+                        
+                        {!isReset && (
+                            <button onClick={handleGoogleLogin} className="w-full py-3 bg-white text-slate-900 font-bold rounded-xl mb-4 flex items-center justify-center gap-2 hover:bg-slate-200 transition-colors">Continue with Google</button>
+                        )}
+
                         <form onSubmit={handleSubmit}>
-                            <input type="email" placeholder="Email" className="w-full p-3 mb-4 bg-brand-input rounded-xl text-white outline-none" value={email} onChange={e=>setEmail(e.target.value)} />
-                            <input type="password" placeholder="Password" className="w-full p-3 mb-6 bg-brand-input rounded-xl text-white outline-none" value={password} onChange={e=>setPassword(e.target.value)} />
+                            <input type="email" placeholder="Email" className="w-full p-3 mb-4 bg-brand-input rounded-xl text-white outline-none" value={email} onChange={e=>setEmail(e.target.value)} required />
+                            
+                            {!isReset && (
+                                <input type="password" placeholder="Password" className="w-full p-3 mb-6 bg-brand-input rounded-xl text-white outline-none" value={password} onChange={e=>setPassword(e.target.value)} required />
+                            )}
+
                             {error && <p className="text-red-500 text-xs mb-4 text-center">{error}</p>}
-                            <button type="submit" className="w-full py-3 bg-brand-navy border border-brand-green text-brand-green font-bold rounded-xl hover:bg-brand-green hover:text-brand-navy transition-all">{isRegister ? "Sign Up" : "Log In"}</button>
+                            {successMsg && <p className="text-green-400 text-xs mb-4 text-center">{successMsg}</p>}
+
+                            <button type="submit" className="w-full py-3 bg-brand-navy border border-brand-green text-brand-green font-bold rounded-xl hover:bg-brand-green hover:text-brand-navy transition-all">
+                                {isReset ? "Send Reset Link" : (isRegister ? "Sign Up" : "Log In")}
+                            </button>
                         </form>
-                        <button onClick={()=>setIsRegister(!isRegister)} className="w-full mt-4 text-xs text-slate-400 underline">{isRegister ? "Already have an account? Log In" : "Need account? Sign Up"}</button>
+
+                        {!isReset && !isRegister && (
+                            <button onClick={() => { setIsReset(true); setError(""); }} className="w-full mt-4 text-xs text-brand-teal hover:underline">
+                                Forgot Password?
+                            </button>
+                        )}
+
+                        {isReset ? (
+                            <button onClick={() => { setIsReset(false); setError(""); }} className="w-full mt-4 text-xs text-slate-400 underline">
+                                Back to Login
+                            </button>
+                        ) : (
+                            <button onClick={()=>{setIsRegister(!isRegister); setError("");}} className="w-full mt-4 text-xs text-slate-400 underline">
+                                {isRegister ? "Already have an account? Log In" : "Need account? Sign Up"}
+                            </button>
+                        )}
+
+                        {/* New User Instructions */}
+                        <div className="mt-8 pt-4 border-t border-slate-700 text-center">
+                            <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider mb-2">New User Guide</p>
+                            <p className="text-[11px] text-slate-400 leading-relaxed">
+                                To create a new account, simply click <strong>"Need account? Sign Up"</strong> above. Enter your email and a secure password, then click <strong>Sign Up</strong> to instantly access your dashboard.
+                            </p>
+                        </div>
                     </div>
                 </div>
             );
