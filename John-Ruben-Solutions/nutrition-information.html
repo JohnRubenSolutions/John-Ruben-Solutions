@@ -273,6 +273,7 @@
                         const res = await fetch(`https://api.nal.usda.gov/fdc/v1/foods/search?api_key=${API_KEY}&query=${qTerm}&pageSize=1&dataType=Branded,SR Legacy`);
                         const data = await res.json();
                         if (data.foods && data.foods.length > 0) { 
+                            // Try to select, but handle potential detail fetch errors
                             await selectFood(data.foods[0]); 
                             setLoading(false); 
                             return; 
@@ -291,29 +292,46 @@
 
             const selectFood = async (food) => {
                 setLoading(true);
+                let foodDetails = food; // Default to the basic food object
+                let nutrients = food.foodNutrients || []; // Default nutrients
+
                 try {
+                    // Try to fetch detailed data
                     const res = await fetch(`https://api.nal.usda.gov/fdc/v1/food/${food.fdcId}?api_key=${API_KEY}`);
-                    const d = await res.json();
-                    // Enhanced Nutrient Extraction for Branded vs Foundation
-                    const getVal = (id) => { 
-                        if (!d.foodNutrients) return 0;
-                        const n = d.foodNutrients.find(x => x.nutrient?.id === id || x.nutrientId === id); 
-                        return n ? (n.amount || n.value) : 0; 
-                    };
-                    
-                    setSelectedFood({ 
-                        name: d.description, 
-                        // Try standard IDs first, then legacy IDs
-                        calories: getVal(1008) || getVal(208) || getVal(2047), 
-                        protein: getVal(1003) || getVal(203), 
-                        carbs: getVal(1005) || getVal(205), 
-                        fat: getVal(1004) || getVal(204), 
-                        fiber: getVal(1079) || getVal(291), 
-                        userGrams: 100 
-                    });
-                    setDisplayAmount(100); setMeasureUnit('g');
-                    setResults([]); // Clear results list on selection
-                } catch (err) { console.error("Detail fetch failed", err); }
+                    if (res.ok) {
+                        const d = await res.json();
+                        foodDetails = d;
+                        nutrients = d.foodNutrients || [];
+                    }
+                } catch (err) { 
+                    console.log("Detail fetch failed, falling back to search result data"); 
+                }
+
+                // Enhanced Nutrient Extraction for Branded vs Foundation vs Summary
+                // USDA matches: 1008=Cals, 1003=Pro, 1005=Carb, 1004=Fat, 1079=Fib
+                // Legacy matches: 208=Cals, 203=Pro, 205=Carb, 204=Fat, 291=Fib
+                const getVal = (ids) => { 
+                    if (!nutrients) return 0;
+                    const n = nutrients.find(x => {
+                        const nId = x.nutrientId || x.nutrient?.id;
+                        return ids.includes(nId);
+                    }); 
+                    return n ? (n.amount || n.value || 0) : 0; 
+                };
+                
+                setSelectedFood({ 
+                    name: foodDetails.description, 
+                    calories: getVal([1008, 208, 2047]), 
+                    protein: getVal([1003, 203]), 
+                    carbs: getVal([1005, 205]), 
+                    fat: getVal([1004, 204]), 
+                    fiber: getVal([1079, 291]), 
+                    userGrams: 100 
+                });
+                
+                setDisplayAmount(100); 
+                setMeasureUnit('g');
+                setResults([]); 
                 setLoading(false);
             };
 
