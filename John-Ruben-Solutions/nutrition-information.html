@@ -230,7 +230,6 @@
                         { facingMode: "environment" },
                         { fps: 15, qrbox: { width: 250, height: 250 } },
                         (decodedText) => { 
-                            // This is where the magic happens: pass code to stop function
                             stopScanner(decodedText); 
                         },
                         (err) => {}
@@ -255,7 +254,7 @@
                         setIsScanning(false);
                         if (foundCode) {
                             setQuery(foundCode);
-                            // Run search logic directly for the barcode
+                            // Run search logic directly for the barcode immediately
                             handleSearch(null, foundCode);
                         }
                     }).catch(() => setIsScanning(false));
@@ -274,11 +273,11 @@
                         const res = await fetch(`https://api.nal.usda.gov/fdc/v1/foods/search?api_key=${API_KEY}&query=${qTerm}&pageSize=1&dataType=Branded,SR Legacy`);
                         const data = await res.json();
                         if (data.foods && data.foods.length > 0) { 
-                            selectFood(data.foods[0]); 
+                            await selectFood(data.foods[0]); 
                             setLoading(false); 
                             return; 
                         }
-                    } catch (e) {}
+                    } catch (e) { console.error("Barcode search failed", e); }
                 }
 
                 // TEXT SEARCH LOGIC
@@ -286,7 +285,7 @@
                     const res = await fetch(`https://api.nal.usda.gov/fdc/v1/foods/search?api_key=${API_KEY}&query=${qTerm}&pageSize=10&dataType=Foundation,SR Legacy,Branded`);
                     const data = await res.json();
                     if (data.foods) setResults(data.foods.map(f => ({ ...f, description: `(USDA) ${f.description}`, fdcId: f.fdcId })));
-                } catch (e) {}
+                } catch (e) { console.error("Text search failed", e); }
                 setLoading(false);
             };
 
@@ -295,10 +294,26 @@
                 try {
                     const res = await fetch(`https://api.nal.usda.gov/fdc/v1/food/${food.fdcId}?api_key=${API_KEY}`);
                     const d = await res.json();
-                    const getVal = (id) => { const n = d.foodNutrients.find(x => x.nutrient?.id === id || x.nutrientId === id); return n ? (n.amount || n.value) : 0; };
-                    setSelectedFood({ name: d.description, calories: getVal(1008)||getVal(208), protein: getVal(1003)||getVal(203), carbs: getVal(1005)||getVal(205), fat: getVal(1004)||getVal(204), fiber: getVal(1079)||getVal(291), userGrams: 100 });
+                    // Enhanced Nutrient Extraction for Branded vs Foundation
+                    const getVal = (id) => { 
+                        if (!d.foodNutrients) return 0;
+                        const n = d.foodNutrients.find(x => x.nutrient?.id === id || x.nutrientId === id); 
+                        return n ? (n.amount || n.value) : 0; 
+                    };
+                    
+                    setSelectedFood({ 
+                        name: d.description, 
+                        // Try standard IDs first, then legacy IDs
+                        calories: getVal(1008) || getVal(208) || getVal(2047), 
+                        protein: getVal(1003) || getVal(203), 
+                        carbs: getVal(1005) || getVal(205), 
+                        fat: getVal(1004) || getVal(204), 
+                        fiber: getVal(1079) || getVal(291), 
+                        userGrams: 100 
+                    });
                     setDisplayAmount(100); setMeasureUnit('g');
-                } catch (err) {}
+                    setResults([]); // Clear results list on selection
+                } catch (err) { console.error("Detail fetch failed", err); }
                 setLoading(false);
             };
 
@@ -376,6 +391,9 @@
 
             if (!user) return <AuthScreen />;
 
+            // Helper for dynamic card calculation
+            const currentRatio = selectedFood ? ((measureUnit === 'oz' ? parseFloat(displayAmount) * 28.3495 : parseFloat(displayAmount)) / 100) : 0;
+
             return (
                 <div className="max-w-4xl mx-auto px-4 pt-6 pb-24 font-sans text-white">
                     <div className="flex bg-brand-card rounded-2xl p-1 mb-6 border border-slate-700">
@@ -420,7 +438,7 @@
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
                                             </button>
                                         </form>
-                                        <button onClick={handleSearch} className="bg-brand-green text-brand-navy px-4 rounded-xl font-bold">Find</button>
+                                        <button onClick={handleSearch} className="bg-brand-green text-brand-navy px-4 rounded-xl font-bold">{loading ? "..." : "Find"}</button>
                                         <button onClick={()=>setShowManual(!showManual)} className="bg-brand-card border border-slate-600 px-4 rounded-xl font-bold text-slate-300">Custom</button>
                                     </div>
 
@@ -449,18 +467,39 @@
                                         <div className="mt-4 bg-brand-card p-5 rounded-2xl border border-brand-green mb-6 animate-fade relative shadow-2xl shadow-brand-green/5">
                                             <button onClick={() => setSelectedFood(null)} className="absolute top-4 right-4 text-slate-500 font-bold text-lg">✕</button>
                                             <p className="font-bold mb-4 pr-10 text-white leading-snug">{selectedFood.name}</p>
-                                            <div className="flex items-center justify-between mb-6 bg-brand-input rounded-xl p-2 border border-slate-600 shadow-inner">
+                                            <div className="flex items-center justify-between mb-4 bg-brand-input rounded-xl p-2 border border-slate-600 shadow-inner">
                                                 <div className="flex items-center gap-2">
                                                     <input type="number" value={displayAmount} onFocus={(e)=>setDisplayAmount('')} onChange={(e)=>setDisplayAmount(e.target.value)} className="w-20 bg-transparent text-white font-bold text-2xl text-center outline-none" placeholder="0" />
                                                     <button onClick={()=>{let n=measureUnit==='g'?'oz':'g'; setMeasureUnit(n)}} className="px-3 py-1 bg-brand-card text-brand-green border border-brand-green rounded-lg font-bold text-xs uppercase hover:bg-brand-green hover:text-brand-navy transition-colors">{measureUnit}</button>
                                                 </div>
                                                 <div className="text-right">
                                                     <span className="block text-2xl font-bold text-white leading-none">
-                                                        {Math.round(selectedFood.calories * ((measureUnit === 'oz' ? parseFloat(displayAmount) * 28.3495 : parseFloat(displayAmount)) / 100) || 0)}
+                                                        {Math.round(selectedFood.calories * currentRatio || 0)}
                                                     </span>
                                                     <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Est Cals</span>
                                                 </div>
                                             </div>
+                                            
+                                            {/* Dynamic Macro Calculation Grid */}
+                                            <div className="grid grid-cols-4 gap-2 mb-6 text-center text-xs">
+                                                <div className="bg-slate-800/50 p-2 rounded-lg border border-slate-700">
+                                                    <span className="text-brand-teal font-black block mb-1">P</span>
+                                                    {(selectedFood.protein * currentRatio).toFixed(1)}g
+                                                </div>
+                                                <div className="bg-slate-800/50 p-2 rounded-lg border border-slate-700">
+                                                    <span className="text-brand-green font-black block mb-1">C</span>
+                                                    {(selectedFood.carbs * currentRatio).toFixed(1)}g
+                                                </div>
+                                                <div className="bg-slate-800/50 p-2 rounded-lg border border-slate-700">
+                                                    <span className="text-yellow-400 font-black block mb-1">F</span>
+                                                    {(selectedFood.fat * currentRatio).toFixed(1)}g
+                                                </div>
+                                                <div className="bg-slate-800/50 p-2 rounded-lg border border-slate-700">
+                                                    <span className="text-purple-400 font-black block mb-1">Fib</span>
+                                                    {(selectedFood.fiber * currentRatio).toFixed(1)}g
+                                                </div>
+                                            </div>
+
                                             <button onClick={addToLog} className="w-full bg-brand-green text-brand-navy py-4 rounded-xl font-black uppercase tracking-tighter shadow-lg shadow-brand-green/20 hover:bg-white transition-all">Add to Daily Log</button>
                                         </div>
                                     )}
