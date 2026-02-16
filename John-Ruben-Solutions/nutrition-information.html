@@ -480,7 +480,12 @@
             };
 
             const nutritionTotals = nutritionLog.reduce((acc, i) => ({ cals: acc.cals + i.calories, pro: acc.pro + i.protein, carb: acc.carb + i.carbs, fat: acc.fat + i.fat, fib: acc.fib + (i.fiber||0) }), { cals: 0, pro: 0, carb: 0, fat: 0, fib: 0 });
-            const totalVolume = workoutLogs.reduce((acc, curr) => acc + (Number(curr.volume) || 0), 0);
+            
+            // Total Volume Logic: Filter workoutLogs to ONLY include exercises currently in activeRoutine
+            const activeExerciseNames = activeRoutine.map(e => e.name);
+            const totalVolume = workoutLogs
+                .filter(log => activeExerciseNames.includes(log.exercise))
+                .reduce((acc, curr) => acc + (Number(curr.volume) || 0), 0);
 
             if (!user) return <AuthScreen />;
 
