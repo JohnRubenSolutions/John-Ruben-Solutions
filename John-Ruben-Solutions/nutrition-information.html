@@ -313,12 +313,32 @@
                 doc.save("Elite_Master_Report.pdf");
             };
 
+            // FIXED: Scanner Restoration and Handshake
+            useEffect(() => {
+                if (isScanning) {
+                    setTimeout(() => {
+                        const html5QrCode = new Html5Qrcode("reader");
+                        scannerRef.current = html5QrCode;
+                        const config = { fps: 10, qrbox: 250 };
+                        html5QrCode.start({ facingMode: "environment" }, config, (decodedText) => { stopScanner(decodedText); }, (err) => {})
+                        .catch(() => html5QrCode.start({ facingMode: "user" }, config, (decodedText) => { stopScanner(decodedText); }, ()=>{}));
+                    }, 100); 
+                }
+                return () => { if(scannerRef.current && scannerRef.current.isScanning) scannerRef.current.stop().catch(()=>{}); }
+            }, [isScanning]);
+
             const startScanner = () => { setResults([]); setIsScanning(true); };
             const stopScanner = (foundCode = null) => {
                 if (scannerRef.current) {
                     scannerRef.current.stop().then(() => {
                         scannerRef.current.clear(); setIsScanning(false);
-                        if (foundCode) { setQuery(foundCode); setTimeout(() => handleSearch(null, foundCode), 100); }
+                        if (foundCode) { 
+                            setQuery(foundCode); 
+                            // Manually trigger handleSearch logic for the found barcode
+                            setTimeout(() => { 
+                                handleSearch(null, foundCode);
+                            }, 200);
+                        }
                     }).catch(() => setIsScanning(false));
                 } else setIsScanning(false);
             };
@@ -342,13 +362,21 @@
                 const qTerm = overrideQuery || query;
                 if (!qTerm) return;
                 setLoading(true); setResults([]); setSelectedFood(null);
+                
+                // Barcode Lookup Path
                 if (/^\d+$/.test(qTerm)) {
                     try {
                         const res = await fetch(`https://api.nal.usda.gov/fdc/v1/foods/search?api_key=${API_KEY}&query=${qTerm}&pageSize=1&dataType=Branded,SR Legacy`);
                         const data = await res.json();
-                        if (data.foods && data.foods.length > 0) { selectFood(data.foods[0]); setLoading(false); return; }
+                        if (data.foods && data.foods.length > 0) { 
+                            selectFood(data.foods[0]); 
+                            setLoading(false); 
+                            return; 
+                        }
                     } catch (e) {}
                 }
+
+                // Standard Text Search Path
                 try {
                     const res = await fetch(`https://api.nal.usda.gov/fdc/v1/foods/search?api_key=${API_KEY}&query=${qTerm}&pageSize=10&dataType=Foundation,SR Legacy,Branded`);
                     const data = await res.json();
@@ -422,7 +450,6 @@
                         <div className="flex items-center bg-brand-input rounded-xl px-4 border border-slate-600">
                             <span className="text-xs text-slate-400 mr-2 uppercase tracking-tighter font-bold">LBS:</span>
                             <input type="number" value={dailyWeight} onChange={(e)=>setDailyWeight(e.target.value)} onBlur={async()=>await window.fb.setDoc(window.fb.doc(window.fb.db, "users", user.uid, "daily_stats", currentDate), { weight: dailyWeight, date: currentDate }, { merge: true })} className="bg-transparent text-white font-bold w-16 text-right outline-none" placeholder="0.0" />
-                            <span className="text-xs text-brand-green ml-1">lbs</span>
                         </div>
                     </div>
 
@@ -435,12 +462,12 @@
 
                             {view === 'daily' ? (
                                 <>
-                                    <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mb-6 text-center">
-                                        <div className="bg-brand-card p-3 rounded-xl border border-slate-700 font-bold"><span className="text-[10px] text-slate-400 uppercase">Cals</span><div className={`text-lg ${nutritionTotals.cals > targets.calories ? 'text-red-400' : 'text-white'}`}>{Math.round(nutritionTotals.cals)}</div></div>
-                                        <div className="bg-brand-card p-3 rounded-xl border border-slate-700 font-bold"><span className="text-[10px] text-brand-teal uppercase">P</span><div className="text-sm">{Math.round(nutritionTotals.pro)}g</div></div>
-                                        <div className="bg-brand-card p-3 rounded-xl border border-slate-700 font-bold"><span className="text-[10px] text-brand-green uppercase">C</span><div className="text-sm">{Math.round(nutritionTotals.carb)}g</div></div>
-                                        <div className="bg-brand-card p-3 rounded-xl border border-slate-700 font-bold"><span className="text-[10px] text-yellow-400 uppercase">F</span><div className="text-sm">{Math.round(nutritionTotals.fat)}g</div></div>
-                                        <div className="bg-brand-card p-3 rounded-xl border border-slate-700 font-bold"><span className="text-[10px] text-purple-400 uppercase">Fib</span><div className="text-sm">{Math.round(nutritionTotals.fib)}g</div></div>
+                                    <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mb-6 text-center font-bold">
+                                        <div className="bg-brand-card p-3 rounded-xl border border-slate-700"><span className="text-[10px] text-slate-400 uppercase">Cals</span><div className={`text-lg ${nutritionTotals.cals > targets.calories ? 'text-red-400' : 'text-white'}`}>{Math.round(nutritionTotals.cals)}</div></div>
+                                        <div className="bg-brand-card p-3 rounded-xl border border-slate-700"><span className="text-[10px] text-brand-teal uppercase">P</span><div className="text-sm">{Math.round(nutritionTotals.pro)}g</div></div>
+                                        <div className="bg-brand-card p-3 rounded-xl border border-slate-700"><span className="text-[10px] text-brand-green uppercase">C</span><div className="text-sm">{Math.round(nutritionTotals.carb)}g</div></div>
+                                        <div className="bg-brand-card p-3 rounded-xl border border-slate-700"><span className="text-[10px] text-yellow-400 uppercase">F</span><div className="text-sm">{Math.round(nutritionTotals.fat)}g</div></div>
+                                        <div className="bg-brand-card p-3 rounded-xl border border-slate-700"><span className="text-[10px] text-purple-400 uppercase">Fib</span><div className="text-sm">{Math.round(nutritionTotals.fib)}g</div></div>
                                     </div>
 
                                     <div className="flex gap-2 mb-6 text-sm">
@@ -548,7 +575,7 @@
                                                 <h3 className="font-extrabold text-white text-sm">{ex.name}</h3>
                                                 <div className="flex gap-2">
                                                     <button onClick={() => setCustomSets(p => ({...p, [ex.name]: (p[ex.name]||0)+1}))} className="text-[9px] bg-slate-700 px-2 py-1 rounded font-bold uppercase">+ Set</button>
-                                                    <button onClick={() => removeExercise(idx)} className="text-[9px] bg-red-900/30 text-red-400 px-2 py-1 rounded font-bold uppercase">Remove</button>
+                                                    <button onClick={() => removeExercise(i)} className="text-[9px] bg-red-900/30 text-red-400 px-2 py-1 rounded font-bold uppercase">Remove</button>
                                                 </div>
                                             </div>
                                             <div className="space-y-4">
