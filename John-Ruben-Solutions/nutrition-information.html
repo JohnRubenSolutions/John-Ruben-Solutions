@@ -191,10 +191,48 @@
                 const docRef = window.fb.doc(window.fb.db, "users", uid, "data", "profile");
                 const snap = await window.fb.getDoc(docRef);
                 if (snap.exists()) setProfile(snap.data());
+                // Initial target load (fallback if no dynamic calc possible yet)
                 const targetRef = window.fb.doc(window.fb.db, "users", uid, "data", "targets");
                 const targetSnap = await window.fb.getDoc(targetRef);
                 if (targetSnap.exists()) setTargets(targetSnap.data());
             };
+
+            // DYNAMIC CALORIE & MACRO CALCULATOR
+            useEffect(() => {
+                if (profile && dailyWeight) {
+                    const w = parseFloat(dailyWeight);
+                    if (!w || w < 50) return; // Basic validation
+
+                    const weightKg = w * 0.453592;
+                    // Fallbacks for calculation if profile incomplete
+                    const heightCm = (parseFloat(profile.height) || 175); 
+                    const age = parseFloat(profile.age) || 30;
+                    const gender = profile.gender || 'male';
+                    const activity = parseFloat(profile.activity) || 1.2;
+                    const goal = parseFloat(profile.goal) || 0; 
+
+                    // Mifflin-St Jeor Equation
+                    let bmr = (10 * weightKg) + (6.25 * heightCm) - (5 * age);
+                    bmr += (gender === 'male' ? 5 : -161);
+
+                    const tdee = bmr * activity;
+                    const finalCals = Math.round(tdee + goal);
+
+                    // Dynamic Macro Split: 
+                    // 1g Protein per lb, 0.35g Fat per lb, Rest Carbs
+                    let pGrams = Math.round(w); 
+                    let fGrams = Math.round(w * 0.35);
+                    const remCals = finalCals - (pGrams * 4) - (fGrams * 9);
+                    let cGrams = Math.max(0, Math.round(remCals / 4));
+
+                    setTargets({
+                        calories: finalCals,
+                        protein: pGrams,
+                        carbs: cGrams,
+                        fat: fGrams
+                    });
+                }
+            }, [dailyWeight, profile]);
 
             useEffect(() => {
                 if (!user || !window.fb) return;
@@ -254,7 +292,6 @@
                         setIsScanning(false);
                         if (foundCode) {
                             setQuery(foundCode);
-                            // Ensure state is clean before triggering search
                             setTimeout(() => handleSearch(null, foundCode), 100);
                         }
                     }).catch(() => setIsScanning(false));
@@ -315,7 +352,6 @@
             const selectFood = async (food) => {
                 setLoading(true);
                 
-                // If it's a pre-packed object (like from OpenFoodFacts via text search if implemented later), skip fetch
                 if (food.userGrams) {
                     setSelectedFood(food);
                     setLoading(false);
@@ -326,7 +362,6 @@
                 let nutrients = food.foodNutrients || []; 
 
                 try {
-                    // Try to fetch detailed data for USDA items
                     const res = await fetch(`https://api.nal.usda.gov/fdc/v1/food/${food.fdcId}?api_key=${API_KEY}`);
                     if (res.ok) {
                         const d = await res.json();
@@ -396,12 +431,10 @@
             };
 
             const removeExercise = async (idx) => {
-                // Capture exercise name BEFORE removing it from array
                 const exName = activeRoutine[idx].name;
                 const updatedRoutine = activeRoutine.filter((_, i) => i !== idx);
                 await window.fb.setDoc(window.fb.doc(window.fb.db, "users", user.uid, "active_routines", currentDate), { exercises: updatedRoutine });
                 
-                // Delete associated logs to trigger volume recalculation
                 if (exName) {
                     const q = window.fb.query(
                         window.fb.collection(window.fb.db, "users", user.uid, "workout_logs"),
@@ -484,10 +517,10 @@
                             {view === 'daily' ? (
                                 <>
                                     <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mb-6 text-center font-bold">
-                                        <div className="bg-brand-card p-3 rounded-xl border border-slate-700 font-bold"><span className="text-[10px] text-slate-400 uppercase">Cals</span><div className={`text-lg ${nutritionTotals.cals > targets.calories ? 'text-red-400' : 'text-white'}`}>{Math.round(nutritionTotals.cals)}</div></div>
-                                        <div className="bg-brand-card p-3 rounded-xl border border-slate-700 font-bold"><span className="text-[10px] text-brand-teal uppercase font-black">P</span><div className="text-sm">{Math.round(nutritionTotals.pro)}g</div></div>
-                                        <div className="bg-brand-card p-3 rounded-xl border border-slate-700 font-bold"><span className="text-[10px] text-brand-green uppercase font-black">C</span><div className="text-sm">{Math.round(nutritionTotals.carb)}g</div></div>
-                                        <div className="bg-brand-card p-3 rounded-xl border border-slate-700 font-bold"><span className="text-[10px] text-yellow-400 uppercase font-black">F</span><div className="text-sm">{Math.round(nutritionTotals.fat)}g</div></div>
+                                        <div className="bg-brand-card p-3 rounded-xl border border-slate-700 font-bold"><span className="text-[10px] text-slate-400 uppercase">Cals</span><div className={`text-lg ${nutritionTotals.cals > targets.calories ? 'text-red-400' : 'text-white'}`}>{Math.round(nutritionTotals.cals)} / <span className="text-slate-400 text-sm">{targets.calories}</span></div></div>
+                                        <div className="bg-brand-card p-3 rounded-xl border border-slate-700 font-bold"><span className="text-[10px] text-brand-teal uppercase font-black">P</span><div className="text-sm">{Math.round(nutritionTotals.pro)} / <span className="text-slate-400 text-xs">{targets.protein}g</span></div></div>
+                                        <div className="bg-brand-card p-3 rounded-xl border border-slate-700 font-bold"><span className="text-[10px] text-brand-green uppercase font-black">C</span><div className="text-sm">{Math.round(nutritionTotals.carb)} / <span className="text-slate-400 text-xs">{targets.carbs}g</span></div></div>
+                                        <div className="bg-brand-card p-3 rounded-xl border border-slate-700 font-bold"><span className="text-[10px] text-yellow-400 uppercase font-black">F</span><div className="text-sm">{Math.round(nutritionTotals.fat)} / <span className="text-slate-400 text-xs">{targets.fat}g</span></div></div>
                                         <div className="bg-brand-card p-3 rounded-xl border border-slate-700 font-bold"><span className="text-[10px] text-purple-400 uppercase font-black">Fib</span><div className="text-sm">{Math.round(nutritionTotals.fib)}g</div></div>
                                     </div>
 
