@@ -396,8 +396,23 @@
             };
 
             const removeExercise = async (idx) => {
+                // Capture exercise name BEFORE removing it from array
+                const exName = activeRoutine[idx].name;
                 const updatedRoutine = activeRoutine.filter((_, i) => i !== idx);
                 await window.fb.setDoc(window.fb.doc(window.fb.db, "users", user.uid, "active_routines", currentDate), { exercises: updatedRoutine });
+                
+                // Delete associated logs to trigger volume recalculation
+                if (exName) {
+                    const q = window.fb.query(
+                        window.fb.collection(window.fb.db, "users", user.uid, "workout_logs"),
+                        window.fb.where("date", "==", currentDate),
+                        window.fb.where("exercise", "==", exName)
+                    );
+                    const snapshot = await window.fb.getDocs(q);
+                    const batch = window.fb.writeBatch(window.fb.db);
+                    snapshot.docs.forEach(doc => batch.delete(doc.ref));
+                    await batch.commit();
+                }
             };
 
             const addExerciseToRoutine = async (exerciseName) => {
