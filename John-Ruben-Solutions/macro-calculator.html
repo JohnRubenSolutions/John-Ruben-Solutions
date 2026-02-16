@@ -18,7 +18,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         // --- YOUR FIREBASE CONFIG ---
@@ -36,7 +36,7 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        window.fb = { auth, db, doc, setDoc, getDoc, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword };
+        window.fb = { auth, db, doc, setDoc, getDoc, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail };
 
         onAuthStateChanged(auth, (user) => {
             if (user) {
@@ -95,9 +95,23 @@
             <h1 class="text-2xl font-bold text-white text-center mb-6">Macro Calculator Login</h1>
             <input type="email" id="email" placeholder="Email" class="w-full p-3 mb-4 bg-brand-input rounded-xl text-white outline-none focus:border-brand-green border border-transparent">
             <input type="password" id="password" placeholder="Password" class="w-full p-3 mb-6 bg-brand-input rounded-xl text-white outline-none focus:border-brand-green border border-transparent">
+            
             <button onclick="handleLogin()" class="w-full py-3 bg-brand-green text-brand-navy font-bold rounded-xl mb-3 hover:bg-white transition-colors">Log In</button>
-            <button onclick="handleSignup()" class="w-full py-3 bg-brand-navy border border-slate-600 text-white font-bold rounded-xl hover:border-brand-teal transition-colors">Sign Up</button>
-            <p id="auth-error" class="text-red-500 text-xs text-center mt-4"></p>
+            <button onclick="handleSignup()" class="w-full py-3 bg-brand-navy border border-slate-600 text-white font-bold rounded-xl hover:border-brand-teal transition-colors mb-4">Sign Up</button>
+            
+            <div class="text-center mb-6">
+                <button onclick="handleForgotPassword()" class="text-xs text-brand-teal hover:text-white underline">Forgot Password?</button>
+            </div>
+
+            <p id="auth-error" class="text-red-500 text-xs text-center mt-2"></p>
+            <p id="auth-success" class="text-brand-green text-xs text-center mt-2"></p>
+
+            <div class="border-t border-slate-700 pt-4 mt-2">
+                <p class="text-[10px] text-slate-500 uppercase font-bold tracking-wider mb-2 text-center">New User Guide</p>
+                <p class="text-[11px] text-slate-400 text-center leading-relaxed">
+                    To create an account, enter your email and a password above, then click <strong>Sign Up</strong>. Your data will be saved automatically.
+                </p>
+            </div>
         </div>
     </div>
 
@@ -253,6 +267,28 @@
             const e = document.getElementById('email').value;
             const p = document.getElementById('password').value;
             window.fb.createUserWithEmailAndPassword(window.fb.auth, e, p).catch(err => document.getElementById('auth-error').innerText = err.message);
+        }
+
+        function handleForgotPassword() {
+            const e = document.getElementById('email').value;
+            const errorText = document.getElementById('auth-error');
+            const successText = document.getElementById('auth-success');
+            
+            errorText.innerText = "";
+            successText.innerText = "";
+
+            if (!e) {
+                errorText.innerText = "Please enter your email address first.";
+                return;
+            }
+
+            window.fb.sendPasswordResetEmail(window.fb.auth, e)
+                .then(() => {
+                    successText.innerText = "Password reset email sent! Please check your inbox.";
+                })
+                .catch((error) => {
+                    errorText.innerText = error.message;
+                });
         }
         
         let hasCalculated = false;
