@@ -163,6 +163,8 @@
             const [showManual, setShowManual] = useState(false);
             const [manualForm, setManualForm] = useState({ name: "", p: "", c: "", f: "", fib: "" });
             const [selectedFood, setSelectedFood] = useState(null);
+            const [displayAmount, setDisplayAmount] = useState(100);
+            const [measureUnit, setMeasureUnit] = useState('g');
             const [isScanning, setIsScanning] = useState(false);
             const [loading, setLoading] = useState(false);
             const [scores, setScores] = useState({ adherence: 0, consistency: 0 });
@@ -197,42 +199,28 @@
 
             useEffect(() => {
                 if (!user || !window.fb) return;
-                
                 const nQ = window.fb.query(window.fb.collection(window.fb.db, "users", user.uid, "logs"), window.fb.where("date", "==", currentDate));
                 const unsubN = window.fb.onSnapshot(nQ, (snap) => {
                     const raw = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                     raw.sort((a,b) => (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0));
                     setNutritionLog(raw);
                 });
-
                 const wQ = window.fb.query(window.fb.collection(window.fb.db, "users", user.uid, "workout_logs"), window.fb.where("date", "==", currentDate));
                 const unsubW = window.fb.onSnapshot(wQ, (snap) => {
                     setWorkoutLogs(snap.docs.map(d => ({id: d.id, ...d.data()})));
                 });
-
                 const rQ = window.fb.doc(window.fb.db, "users", user.uid, "active_routines", currentDate);
                 const unsubR = window.fb.onSnapshot(rQ, (doc) => {
                     if(doc.exists()) setActiveRoutine(doc.data().exercises || []);
                     else setActiveRoutine([]);
                 });
-
                 const fetchWeight = async () => {
                     const docSnap = await window.fb.getDoc(window.fb.doc(window.fb.db, "users", user.uid, "daily_stats", currentDate));
                     setDailyWeight(docSnap.exists() ? docSnap.data().weight : "");
                 };
-
                 fetchWeight();
                 return () => { unsubN(); unsubW(); unsubR(); };
             }, [user, currentDate]);
-
-            useEffect(() => {
-                if(!user || activeRoutine.length === 0) return;
-                activeRoutine.forEach(async (ex) => {
-                    const hQ = window.fb.query(window.fb.collection(window.fb.db, user.uid, "workout_logs"), window.fb.where("exercise", "==", ex.name), window.fb.orderBy("timestamp", "desc"), window.fb.limit(1));
-                    const hSnap = await window.fb.getDocs(hQ);
-                    if(!hSnap.empty) setWorkoutHistory(prev => ({...prev, [ex.name]: hSnap.docs[0].data()}));
-                });
-            }, [activeRoutine, user]);
 
             useEffect(() => {
                 if (view === 'trends' && user && appMode === 'nutrition') {
@@ -296,15 +284,10 @@
             const exportMasterReport = async () => {
                 const { jsPDF } = window.jspdf;
                 const doc = new jsPDF();
-                
-                // Fetch all history
                 const logsSnap = await window.fb.getDocs(window.fb.collection(window.fb.db, "users", user.uid, "logs"));
                 const workoutSnap = await window.fb.getDocs(window.fb.collection(window.fb.db, "users", user.uid, "workout_logs"));
-                
                 const allNutrition = logsSnap.docs.map(d => d.data());
                 const allWorkouts = workoutSnap.docs.map(d => d.data());
-                
-                // Group by date
                 const historyByDate = {};
                 allNutrition.forEach(n => {
                     if(!historyByDate[n.date]) historyByDate[n.date] = { nutrition: [], volume: 0 };
@@ -314,93 +297,21 @@
                     if(!historyByDate[w.date]) historyByDate[w.date] = { nutrition: [], volume: 0 };
                     historyByDate[w.date].volume += (Number(w.volume) || 0);
                 });
-
                 const sortedDates = Object.keys(historyByDate).sort().reverse();
-
-                // Section A: Daily Log
                 doc.setFontSize(22); doc.setTextColor(15, 23, 42); doc.text("ELITE MASTER REPORT", 14, 20);
-                doc.setFontSize(14); doc.text("Historical Daily Logs", 14, 30);
-                
                 let yPos = 40;
                 sortedDates.forEach(date => {
                     if(yPos > 250) { doc.addPage(); yPos = 20; }
                     const day = historyByDate[date];
-                    const dailyTotal = day.nutrition.reduce((acc, curr) => ({
-                        c: acc.c + curr.calories, p: acc.p + curr.protein, ch: acc.ch + curr.carbs, f: acc.f + curr.fat, fib: acc.fib + (curr.fiber||0)
-                    }), { c:0, p:0, ch:0, f:0, fib:0 });
-
+                    const dailyTotal = day.nutrition.reduce((acc, curr) => ({ c: acc.c + curr.calories, p: acc.p + curr.protein, ch: acc.ch + curr.carbs, f: acc.f + curr.fat, fib: acc.fib + (curr.fiber||0) }), { c:0, p:0, ch:0, f:0, fib:0 });
                     doc.setFontSize(10); doc.setTextColor(100); doc.text(`DATE: ${date} | LIFTED VOLUME: ${day.volume.toLocaleString()} lbs`, 14, yPos);
-                    
                     const tableRows = day.nutrition.map(n => [n.name, n.calories.toFixed(0), n.protein+'g', n.carbs+'g', n.fat+'g', (n.fiber||0)+'g']);
                     tableRows.push([{content: 'DAILY TOTAL', styles: {fontStyle: 'bold'}}, dailyTotal.c.toFixed(0), dailyTotal.p.toFixed(1)+'g', dailyTotal.ch.toFixed(1)+'g', dailyTotal.f.toFixed(1)+'g', dailyTotal.fib.toFixed(1)+'g']);
-
-                    doc.autoTable({
-                        startY: yPos + 2,
-                        head: [['Food', 'Cals', 'P', 'C', 'F', 'Fib']],
-                        body: tableRows,
-                        theme: 'grid',
-                        styles: { fontSize: 8 },
-                        headStyles: { fillColor: [15, 23, 42] }
-                    });
+                    doc.autoTable({ startY: yPos + 2, head: [['Food', 'Cals', 'P', 'C', 'F', 'Fib']], body: tableRows, theme: 'grid', styles: { fontSize: 8 }, headStyles: { fillColor: [15, 23, 42] } });
                     yPos = doc.lastAutoTable.finalY + 10;
                 });
-
-                // Section B: Weekly Averages
-                doc.addPage();
-                doc.setFontSize(14); doc.text("Weekly Performance Averages", 14, 20);
-                const weeklyAgg = {};
-                allNutrition.forEach(n => {
-                    const wk = getWeekNumber(new Date(n.date));
-                    if(!weeklyAgg[wk]) weeklyAgg[wk] = { c:0, p:0, ch:0, f:0, fib:0, v:0, days: new Set() };
-                    weeklyAgg[wk].c += n.calories;
-                    weeklyAgg[wk].p += n.protein;
-                    weeklyAgg[wk].ch += n.carbs;
-                    weeklyAgg[wk].f += n.fat;
-                    weeklyAgg[wk].fib += (n.fiber||0);
-                    weeklyAgg[wk].days.add(n.date);
-                });
-                allWorkouts.forEach(w => {
-                    const wk = getWeekNumber(new Date(w.date));
-                    if(weeklyAgg[wk]) weeklyAgg[wk].v += (Number(w.volume) || 0);
-                });
-
-                const weekRows = Object.keys(weeklyAgg).sort().reverse().map(wk => {
-                    const w = weeklyAgg[wk];
-                    const dCount = w.days.size || 1;
-                    return [formatWeekLabel(wk), (w.c/dCount).toFixed(0), (w.p/dCount).toFixed(1)+'g', (w.ch/dCount).toFixed(1)+'g', (w.f/dCount).toFixed(1)+'g', (w.fib/dCount).toFixed(1)+'g', w.v.toLocaleString() + ' lbs'];
-                });
-
-                doc.autoTable({
-                    startY: 30,
-                    head: [['Week', 'Avg Cals', 'Avg P', 'Avg C', 'Avg F', 'Avg Fib', 'Total Lifted']],
-                    body: weekRows,
-                    headStyles: { fillColor: [132, 204, 22] }
-                });
-
-                // Section C: Graph
-                const canvas = document.getElementById('trendChart') || chartRef.current;
-                if (canvas) {
-                    const chartImg = canvas.toDataURL("image/png");
-                    doc.addPage();
-                    doc.setFontSize(14); doc.text("Historical Weight & Calorie Trends", 14, 20);
-                    doc.addImage(chartImg, 'PNG', 15, 30, 180, 90);
-                }
-
                 doc.save("Elite_Master_Report.pdf");
             };
-
-            useEffect(() => {
-                if (isScanning) {
-                    setTimeout(() => {
-                        const html5QrCode = new Html5Qrcode("reader");
-                        scannerRef.current = html5QrCode;
-                        const config = { fps: 10, qrbox: 250 };
-                        html5QrCode.start({ facingMode: "environment" }, config, (decodedText) => { stopScanner(decodedText); }, (err) => {})
-                        .catch(() => html5QrCode.start({ facingMode: "user" }, config, (decodedText) => { stopScanner(decodedText); }, ()=>{}));
-                    }, 100); 
-                }
-                return () => { if(scannerRef.current && scannerRef.current.isScanning) scannerRef.current.stop().catch(()=>{}); }
-            }, [isScanning]);
 
             const startScanner = () => { setResults([]); setIsScanning(true); };
             const stopScanner = (foundCode = null) => {
@@ -424,18 +335,6 @@
                 await window.fb.setDoc(window.fb.doc(window.fb.db, "users", user.uid, "workout_logs", entryId), {
                     exercise: exName, setIndex: setIdx, reps: parseInt(reps), weight: parseFloat(weight), volume: parseInt(reps) * parseFloat(weight), date: currentDate, timestamp: window.fb.serverTimestamp()
                 });
-            };
-
-            const addExerciseToRoutine = async (exerciseName) => {
-                const newEx = { name: exerciseName, type: exerciseName.includes('Running') || exerciseName.includes('Cycling') ? 'cardio' : 'lifting', sets: 3 };
-                const updatedRoutine = [...activeRoutine, newEx];
-                await window.fb.setDoc(window.fb.doc(window.fb.db, "users", user.uid, "active_routines", currentDate), { exercises: updatedRoutine });
-                setShowLibrary(false);
-            };
-
-            const removeExercise = async (idx) => {
-                const updatedRoutine = activeRoutine.filter((_, i) => i !== idx);
-                await window.fb.setDoc(window.fb.doc(window.fb.db, "users", user.uid, "active_routines", currentDate), { exercises: updatedRoutine });
             };
 
             const handleSearch = async (e, overrideQuery = null) => {
@@ -465,6 +364,7 @@
                     const d = await res.json();
                     const getVal = (id) => { const n = d.foodNutrients.find(x => x.nutrient?.id === id || x.nutrientId === id); return n ? (n.amount || n.value) : 0; };
                     setSelectedFood({ name: d.description, calories: getVal(1008)||getVal(208), protein: getVal(1003)||getVal(203), carbs: getVal(1005)||getVal(205), fat: getVal(1004)||getVal(204), fiber: getVal(1079)||getVal(291), userGrams: 100 });
+                    setDisplayAmount(100); setMeasureUnit('g');
                     setResults([]); setQuery("");
                 } catch (err) {}
                 setLoading(false);
@@ -480,9 +380,25 @@
 
             const addToLog = async () => {
                 if(!selectedFood) return;
-                const f = selectedFood.userGrams / 100;
-                await window.fb.addDoc(window.fb.collection(window.fb.db, "users", user.uid, "logs"), { name: selectedFood.name, grams: selectedFood.userGrams, calories: selectedFood.calories * f, protein: parseFloat((selectedFood.protein * f).toFixed(1)), carbs: parseFloat((selectedFood.carbs * f).toFixed(1)), fat: parseFloat((selectedFood.fat * f).toFixed(1)), fiber: parseFloat((selectedFood.fiber * f).toFixed(1)), date: currentDate, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), createdAt: window.fb.serverTimestamp() });
+                let rawVal = parseFloat(displayAmount) || 0;
+                let calculatedGrams = measureUnit === 'oz' ? rawVal * 28.3495 : rawVal;
+                const f = calculatedGrams / 100;
+                await window.fb.addDoc(window.fb.collection(window.fb.db, "users", user.uid, "logs"), { 
+                    name: selectedFood.name, grams: calculatedGrams, calories: selectedFood.calories * f, protein: parseFloat((selectedFood.protein * f).toFixed(1)), carbs: parseFloat((selectedFood.carbs * f).toFixed(1)), fat: parseFloat((selectedFood.fat * f).toFixed(1)), fiber: parseFloat((selectedFood.fiber * f).toFixed(1)), date: currentDate, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), createdAt: window.fb.serverTimestamp() 
+                });
                 setSelectedFood(null);
+            };
+
+            const addExerciseToRoutine = async (exerciseName) => {
+                const newEx = { name: exerciseName, type: exerciseName.includes('Running') || exerciseName.includes('Cycling') ? 'cardio' : 'lifting', sets: 3 };
+                const updatedRoutine = [...activeRoutine, newEx];
+                await window.fb.setDoc(window.fb.doc(window.fb.db, "users", user.uid, "active_routines", currentDate), { exercises: updatedRoutine });
+                setShowLibrary(false);
+            };
+
+            const removeExercise = async (idx) => {
+                const updatedRoutine = activeRoutine.filter((_, i) => i !== idx);
+                await window.fb.setDoc(window.fb.doc(window.fb.db, "users", user.uid, "active_routines", currentDate), { exercises: updatedRoutine });
             };
 
             const totalVolume = workoutLogs.reduce((acc, curr) => acc + (Number(curr.volume) || 0), 0);
@@ -506,6 +422,7 @@
                         <div className="flex items-center bg-brand-input rounded-xl px-4 border border-slate-600">
                             <span className="text-xs text-slate-400 mr-2 uppercase tracking-tighter font-bold">LBS:</span>
                             <input type="number" value={dailyWeight} onChange={(e)=>setDailyWeight(e.target.value)} onBlur={async()=>await window.fb.setDoc(window.fb.doc(window.fb.db, "users", user.uid, "daily_stats", currentDate), { weight: dailyWeight, date: currentDate }, { merge: true })} className="bg-transparent text-white font-bold w-16 text-right outline-none" placeholder="0.0" />
+                            <span className="text-xs text-brand-green ml-1">lbs</span>
                         </div>
                     </div>
 
@@ -538,7 +455,8 @@
                                     </div>
 
                                     {showManual && (
-                                        <div className="bg-brand-card p-4 rounded-2xl border border-slate-600 mb-6 animate-fade">
+                                        <div className="bg-brand-card p-4 rounded-2xl border border-slate-600 mb-6 animate-fade relative">
+                                            <button onClick={() => setShowManual(false)} className="absolute top-4 right-4 text-slate-500 hover:text-white font-bold">✕</button>
                                             <h3 className="font-bold mb-4">Add Custom Food</h3>
                                             <form onSubmit={submitManual} className="grid grid-cols-2 md:grid-cols-5 gap-3">
                                                 <input className="col-span-2 md:col-span-5 p-2 bg-brand-input rounded-lg text-white" placeholder="Food Name" required value={manualForm.name} onChange={e=>setManualForm({...manualForm, name: e.target.value})} />
@@ -558,9 +476,24 @@
                                     )}
 
                                     {selectedFood && (
-                                        <div className="mt-4 bg-brand-card p-5 rounded-2xl border border-brand-green mb-6 animate-fade">
-                                            <p className="font-bold mb-4">{selectedFood.name}</p>
-                                            <button onClick={addToLog} className="w-full bg-brand-green text-brand-navy py-4 rounded-xl font-black">Add 100g to Daily Log</button>
+                                        <div className="mt-4 bg-brand-card p-5 rounded-2xl border border-brand-green mb-6 animate-fade relative">
+                                            <button onClick={() => setSelectedFood(null)} className="absolute top-4 right-4 text-slate-500 hover:text-white font-bold text-lg">✕</button>
+                                            <p className="font-bold mb-4 pr-8">{selectedFood.name}</p>
+                                            
+                                            <div className="flex items-center justify-between mb-6 bg-brand-input rounded-xl p-2 border border-slate-600">
+                                                <div className="flex items-center gap-2">
+                                                    <input type="number" value={displayAmount} onFocus={(e)=>setDisplayAmount('')} onChange={(e)=>setDisplayAmount(e.target.value)} className="w-20 bg-transparent text-white font-bold text-2xl text-center focus:outline-none" placeholder="0" />
+                                                    <button onClick={()=>{let next=measureUnit==='g'?'oz':'g'; setMeasureUnit(next)}} className="px-3 py-1 bg-brand-card text-brand-green border border-brand-green rounded-lg font-bold text-xs uppercase">{measureUnit}</button>
+                                                </div>
+                                                <div className="text-right">
+                                                    <span className="block text-2xl font-bold text-white">
+                                                        {Math.round(selectedFood.calories * ((measureUnit === 'oz' ? parseFloat(displayAmount) * 28.3495 : parseFloat(displayAmount)) / 100) || 0)}
+                                                    </span>
+                                                    <span className="text-[10px] text-slate-400 uppercase tracking-wider">Estimated Cals</span>
+                                                </div>
+                                            </div>
+
+                                            <button onClick={addToLog} className="w-full bg-brand-green text-brand-navy py-4 rounded-xl font-black uppercase tracking-tighter">Add to Daily Log</button>
                                         </div>
                                     )}
 
@@ -615,28 +548,26 @@
                                                 <h3 className="font-extrabold text-white text-sm">{ex.name}</h3>
                                                 <div className="flex gap-2">
                                                     <button onClick={() => setCustomSets(p => ({...p, [ex.name]: (p[ex.name]||0)+1}))} className="text-[9px] bg-slate-700 px-2 py-1 rounded font-bold uppercase">+ Set</button>
-                                                    <button onClick={() => removeExercise(i)} className="text-[9px] bg-red-900/30 text-red-400 px-2 py-1 rounded font-bold uppercase">Remove</button>
+                                                    <button onClick={() => removeExercise(idx)} className="text-[9px] bg-red-900/30 text-red-400 px-2 py-1 rounded font-bold uppercase">Remove</button>
                                                 </div>
                                             </div>
-                                            {ex.type === 'lifting' || ex.type === 'cardio' ? (
-                                                <div className="space-y-4">
-                                                    {[...Array(3 + (customSets[ex.name] || 0))].map((_, s) => {
-                                                        const existing = exLogs.find(l => l.setIndex === s);
-                                                        return (
-                                                            <div key={s} className="grid grid-cols-2 gap-3 p-3 bg-slate-800/30 rounded-xl">
-                                                                <div>
-                                                                    <input type="number" placeholder="Reps" defaultValue={existing?.reps || ""} className="w-full bg-brand-input p-2 rounded-lg text-center text-sm outline-none font-bold" onBlur={(e) => { const wIn = e.target.closest('.grid').querySelector('input[placeholder="Lbs"]'); if(e.target.value && wIn.value) saveEntry(ex.name, s, e.target.value, wIn.value); }} />
-                                                                    {workoutHistory[ex.name] && <p className="text-[8px] text-slate-500 mt-1 uppercase text-center">Last: {workoutHistory[ex.name].reps}</p>}
-                                                                </div>
-                                                                <div>
-                                                                    <input type="number" placeholder="Lbs" defaultValue={existing?.weight || workoutHistory[ex.name]?.weight || ""} className="w-in w-full bg-brand-input p-2 rounded-lg text-center text-sm outline-none font-bold text-brand-teal" onBlur={(e) => { const rIn = e.target.closest('.grid').querySelector('input[placeholder="Reps"]'); if(e.target.value && rIn.value) saveEntry(ex.name, s, rIn.value, e.target.value); }} />
-                                                                    {workoutHistory[ex.name] && <p className="text-[8px] text-slate-500 mt-1 uppercase text-center">Last: {workoutHistory[ex.name].weight}</p>}
-                                                                </div>
+                                            <div className="space-y-4">
+                                                {[...Array(3 + (customSets[ex.name] || 0))].map((_, s) => {
+                                                    const existing = exLogs.find(l => l.setIndex === s);
+                                                    return (
+                                                        <div key={s} className="grid grid-cols-2 gap-3 p-3 bg-slate-800/30 rounded-xl">
+                                                            <div>
+                                                                <input type="number" placeholder="Reps" defaultValue={existing?.reps || ""} className="w-full bg-brand-input p-2 rounded-lg text-center text-sm outline-none font-bold" onBlur={(e) => { const wIn = e.target.closest('.grid').querySelector('input[placeholder="Lbs"]'); if(e.target.value && wIn.value) saveEntry(ex.name, s, e.target.value, wIn.value); }} />
+                                                                {workoutHistory[ex.name] && <p className="text-[8px] text-slate-500 mt-1 uppercase text-center">Last: {workoutHistory[ex.name].reps}</p>}
                                                             </div>
-                                                        );
-                                                    })}
-                                                </div>
-                                            ) : null}
+                                                            <div>
+                                                                <input type="number" placeholder="Lbs" defaultValue={existing?.weight || workoutHistory[ex.name]?.weight || ""} className="w-in w-full bg-brand-input p-2 rounded-lg text-center text-sm outline-none font-bold text-brand-teal" onBlur={(e) => { const rIn = e.target.closest('.grid').querySelector('input[placeholder="Reps"]'); if(e.target.value && rIn.value) saveEntry(ex.name, s, rIn.value, e.target.value); }} />
+                                                                {workoutHistory[ex.name] && <p className="text-[8px] text-slate-500 mt-1 uppercase text-center">Last: {workoutHistory[ex.name].weight}</p>}
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
                                         </div>
                                     );
                                 })}
