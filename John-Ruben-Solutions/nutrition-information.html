@@ -154,7 +154,6 @@
             const [profile, setProfile] = useState(null);
             const [currentDate, setCurrentDate] = useState(new Date().toISOString().split('T')[0]);
             
-            // Nutrition State
             const [targets, setTargets] = useState({ calories: 2000, protein: 150, carbs: 200, fat: 60 });
             const [query, setQuery] = useState("");
             const [results, setResults] = useState([]);
@@ -169,7 +168,6 @@
             const [loading, setLoading] = useState(false);
             const [scores, setScores] = useState({ adherence: 0, consistency: 0 });
 
-            // Workout State
             const [workoutLogs, setWorkoutLogs] = useState([]);
             const [workoutHistory, setWorkoutHistory] = useState({});
             const [customSets, setCustomSets] = useState({});
@@ -221,12 +219,6 @@
                 fetchWeight();
                 return () => { unsubN(); unsubW(); unsubR(); };
             }, [user, currentDate]);
-
-            useEffect(() => {
-                if (view === 'trends' && user && appMode === 'nutrition') {
-                    setTimeout(calculateAnalytics, 200); 
-                }
-            }, [view, user, appMode]);
 
             const calculateAnalytics = async () => {
                 if(!chartRef.current || !user) return;
@@ -313,7 +305,7 @@
                 doc.save("Elite_Master_Report.pdf");
             };
 
-            // FIXED: Scanner Restoration and Handshake
+            // SCANNER CORE
             useEffect(() => {
                 if (isScanning) {
                     setTimeout(() => {
@@ -328,16 +320,16 @@
             }, [isScanning]);
 
             const startScanner = () => { setResults([]); setIsScanning(true); };
+            
+            // FIXED: stopScanner logic to trigger immediate gram card
             const stopScanner = (foundCode = null) => {
                 if (scannerRef.current) {
                     scannerRef.current.stop().then(() => {
-                        scannerRef.current.clear(); setIsScanning(false);
+                        scannerRef.current.clear(); 
+                        setIsScanning(false);
                         if (foundCode) { 
                             setQuery(foundCode); 
-                            // Manually trigger handleSearch logic for the found barcode
-                            setTimeout(() => { 
-                                handleSearch(null, foundCode);
-                            }, 200);
+                            handleSearch(null, foundCode); // Trigger API lookup immediately
                         }
                     }).catch(() => setIsScanning(false));
                 } else setIsScanning(false);
@@ -349,21 +341,13 @@
                 setCurrentDate(d.toISOString().split('T')[0]);
             };
 
-            const saveEntry = async (exName, setIdx, reps, weight) => {
-                if(!user || !reps || !weight) return;
-                const entryId = `${currentDate}_${exName.replace(/\s+/g, '_')}_set${setIdx}`;
-                await window.fb.setDoc(window.fb.doc(window.fb.db, "users", user.uid, "workout_logs", entryId), {
-                    exercise: exName, setIndex: setIdx, reps: parseInt(reps), weight: parseFloat(weight), volume: parseInt(reps) * parseFloat(weight), date: currentDate, timestamp: window.fb.serverTimestamp()
-                });
-            };
-
             const handleSearch = async (e, overrideQuery = null) => {
                 if (e) e.preventDefault();
                 const qTerm = overrideQuery || query;
                 if (!qTerm) return;
                 setLoading(true); setResults([]); setSelectedFood(null);
                 
-                // Barcode Lookup Path
+                // RESTORED: Barcode Logic to trigger detailed selectFood
                 if (/^\d+$/.test(qTerm)) {
                     try {
                         const res = await fetch(`https://api.nal.usda.gov/fdc/v1/foods/search?api_key=${API_KEY}&query=${qTerm}&pageSize=1&dataType=Branded,SR Legacy`);
@@ -376,7 +360,6 @@
                     } catch (e) {}
                 }
 
-                // Standard Text Search Path
                 try {
                     const res = await fetch(`https://api.nal.usda.gov/fdc/v1/foods/search?api_key=${API_KEY}&query=${qTerm}&pageSize=10&dataType=Foundation,SR Legacy,Branded`);
                     const data = await res.json();
@@ -417,6 +400,14 @@
                 setSelectedFood(null);
             };
 
+            const saveEntry = async (exName, setIdx, reps, weight) => {
+                if(!user || !reps || !weight) return;
+                const entryId = `${currentDate}_${exName.replace(/\s+/g, '_')}_set${setIdx}`;
+                await window.fb.setDoc(window.fb.doc(window.fb.db, "users", user.uid, "workout_logs", entryId), {
+                    exercise: exName, setIndex: setIdx, reps: parseInt(reps), weight: parseFloat(weight), volume: parseInt(reps) * parseFloat(weight), date: currentDate, timestamp: window.fb.serverTimestamp()
+                });
+            };
+
             const addExerciseToRoutine = async (exerciseName) => {
                 const newEx = { name: exerciseName, type: exerciseName.includes('Running') || exerciseName.includes('Cycling') ? 'cardio' : 'lifting', sets: 3 };
                 const updatedRoutine = [...activeRoutine, newEx];
@@ -429,13 +420,10 @@
                 await window.fb.setDoc(window.fb.doc(window.fb.db, "users", user.uid, "active_routines", currentDate), { exercises: updatedRoutine });
             };
 
-            const totalVolume = workoutLogs.reduce((acc, curr) => acc + (Number(curr.volume) || 0), 0);
-            const nutritionTotals = nutritionLog.reduce((acc, i) => ({ cals: acc.cals + i.calories, pro: acc.pro + i.protein, carb: acc.carb + i.carbs, fat: acc.fat + i.fat, fib: acc.fib + (i.fiber||0) }), { cals: 0, pro: 0, carb: 0, fat: 0, fib: 0 });
-
             if (!user) return <AuthScreen />;
 
             return (
-                <div className="max-w-4xl mx-auto px-4 pt-6 pb-24">
+                <div className="max-w-4xl mx-auto px-4 pt-6 pb-24 font-sans">
                     <div className="flex bg-brand-card rounded-2xl p-1 mb-6 border border-slate-700">
                         <button onClick={() => setAppMode("nutrition")} className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all ${appMode === 'nutrition' ? 'bg-brand-green text-brand-navy' : 'text-slate-400'}`}>Nutrition</button>
                         <button onClick={() => setAppMode("workout")} className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all ${appMode === 'workout' ? 'bg-brand-teal text-brand-navy' : 'text-slate-400'}`}>Elite Workout</button>
@@ -472,7 +460,7 @@
 
                                     <div className="flex gap-2 mb-6 text-sm">
                                         <form onSubmit={handleSearch} className="flex-1 relative">
-                                            <input type="text" value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search food..." className="w-full p-4 bg-brand-input rounded-xl outline-none pr-12" />
+                                            <input type="text" value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search food or scan..." className="w-full p-4 bg-brand-input rounded-xl outline-none pr-12 text-white" />
                                             <button type="button" onClick={startScanner} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-brand-green">
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
                                             </button>
@@ -483,7 +471,7 @@
 
                                     {showManual && (
                                         <div className="bg-brand-card p-4 rounded-2xl border border-slate-600 mb-6 animate-fade relative">
-                                            <button onClick={() => setShowManual(false)} className="absolute top-4 right-4 text-slate-500 hover:text-white font-bold">✕</button>
+                                            <button onClick={() => setShowManual(false)} className="absolute top-4 right-4 text-slate-500 hover:text-white font-bold text-lg">✕</button>
                                             <h3 className="font-bold mb-4">Add Custom Food</h3>
                                             <form onSubmit={submitManual} className="grid grid-cols-2 md:grid-cols-5 gap-3">
                                                 <input className="col-span-2 md:col-span-5 p-2 bg-brand-input rounded-lg text-white" placeholder="Food Name" required value={manualForm.name} onChange={e=>setManualForm({...manualForm, name: e.target.value})} />
@@ -505,33 +493,33 @@
                                     {selectedFood && (
                                         <div className="mt-4 bg-brand-card p-5 rounded-2xl border border-brand-green mb-6 animate-fade relative">
                                             <button onClick={() => setSelectedFood(null)} className="absolute top-4 right-4 text-slate-500 hover:text-white font-bold text-lg">✕</button>
-                                            <p className="font-bold mb-4 pr-8">{selectedFood.name}</p>
+                                            <p className="font-bold mb-4 pr-10 text-white">{selectedFood.name}</p>
                                             
                                             <div className="flex items-center justify-between mb-6 bg-brand-input rounded-xl p-2 border border-slate-600">
                                                 <div className="flex items-center gap-2">
-                                                    <input type="number" value={displayAmount} onFocus={(e)=>setDisplayAmount('')} onChange={(e)=>setDisplayAmount(e.target.value)} className="w-20 bg-transparent text-white font-bold text-2xl text-center focus:outline-none" placeholder="0" />
-                                                    <button onClick={()=>{let next=measureUnit==='g'?'oz':'g'; setMeasureUnit(next)}} className="px-3 py-1 bg-brand-card text-brand-green border border-brand-green rounded-lg font-bold text-xs uppercase">{measureUnit}</button>
+                                                    <input type="number" value={displayAmount} onFocus={(e)=>setDisplayAmount('')} onChange={(e)=>setDisplayAmount(e.target.value)} className="w-24 bg-transparent text-white font-bold text-2xl text-center focus:outline-none" placeholder="0" />
+                                                    <button onClick={()=>{let n=measureUnit==='g'?'oz':'g'; setMeasureUnit(n)}} className="px-3 py-1 bg-brand-card text-brand-green border border-brand-green rounded-lg font-bold text-xs uppercase">{measureUnit}</button>
                                                 </div>
                                                 <div className="text-right">
                                                     <span className="block text-2xl font-bold text-white">
                                                         {Math.round(selectedFood.calories * ((measureUnit === 'oz' ? parseFloat(displayAmount) * 28.3495 : parseFloat(displayAmount)) / 100) || 0)}
                                                     </span>
-                                                    <span className="text-[10px] text-slate-400 uppercase tracking-wider">Estimated Cals</span>
+                                                    <span className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">Estimated Cals</span>
                                                 </div>
                                             </div>
 
-                                            <button onClick={addToLog} className="w-full bg-brand-green text-brand-navy py-4 rounded-xl font-black uppercase tracking-tighter">Add to Daily Log</button>
+                                            <button onClick={addToLog} className="w-full bg-brand-green text-brand-navy py-4 rounded-xl font-black uppercase tracking-tighter shadow-lg shadow-brand-green/10">Add to Daily Log</button>
                                         </div>
                                     )}
 
-                                    <div className="bg-brand-card rounded-2xl border border-slate-700 overflow-hidden">
+                                    <div className="bg-brand-card rounded-2xl border border-slate-700 overflow-hidden shadow-2xl">
                                         <table className="w-full text-xs text-left text-slate-300">
                                             <thead className="bg-slate-800 text-slate-400 uppercase">
                                                 <tr><th className="px-4 py-3">Food</th><th className="px-4 py-3 text-brand-green">Cals</th><th className="px-4 py-3">P</th><th className="px-4 py-3">C</th><th className="px-4 py-3">F</th><th className="px-4 py-3">Fib</th><th className="px-4 py-3"></th></tr>
                                             </thead>
                                             <tbody>
                                                 {nutritionLog.map(item => (
-                                                    <tr key={item.id} className="border-b border-slate-700">
+                                                    <tr key={item.id} className="border-b border-slate-700 hover:bg-slate-700/20">
                                                         <td className="px-4 py-3 font-medium text-white max-w-[120px] truncate">{item.name}</td>
                                                         <td className="px-4 py-3 font-bold text-white">{item.calories.toFixed(0)}</td>
                                                         <td className="px-4 py-3 text-brand-teal">{item.protein.toFixed(1)}g</td>
@@ -548,10 +536,10 @@
                             ) : (
                                 <div className="space-y-6 animate-fade">
                                     <div className="grid grid-cols-2 gap-4 text-center">
-                                        <div className="bg-brand-card p-6 rounded-2xl border border-slate-700"><span className="text-[10px] text-slate-400 uppercase tracking-widest">Adherence Score</span><div className="text-4xl font-extrabold text-brand-teal mt-2">{scores.adherence}%</div></div>
-                                        <div className="bg-brand-card p-6 rounded-2xl border border-slate-700"><span className="text-[10px] text-slate-400 uppercase tracking-widest">Consistency Score</span><div className="text-4xl font-extrabold text-brand-green mt-2">{scores.consistency}%</div></div>
+                                        <div className="bg-brand-card p-6 rounded-2xl border border-slate-700"><span className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">Adherence Score</span><div className="text-4xl font-extrabold text-brand-teal mt-2">{scores.adherence}%</div></div>
+                                        <div className="bg-brand-card p-6 rounded-2xl border border-slate-700"><span className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">Consistency Score</span><div className="text-4xl font-extrabold text-brand-green mt-2">{scores.consistency}%</div></div>
                                     </div>
-                                    <div className="bg-brand-card p-4 rounded-2xl border border-slate-700 h-80">
+                                    <div className="bg-brand-card p-4 rounded-2xl border border-slate-700 h-80 shadow-2xl">
                                         <canvas ref={chartRef} id="trendChart"></canvas>
                                     </div>
                                 </div>
@@ -559,23 +547,23 @@
                         </div>
                     ) : (
                         <div className="animate-fade">
-                            <div className="bg-brand-card p-5 rounded-2xl border border-slate-700 mb-6 flex justify-between items-center">
-                                <div><h2 className="text-xl font-black text-brand-teal uppercase tracking-tighter">Daily Volume</h2><p className="text-[10px] text-slate-500 font-bold uppercase">Dynamic Routine</p></div>
+                            <div className="bg-brand-card p-5 rounded-2xl border border-slate-700 mb-6 flex justify-between items-center shadow-xl">
+                                <div><h2 className="text-xl font-black text-brand-teal uppercase tracking-tighter">Daily Volume</h2><p className="text-[10px] text-slate-500 font-bold uppercase">Lifting Performance</p></div>
                                 <div className="text-right font-black"><span className="text-2xl text-white">{totalVolume.toLocaleString()}</span><span className="ml-1 text-[10px] text-brand-teal uppercase">lbs</span></div>
                             </div>
 
-                            <button onClick={() => setShowLibrary(true)} className="w-full py-4 bg-brand-navy border-2 border-dashed border-slate-600 rounded-2xl text-slate-400 font-bold mb-6 hover:border-brand-teal hover:text-brand-teal transition-all">+ Add Exercise from Library</button>
+                            <button onClick={() => setShowLibrary(true)} className="w-full py-4 bg-brand-navy border-2 border-dashed border-slate-600 rounded-2xl text-slate-400 font-bold mb-6 hover:border-brand-teal hover:text-brand-teal transition-all shadow-lg">+ Add Exercise from Library</button>
 
                             <div className="space-y-6">
                                 {activeRoutine.map((ex, i) => {
                                     const exLogs = workoutLogs.filter(l => l.exercise === ex.name);
                                     return (
-                                        <div key={i} className="bg-brand-card rounded-2xl p-5 border border-slate-700">
+                                        <div key={i} className="bg-brand-card rounded-2xl p-5 border border-slate-700 shadow-lg">
                                             <div className="flex justify-between items-center mb-4">
                                                 <h3 className="font-extrabold text-white text-sm">{ex.name}</h3>
                                                 <div className="flex gap-2">
-                                                    <button onClick={() => setCustomSets(p => ({...p, [ex.name]: (p[ex.name]||0)+1}))} className="text-[9px] bg-slate-700 px-2 py-1 rounded font-bold uppercase">+ Set</button>
-                                                    <button onClick={() => removeExercise(i)} className="text-[9px] bg-red-900/30 text-red-400 px-2 py-1 rounded font-bold uppercase">Remove</button>
+                                                    <button onClick={() => setCustomSets(p => ({...p, [ex.name]: (p[ex.name]||0)+1}))} className="text-[9px] bg-slate-700 px-2 py-1 rounded font-bold uppercase text-white hover:bg-slate-600 transition-colors">+ Set</button>
+                                                    <button onClick={() => removeExercise(i)} className="text-[9px] bg-red-900/30 text-red-400 px-2 py-1 rounded font-bold uppercase hover:bg-red-900/50 transition-colors">Remove</button>
                                                 </div>
                                             </div>
                                             <div className="space-y-4">
@@ -584,12 +572,12 @@
                                                     return (
                                                         <div key={s} className="grid grid-cols-2 gap-3 p-3 bg-slate-800/30 rounded-xl">
                                                             <div>
-                                                                <input type="number" placeholder="Reps" defaultValue={existing?.reps || ""} className="w-full bg-brand-input p-2 rounded-lg text-center text-sm outline-none font-bold" onBlur={(e) => { const wIn = e.target.closest('.grid').querySelector('input[placeholder="Lbs"]'); if(e.target.value && wIn.value) saveEntry(ex.name, s, e.target.value, wIn.value); }} />
-                                                                {workoutHistory[ex.name] && <p className="text-[8px] text-slate-500 mt-1 uppercase text-center">Last: {workoutHistory[ex.name].reps}</p>}
+                                                                <input type="number" placeholder="Reps" defaultValue={existing?.reps || ""} className="w-full bg-brand-input p-2 rounded-lg text-center text-sm outline-none font-bold text-white" onBlur={(e) => { const wIn = e.target.closest('.grid').querySelector('input[placeholder="Lbs"]'); if(e.target.value && wIn.value) saveEntry(ex.name, s, e.target.value, wIn.value); }} />
+                                                                {workoutHistory[ex.name] && <p className="text-[8px] text-slate-500 mt-1 uppercase text-center font-bold">Last: {workoutHistory[ex.name].reps}</p>}
                                                             </div>
                                                             <div>
                                                                 <input type="number" placeholder="Lbs" defaultValue={existing?.weight || workoutHistory[ex.name]?.weight || ""} className="w-in w-full bg-brand-input p-2 rounded-lg text-center text-sm outline-none font-bold text-brand-teal" onBlur={(e) => { const rIn = e.target.closest('.grid').querySelector('input[placeholder="Reps"]'); if(e.target.value && rIn.value) saveEntry(ex.name, s, rIn.value, e.target.value); }} />
-                                                                {workoutHistory[ex.name] && <p className="text-[8px] text-slate-500 mt-1 uppercase text-center">Last: {workoutHistory[ex.name].weight}</p>}
+                                                                {workoutHistory[ex.name] && <p className="text-[8px] text-slate-500 mt-1 uppercase text-center font-bold">Last: {workoutHistory[ex.name].weight}</p>}
                                                             </div>
                                                         </div>
                                                     );
@@ -604,17 +592,17 @@
 
                     {showLibrary && (
                         <div className="fixed inset-0 z-[70] bg-black/95 p-4 overflow-y-auto">
-                            <div className="max-w-md mx-auto bg-brand-card rounded-3xl border border-slate-700 p-6">
+                            <div className="max-w-md mx-auto bg-brand-card rounded-3xl border border-slate-700 p-6 shadow-2xl">
                                 <div className="flex justify-between items-center mb-6">
-                                    <h2 className="text-xl font-bold">Exercise Library</h2>
-                                    <button onClick={() => setShowLibrary(false)} className="text-slate-400 font-bold text-lg">✕</button>
+                                    <h2 className="text-xl font-bold text-white">Exercise Library</h2>
+                                    <button onClick={() => setShowLibrary(false)} className="text-slate-400 font-bold text-xl hover:text-white">✕</button>
                                 </div>
                                 {Object.keys(WORKOUT_LIBRARY).map(cat => (
                                     <div key={cat} className="mb-6">
-                                        <h4 className="text-[10px] text-slate-500 uppercase tracking-widest mb-3 font-bold">{cat}</h4>
+                                        <h4 className="text-[10px] text-brand-teal uppercase tracking-widest mb-3 font-black">{cat}</h4>
                                         <div className="grid grid-cols-1 gap-2">
                                             {WORKOUT_LIBRARY[cat].map(ex => (
-                                                <button key={ex} onClick={() => addExerciseToRoutine(ex)} className="w-full text-left p-3 bg-slate-800 rounded-xl hover:bg-brand-teal hover:text-brand-navy transition-all font-bold text-sm">{ex}</button>
+                                                <button key={ex} onClick={() => addExerciseToRoutine(ex)} className="w-full text-left p-3 bg-slate-800 rounded-xl hover:bg-brand-teal hover:text-brand-navy transition-all font-bold text-sm text-slate-300">{ex}</button>
                                             ))}
                                         </div>
                                     </div>
@@ -625,15 +613,15 @@
 
                     {isScanning && (
                         <div className="fixed inset-0 z-[60] bg-black/95 flex flex-col items-center justify-center p-4">
-                            <div className="bg-brand-card p-6 rounded-3xl w-full max-w-sm border border-slate-700 relative">
-                                <h3 className="text-center font-bold text-white mb-4">Scan Barcode</h3>
-                                <div id="reader" className="w-full bg-black rounded-2xl overflow-hidden shadow-2xl"></div>
-                                <button onClick={() => setIsScanning(false)} className="mt-6 w-full py-3 bg-red-500/20 text-red-400 rounded-xl font-bold uppercase text-xs">Cancel</button>
+                            <div className="bg-brand-card p-6 rounded-3xl w-full max-w-sm border border-slate-700 relative shadow-2xl">
+                                <h3 className="text-center font-bold text-white mb-4 uppercase tracking-widest text-sm">Scan Barcode</h3>
+                                <div id="reader" className="w-full bg-black rounded-2xl overflow-hidden shadow-inner border border-slate-600"></div>
+                                <button onClick={() => setIsScanning(false)} className="mt-6 w-full py-4 bg-red-500/20 text-red-400 rounded-xl font-black uppercase text-xs tracking-tighter">Cancel Scanning</button>
                             </div>
                         </div>
                     )}
 
-                    <div className="fixed bottom-0 left-0 right-0 p-4 bg-brand-navy/90 flex gap-2 backdrop-blur-md border-t border-slate-800">
+                    <div className="fixed bottom-0 left-0 right-0 p-4 bg-brand-navy/90 flex gap-2 backdrop-blur-md border-t border-slate-800 shadow-2xl">
                         <button onClick={exportMasterReport} className="flex-1 bg-brand-green text-brand-navy font-black py-4 rounded-2xl uppercase tracking-tighter shadow-lg shadow-brand-green/20">Download Master Report (PDF)</button>
                         <button onClick={() => window.fb.signOut(window.fb.auth)} className="bg-slate-800 p-4 rounded-2xl text-red-400 font-bold">Exit</button>
                     </div>
