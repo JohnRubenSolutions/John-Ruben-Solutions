@@ -71,7 +71,6 @@
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
         const API_KEY = '4FRpc4urF9W2UedPH6agara8y52PR0efkZRmoPvv'; 
-        const GEMINI_API_KEY = "AIzaSyAV_yP5jI_tFemd1CKoxlGZoDrYsSYB7yI";
 
         const WORKOUT_LIBRARY = {
             "Chest": ["Bench Press", "Incline DB Press", "Cable Flyes", "Pushups", "Dips"],
@@ -221,10 +220,6 @@
             const [isChartLoading, setIsChartLoading] = useState(false);
             const [scores, setScores] = useState({ adherence: 0, consistency: 0 });
 
-            const [aiRecommendation, setAiRecommendation] = useState("");
-            const [aiLoading, setAiLoading] = useState(false);
-            const [aiExpanded, setAiExpanded] = useState(true);
-
             const [workoutLogs, setWorkoutLogs] = useState([]);
             const [workoutHistory, setWorkoutHistory] = useState({});
             const [customSets, setCustomSets] = useState({});
@@ -252,72 +247,6 @@
                 const targetSnap = await window.fb.getDoc(targetRef);
                 if (targetSnap.exists()) setTargets(targetSnap.data());
             };
-
-            // AI Recommendation Engine
-            const getAIAdvice = async () => {
-                if (aiRecommendation || aiLoading || !profile || !user) return;
-                setAiLoading(true);
-                try {
-                    // Fetch historical logs to build a complete user dataset
-                    const logsSnap = await window.fb.getDocs(window.fb.collection(window.fb.db, "users", user.uid, "logs"));
-                    const workoutSnap = await window.fb.getDocs(window.fb.collection(window.fb.db, "users", user.uid, "workout_logs"));
-                    
-                    let totalHistoryCals = 0;
-                    let loggedDays = new Set();
-                    logsSnap.docs.forEach(doc => {
-                        const d = doc.data();
-                        totalHistoryCals += (d.calories || 0);
-                        if(d.date) loggedDays.add(d.date);
-                    });
-                    const avgHistoryCals = loggedDays.size > 0 ? Math.round(totalHistoryCals / loggedDays.size) : 0;
-
-                    let totalLifetimeVolume = 0;
-                    let workoutDays = new Set();
-                    workoutSnap.docs.forEach(doc => {
-                        const d = doc.data();
-                        totalLifetimeVolume += (Number(d.volume) || 0);
-                        if(d.date) workoutDays.add(d.date);
-                    });
-
-                    const nutritionTotals = nutritionLog.reduce((acc, i) => ({ cals: acc.cals + i.calories, pro: acc.pro + i.protein, carb: acc.carb + i.carbs, fat: acc.fat + i.fat }), { cals: 0, pro: 0, carb: 0, fat: 0 });
-                    
-                    const prompt = `Act as a Senior Clinical Pharmacist, Metabolic Specialist, and Sports Nutritionist. 
-                    Current Date: ${currentDate}. 
-                    User Profile: Age ${profile.age || 30}, Gender ${profile.gender || 'male'}, Goal: ${profile.goal || 'maintenance'}, Body Type: ${profile.bodyType || 'meso'}.
-                    Historical Lifetime Context: Nutrition tracked for ${loggedDays.size} days (Avg ${avgHistoryCals} cals/day). Workouts tracked for ${workoutDays.size} days (Total Lifetime Volume: ${totalLifetimeVolume} lbs).
-                    Current Daily Stats: Weight ${dailyWeight || 'Not logged'} lbs.
-                    Targets: ${targets.calories} cals, ${targets.protein}g Protein, ${targets.carbs}g Carbs, ${targets.fat}g Fat.
-                    Current Consumption (Today): ${Math.round(nutritionTotals.cals)} cals, ${Math.round(nutritionTotals.pro)}g Protein.
-                    Based on ALL historical and current data, provide one concise paragraph of clinical motivation and a specific tactical recommendation for the remainder of the day. Be professional, elite, and evidence-based. Do not use Markdown formatting.`;
-
-                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-                    });
-                    
-                    const data = await response.json();
-                    
-                    if (data.error) {
-                        console.error("Gemini API Error:", data.error);
-                        throw new Error(data.error.message);
-                    }
-                    
-                    const text = data.candidates[0].content.parts[0].text;
-                    setAiRecommendation(text);
-                } catch (err) {
-                    console.error("AI Generation Failed:", err);
-                    setAiRecommendation("Unable to load Elite AI Strategy at this time. Keep pushing towards your targets. Check console for details.");
-                } finally {
-                    setAiLoading(false);
-                }
-            };
-
-            useEffect(() => {
-                if (profile && user) {
-                    getAIAdvice();
-                }
-            }, [profile, user, currentDate]);
 
             // DYNAMIC CALORIE & MACRO CALCULATOR
             useEffect(() => {
@@ -553,7 +482,6 @@
                 const d = new Date(currentDate);
                 d.setDate(d.getDate() + offset);
                 setCurrentDate(d.toISOString().split('T')[0]);
-                setAiRecommendation(""); // Reset AI on date change
             };
 
             const saveEntry = async (exName, setIdx, reps, weight) => {
@@ -937,39 +865,6 @@
 
                     {appMode === "nutrition" ? (
                         <div className="animate-fade">
-                            {/* ELITE AI STRATEGY CARD */}
-                            {view === 'daily' && (
-                                <div className="mb-6 bg-gradient-to-br from-brand-card to-slate-900 p-5 rounded-2xl border border-brand-teal/30 shadow-xl animate-fade">
-                                    <div 
-                                        className="flex items-center justify-between mb-3 cursor-pointer" 
-                                        onClick={() => setAiExpanded(!aiExpanded)}
-                                    >
-                                        <div className="flex items-center gap-2">
-                                            <div className="p-2 bg-brand-teal/20 rounded-lg">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#22d3ee" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v8"/><path d="m16 6-4 4-4-4"/><path d="M12 18v4"/><path d="m8 21 4-4 4 4"/><path d="M2 12h8"/><path d="m6 16 4-4-4-4"/><path d="M22 12h-8"/><path d="m18 8 4 4-4 4"/></svg>
-                                            </div>
-                                            <h2 className="text-xs font-black text-brand-teal uppercase tracking-[0.2em]">Elite AI Strategy</h2>
-                                        </div>
-                                        <button className="text-brand-teal font-bold">{aiExpanded ? '▼' : '▲'}</button>
-                                    </div>
-                                    
-                                    {aiExpanded && (
-                                        <div className="min-h-[60px] flex items-center">
-                                            {aiLoading ? (
-                                                <div className="flex items-center gap-3 text-slate-500 italic text-sm">
-                                                    <div className="animate-spin h-4 w-4 border-2 border-brand-teal border-t-transparent rounded-full"></div>
-                                                    Analyzing metabolic markers...
-                                                </div>
-                                            ) : (
-                                                <p className="text-slate-300 text-sm leading-relaxed italic">
-                                                    {aiRecommendation || "Loading daily recommendation..."}
-                                                </p>
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-
                             <div className="flex justify-center gap-4 mb-6">
                                 <button onClick={()=>setView('daily')} className={`text-xs px-4 py-1 rounded-full ${view==='daily' ? 'bg-brand-green text-brand-navy font-bold' : 'text-slate-400'}`}>Daily Log</button>
                                 <button onClick={()=>setView('trends')} className={`text-xs px-4 py-1 rounded-full ${view==='trends' ? 'bg-brand-green text-brand-navy font-bold' : 'text-slate-400'}`}>Analytics</button>
@@ -1119,9 +1014,11 @@
                                                         <div key={s} className="grid grid-cols-2 gap-3 p-3 bg-slate-800/30 rounded-xl">
                                                             <div>
                                                                 <input type="number" placeholder="Reps" defaultValue={existing?.reps || ""} className="w-full bg-brand-input p-2 rounded-lg text-center text-sm outline-none font-bold text-white border border-transparent focus:border-brand-teal transition-colors" onBlur={(e) => { const wIn = e.target.closest('.grid').querySelector('input[placeholder="Lbs"]'); if(e.target.value && wIn.value) saveEntry(ex.name, s, e.target.value, wIn.value); }} />
+                                                                {workoutHistory[ex.name] && <p className="text-[8px] text-slate-500 mt-1 uppercase text-center font-bold tracking-tighter">Last: {workoutHistory[ex.name].reps}</p>}
                                                             </div>
                                                             <div>
                                                                 <input type="number" placeholder="Lbs" defaultValue={existing?.weight || workoutHistory[ex.name]?.weight || ""} className="w-in w-full bg-brand-input p-2 rounded-lg text-center text-sm outline-none font-bold text-brand-teal border border-transparent focus:border-brand-teal transition-colors" onBlur={(e) => { const rIn = e.target.closest('.grid').querySelector('input[placeholder="Reps"]'); if(e.target.value && rIn.value) saveEntry(ex.name, s, rIn.value, e.target.value); }} />
+                                                                {workoutHistory[ex.name] && <p className="text-[8px] text-slate-500 mt-1 uppercase text-center font-bold tracking-tighter">Last: {workoutHistory[ex.name].weight}</p>}
                                                             </div>
                                                         </div>
                                                     );
@@ -1178,5 +1075,4 @@
     </script>
 </body>
 </html>
-
 
