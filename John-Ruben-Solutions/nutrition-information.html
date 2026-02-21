@@ -1,611 +1,888 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>John Ruben Solutions - Unified Elite Tracker</title>
-    
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    
-    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>John Ruben Solutions - Unified Elite Tracker</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, query, where, onSnapshot, deleteDoc, doc, setDoc, getDoc, orderBy, serverTimestamp, getDocs, limit, writeBatch } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-        
-        const firebaseConfig = {
-            apiKey: "AIzaSyD2h_sejv6lB8sFC15xHSgqxfdD2hLd5Kg",
-            authDomain: "john-ruben-solutions.firebaseapp.com",
-            projectId: "john-ruben-solutions",
-            storageBucket: "john-ruben-solutions.firebasestorage.app",
-            messagingSenderId: "761855596159",
-            appId: "1:761855596159:web:a4bbe805663c2304c5d14a",
-            measurementId: "G-1T2J8VR066"
-        };
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, query, where, onSnapshot, deleteDoc, doc, setDoc, getDoc, orderBy, serverTimestamp, getDocs, limit, writeBatch } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        
+        const firebaseConfig = {
+            apiKey: "AIzaSyD2h_sejv6lB8sFC15xHSgqxfdD2hLd5Kg",
+            authDomain: "john-ruben-solutions.firebaseapp.com",
+            projectId: "john-ruben-solutions",
+            storageBucket: "john-ruben-solutions.firebasestorage.app",
+            messagingSenderId: "761855596159",
+            appId: "1:761855596159:web:a4bbe805663c2304c5d14a",
+            measurementId: "G-1T2J8VR066"
+        };
 
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        const googleProvider = new GoogleAuthProvider();
-        
-        window.fb = { auth, db, googleProvider, signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, sendPasswordResetEmail, collection, addDoc, query, where, onSnapshot, deleteDoc, doc, setDoc, getDoc, getDocs, orderBy, serverTimestamp, limit, writeBatch };
-    </script>
-    
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        brand: { navy: '#0f172a', dark: '#020617', card: '#1e293b', green: '#84cc16', teal: '#22d3ee', input: '#334155' }
-                    },
-                    fontFamily: { sans: ['"Plus Jakarta Sans"', 'sans-serif'] }
-                }
-            }
-        }
-    </script>
-    <style> 
-        body { background-color: #0f172a; color: #f8fafc; } 
-        #reader { width: 100% !important; border: none !important; }
-        #reader video { object-fit: cover; border-radius: 12px; }
-        .table-scroll::-webkit-scrollbar { height: 4px; width: 4px; }
-        .table-scroll::-webkit-scrollbar-thumb { background: #84cc16; border-radius: 4px; }
-        .table-scroll::-webkit-scrollbar-track { background: #1e293b; }
-        .active-timer { animation: pulse 2s infinite; color: #84cc16; }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
-        .animate-fade { animation: fadeIn 0.3s ease-in; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-    </style>
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const googleProvider = new GoogleAuthProvider();
+        
+        window.fb = { auth, db, googleProvider, signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, sendPasswordResetEmail, collection, addDoc, query, where, onSnapshot, deleteDoc, doc, setDoc, getDoc, getDocs, orderBy, serverTimestamp, limit, writeBatch };
+    </script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: { navy: '#0f172a', dark: '#020617', card: '#1e293b', green: '#84cc16', teal: '#22d3ee', input: '#334155' }
+                    },
+                    fontFamily: { sans: ['"Plus Jakarta Sans"', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+    <style> 
+        body { background-color: #0f172a; color: #f8fafc; } 
+        #reader { width: 100% !important; border: none !important; }
+        #reader video { object-fit: cover; border-radius: 12px; }
+        .table-scroll::-webkit-scrollbar { height: 4px; width: 4px; }
+        .table-scroll::-webkit-scrollbar-thumb { background: #84cc16; border-radius: 4px; }
+        .table-scroll::-webkit-scrollbar-track { background: #1e293b; }
+        .active-timer { animation: pulse 2s infinite; color: #84cc16; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+        .animate-fade { animation: fadeIn 0.3s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    </style>
 </head>
 <body>
-    <div id="root"></div>
+    <div id="root"></div>
 
-    <script type="text/babel">
-        const { useState, useEffect, useRef } = React;
-        const API_KEY = '4FRpc4urF9W2UedPH6agara8y52PR0efkZRmoPvv'; 
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+        const API_KEY = '4FRpc4urF9W2UedPH6agara8y52PR0efkZRmoPvv'; 
 
-        const WORKOUT_LIBRARY = {
-            "Chest": ["Bench Press", "Incline DB Press", "Cable Flyes", "Pushups", "Dips"],
-            "Back": ["Pull Ups", "Lat Pulldowns", "Bent Over Rows", "Deadlifts", "Face Pulls", "Stability Ball Hyperextension"],
-            "Shoulders": ["Overhead Press", "Dumbbell Front Raise", "Dumbbell Lateral Raise", "Rear Delt Flyes"],
-            "Arms": ["Dumbbell Bicep Curl", "Hammer Curls", "Cable Tricep Pushdown", "Skull Crushers"],
-            "Legs": ["Squats", "Leg Press", "Leg Extensions", "Hamstring Curls", "Calf Raises", "Hip Bridge Thrusts", "Side Leg Raises", "Standing Hip Adduction", "Air Squats"],
-            "Core": ["Exercise Ball Crunch", "Plank", "Leg Raises", "Russian Twists"],
-            "Cardio/Other": ["Running", "Jog in place", "Cycling", "Swimming"]
-        };
+        const WORKOUT_LIBRARY = {
+            "Chest": ["Bench Press", "Incline DB Press", "Cable Flyes", "Pushups", "Dips"],
+            "Back": ["Pull Ups", "Lat Pulldowns", "Bent Over Rows", "Deadlifts", "Face Pulls", "Stability Ball Hyperextension"],
+            "Shoulders": ["Overhead Press", "Dumbbell Front Raise", "Dumbbell Lateral Raise", "Rear Delt Flyes"],
+            "Arms": ["Dumbbell Bicep Curl", "Hammer Curls", "Cable Tricep Pushdown", "Skull Crushers"],
+            "Legs": ["Squats", "Leg Press", "Leg Extensions", "Hamstring Curls", "Calf Raises", "Hip Bridge Thrusts", "Side Leg Raises", "Standing Hip Adduction", "Air Squats"],
+            "Core": ["Exercise Ball Crunch", "Plank", "Leg Raises", "Russian Twists"],
+            "Cardio/Other": ["Running", "Jog in place", "Cycling", "Swimming"]
+        };
 
-        const getWeekNumber = (d) => {
-            const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
-            date.setUTCDate(date.getUTCDate() + 4 - (date.getUTCDay() || 7));
-            const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
-            return `${date.getUTCFullYear()}-W${Math.ceil((((date - yearStart) / 86400000) + 1) / 7)}`;
-        };
+        const getWeekNumber = (d) => {
+            const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+            date.setUTCDate(date.getUTCDate() + 4 - (date.getUTCDay() || 7));
+            const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+            return `${date.getUTCFullYear()}-W${Math.ceil((((date - yearStart) / 86400000) + 1) / 7)}`;
+        };
 
-        const formatWeekLabel = (weekStr) => {
-             const parts = weekStr.split('-');
-             return `Week ${parts[1].replace('W','')}, ${parts[0]}`;
-        };
+        const formatWeekLabel = (weekStr) => {
+             const parts = weekStr.split('-');
+             return `Week ${parts[1].replace('W','')}, ${parts[0]}`;
+        };
 
-        const AuthScreen = () => {
-            const [isRegister, setIsRegister] = useState(false);
-            const [isReset, setIsReset] = useState(false);
-            const [email, setEmail] = useState("");
-            const [password, setPassword] = useState("");
-            const [error, setError] = useState("");
-            const [successMsg, setSuccessMsg] = useState("");
+        const AuthScreen = () => {
+            const [isRegister, setIsRegister] = useState(false);
+            const [isReset, setIsReset] = useState(false);
+            const [email, setEmail] = useState("");
+            const [password, setPassword] = useState("");
+            const [error, setError] = useState("");
+            const [successMsg, setSuccessMsg] = useState("");
 
-            const handleGoogleLogin = async () => {
-                try { await window.fb.signInWithPopup(window.fb.auth, window.fb.googleProvider); } 
-                catch (err) { setError(err.message); }
-            };
+            const handleGoogleLogin = async () => {
+                try { await window.fb.signInWithPopup(window.fb.auth, window.fb.googleProvider); } 
+                catch (err) { setError(err.message); }
+            };
 
-            const handleSubmit = async (e) => {
-                e.preventDefault();
-                setError(""); setSuccessMsg("");
-                try {
-                    if (isReset) {
-                        await window.fb.sendPasswordResetEmail(window.fb.auth, email);
-                        setSuccessMsg("Reset link sent! Check your email.");
-                        setTimeout(() => setIsReset(false), 3000);
-                    } else if (isRegister) {
-                        await window.fb.createUserWithEmailAndPassword(window.fb.auth, email, password);
-                    } else {
-                        await window.fb.signInWithEmailAndPassword(window.fb.auth, email, password);
-                    }
-                } catch (err) { setError(err.message); }
-            };
+            const handleSubmit = async (e) => {
+                e.preventDefault();
+                setError(""); setSuccessMsg("");
+                try {
+                    if (isReset) {
+                        await window.fb.sendPasswordResetEmail(window.fb.auth, email);
+                        setSuccessMsg("Reset link sent! Check your email.");
+                        setTimeout(() => setIsReset(false), 3000);
+                    } else if (isRegister) {
+                        await window.fb.createUserWithEmailAndPassword(window.fb.auth, email, password);
+                    } else {
+                        await window.fb.signInWithEmailAndPassword(window.fb.auth, email, password);
+                    }
+                } catch (err) { setError(err.message); }
+            };
 
-            return (
-                <div className="min-h-screen flex items-center justify-center p-4">
-                    <div className="bg-brand-card p-8 rounded-3xl w-full max-w-sm border border-slate-700 shadow-2xl animate-fade">
-                        <h2 className="text-xl font-bold text-white mb-6 text-center">
-                            {isReset ? "Reset Password" : (isRegister ? "Join Elite Tracker" : "Elite Login")}
-                        </h2>
-                        {!isReset && (
-                            <button onClick={handleGoogleLogin} className="w-full py-3 bg-white text-slate-900 font-bold rounded-xl mb-4 flex items-center justify-center gap-2 hover:bg-slate-200 transition-colors">Continue with Google</button>
-                        )}
-                        <form onSubmit={handleSubmit}>
-                            <input type="email" placeholder="Email" className="w-full p-3 mb-4 bg-brand-input rounded-xl text-white outline-none" value={email} onChange={e=>setEmail(e.target.value)} required />
-                            {!isReset && (
-                                <input type="password" placeholder="Password" className="w-full p-3 mb-6 bg-brand-input rounded-xl text-white outline-none" value={password} onChange={e=>setPassword(e.target.value)} required />
-                            )}
-                            {error && <p className="text-red-500 text-xs mb-4 text-center">{error}</p>}
-                            {successMsg && <p className="text-green-400 text-xs mb-4 text-center">{successMsg}</p>}
-                            <button type="submit" className="w-full py-3 bg-brand-navy border border-brand-green text-brand-green font-bold rounded-xl hover:bg-brand-green hover:text-brand-navy transition-all">
-                                {isReset ? "Send Reset Link" : (isRegister ? "Sign Up" : "Log In")}
-                            </button>
-                        </form>
-                        {!isReset && !isRegister && (
-                            <button onClick={() => { setIsReset(true); setError(""); }} className="w-full mt-4 text-xs text-brand-teal hover:underline">Forgot Password?</button>
-                        )}
-                        {isReset ? (
-                            <button onClick={() => { setIsReset(false); setError(""); }} className="w-full mt-4 text-xs text-slate-400 underline">Back to Login</button>
-                        ) : (
-                            <button onClick={()=>{setIsRegister(!isRegister); setError("");}} className="w-full mt-4 text-xs text-slate-400 underline">
-                                {isRegister ? "Already have an account? Log In" : "Need account? Sign Up"}
-                            </button>
-                        )}
-                        <div className="mt-8 pt-4 border-t border-slate-700 text-center">
-                            <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider mb-2">New User Guide</p>
-                            <p className="text-[11px] text-slate-400 leading-relaxed">To create a new account, simply click <strong>"Need account? Sign Up"</strong> above.</p>
-                        </div>
-                    </div>
-                </div>
-            );
-        };
+            return (
+                <div className="min-h-screen flex items-center justify-center p-4">
+                    <div className="bg-brand-card p-8 rounded-3xl w-full max-w-sm border border-slate-700 shadow-2xl animate-fade">
+                        <h2 className="text-xl font-bold text-white mb-6 text-center">
+                            {isReset ? "Reset Password" : (isRegister ? "Join Elite Tracker" : "Elite Login")}
+                        </h2>
+                        
+                        {!isReset && (
+                            <button onClick={handleGoogleLogin} className="w-full py-3 bg-white text-slate-900 font-bold rounded-xl mb-4 flex items-center justify-center gap-2 hover:bg-slate-200 transition-colors">Continue with Google</button>
+                        )}
 
-        const Timer = ({ seconds, label }) => {
-            const [timeLeft, setTimeLeft] = useState(seconds);
-            const [isActive, setIsActive] = useState(false);
-            useEffect(() => {
-                let iter = null;
-                if (isActive && timeLeft > 0) iter = setInterval(() => setTimeLeft(t => t - 1), 1000);
-                else clearInterval(iter);
-                return () => clearInterval(iter);
-            }, [isActive, timeLeft]);
-            const fmt = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
-            return (
-                <div className="flex items-center justify-between bg-slate-800/50 p-3 rounded-xl border border-slate-700 mb-2">
-                    <span className="text-xs text-slate-400 font-bold">{label}</span>
-                    <div className="flex items-center gap-4">
-                        <span className={`font-mono text-xl ${isActive ? 'active-timer' : 'text-slate-500'}`}>{fmt(timeLeft)}</span>
-                        <button onClick={() => setIsActive(!isActive)} className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase ${isActive ? 'bg-red-500/20 text-red-400' : 'bg-brand-green text-brand-navy'}`}>{isActive ? 'Stop' : 'Start'}</button>
-                    </div>
-                </div>
-            );
-        };
+                        <form onSubmit={handleSubmit}>
+                            <input type="email" placeholder="Email" className="w-full p-3 mb-4 bg-brand-input rounded-xl text-white outline-none" value={email} onChange={e=>setEmail(e.target.value)} required />
+                            
+                            {!isReset && (
+                                <input type="password" placeholder="Password" className="w-full p-3 mb-6 bg-brand-input rounded-xl text-white outline-none" value={password} onChange={e=>setPassword(e.target.value)} required />
+                            )}
 
-        const App = () => {
-            const [user, setUser] = useState(null);
-            const [appMode, setAppMode] = useState("nutrition");
-            const [view, setView] = useState("daily");
-            const [profile, setProfile] = useState(null);
-            const [currentDate, setCurrentDate] = useState(new Date().toISOString().split('T')[0]);
-            
-            const [targets, setTargets] = useState({ calories: 2000, protein: 150, carbs: 200, fat: 60 });
-            const [query, setQuery] = useState("");
-            const [results, setResults] = useState([]);
-            const [nutritionLog, setNutritionLog] = useState([]);
-            const [dailyWeight, setDailyWeight] = useState("");
-            const [showManual, setShowManual] = useState(false);
-            const [manualForm, setManualForm] = useState({ name: "", p: "", c: "", f: "", fib: "" });
-            const [selectedFood, setSelectedFood] = useState(null);
-            const [displayAmount, setDisplayAmount] = useState(100);
-            const [measureUnit, setMeasureUnit] = useState('g');
-            const [isScanning, setIsScanning] = useState(false);
-            const [loading, setLoading] = useState(false);
-            const [scores, setScores] = useState({ adherence: 0, consistency: 0 });
+                            {error && <p className="text-red-500 text-xs mb-4 text-center">{error}</p>}
+                            {successMsg && <p className="text-green-400 text-xs mb-4 text-center">{successMsg}</p>}
 
-            const [workoutLogs, setWorkoutLogs] = useState([]);
-            const [workoutHistory, setWorkoutHistory] = useState({});
-            const [customSets, setCustomSets] = useState({});
-            const [showLibrary, setShowLibrary] = useState(false);
-            const [activeRoutine, setActiveRoutine] = useState([]);
+                            <button type="submit" className="w-full py-3 bg-brand-navy border border-brand-green text-brand-green font-bold rounded-xl hover:bg-brand-green hover:text-brand-navy transition-all">
+                                {isReset ? "Send Reset Link" : (isRegister ? "Sign Up" : "Log In")}
+                            </button>
+                        </form>
 
-            const scannerRef = useRef(null);
-            const chartRef = useRef(null);
-            const chartInstance = useRef(null);
+                        {!isReset && !isRegister && (
+                            <button onClick={() => { setIsReset(true); setError(""); }} className="w-full mt-4 text-xs text-brand-teal hover:underline">
+                                Forgot Password?
+                            </button>
+                        )}
 
-            useEffect(() => {
-                const unsubscribe = window.fb.onAuthStateChanged(window.fb.auth, (u) => {
-                    setUser(u);
-                    if(u) loadProfile(u.uid);
-                });
-                return () => unsubscribe();
-            }, []);
+                        {isReset ? (
+                            <button onClick={() => { setIsReset(false); setError(""); }} className="w-full mt-4 text-xs text-slate-400 underline">
+                                Back to Login
+                            </button>
+                        ) : (
+                            <button onClick={()=>{setIsRegister(!isRegister); setError("");}} className="w-full mt-4 text-xs text-slate-400 underline">
+                                {isRegister ? "Already have an account? Log In" : "Need account? Sign Up"}
+                            </button>
+                        )}
 
-            const loadProfile = async (uid) => {
-                const docRef = window.fb.doc(window.fb.db, "users", uid, "data", "profile");
-                const snap = await window.fb.getDoc(docRef);
-                if (snap.exists()) setProfile(snap.data());
-            };
+                        {/* New User Instructions */}
+                        <div className="mt-8 pt-4 border-t border-slate-700 text-center">
+                            <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider mb-2">New User Guide</p>
+                            <p className="text-[11px] text-slate-400 leading-relaxed">
+                                To create a new account, simply click <strong>"Need account? Sign Up"</strong> above. Enter your email and a secure password, then click <strong>Sign Up</strong> to instantly access your dashboard.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
 
-            // DYNAMIC CLINICAL MACRO CALCULATION
-            useEffect(() => {
-                if (profile && dailyWeight) {
-                    const weightLbs = parseFloat(dailyWeight);
-                    if (!weightLbs || weightLbs < 50) return;
+        const Timer = ({ seconds, label }) => {
+            const [timeLeft, setTimeLeft] = useState(seconds);
+            const [isActive, setIsActive] = useState(false);
+            useEffect(() => {
+                let iter = null;
+                if (isActive && timeLeft > 0) iter = setInterval(() => setTimeLeft(t => t - 1), 1000);
+                else clearInterval(iter);
+                return () => clearInterval(iter);
+            }, [isActive, timeLeft]);
+            const fmt = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+            return (
+                <div className="flex items-center justify-between bg-slate-800/50 p-3 rounded-xl border border-slate-700 mb-2">
+                    <span className="text-xs text-slate-400 font-bold">{label}</span>
+                    <div className="flex items-center gap-4">
+                        <span className={`font-mono text-xl ${isActive ? 'active-timer' : 'text-slate-500'}`}>{fmt(timeLeft)}</span>
+                        <button onClick={() => setIsActive(!isActive)} className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase ${isActive ? 'bg-red-500/20 text-red-400' : 'bg-brand-green text-brand-navy'}`}>{isActive ? 'Stop' : 'Start'}</button>
+                    </div>
+                </div>
+            );
+        };
 
-                    const kg = weightLbs * 0.453592;
-                    const heightCm = (parseFloat(profile.height) || 67) * 2.54;
-                    const age = parseFloat(profile.age) || 35;
-                    const gender = profile.gender || 'male';
-                    const act = parseFloat(profile.activity) || 1.55;
-                    const goalAdj = parseFloat(profile.goal) || -500;
-                    const bodyType = profile.bodyType || 'meso';
+        const App = () => {
+            const [user, setUser] = useState(null);
+            const [appMode, setAppMode] = useState("nutrition");
+            const [view, setView] = useState("daily");
+            const [profile, setProfile] = useState(null);
+            const [currentDate, setCurrentDate] = useState(new Date().toISOString().split('T')[0]);
+            
+            const [targets, setTargets] = useState({ calories: 2000, protein: 150, carbs: 200, fat: 60 });
+            const [query, setQuery] = useState("");
+            const [results, setResults] = useState([]);
+            const [nutritionLog, setNutritionLog] = useState([]);
+            const [dailyWeight, setDailyWeight] = useState("");
+            const [showManual, setShowManual] = useState(false);
+            const [manualForm, setManualForm] = useState({ name: "", p: "", c: "", f: "", fib: "" });
+            const [selectedFood, setSelectedFood] = useState(null);
+            const [displayAmount, setDisplayAmount] = useState(100);
+            const [measureUnit, setMeasureUnit] = useState('g');
+            const [isScanning, setIsScanning] = useState(false);
+            const [loading, setLoading] = useState(false);
+            const [scores, setScores] = useState({ adherence: 0, consistency: 0 });
 
-                    let bmr = (10 * kg) + (6.25 * heightCm) - (5 * age);
-                    bmr = (gender === 'male') ? bmr + 5 : bmr - 161;
+            const [workoutLogs, setWorkoutLogs] = useState([]);
+            const [workoutHistory, setWorkoutHistory] = useState({});
+            const [customSets, setCustomSets] = useState({});
+            const [showLibrary, setShowLibrary] = useState(false);
+            const [activeRoutine, setActiveRoutine] = useState([]);
 
-                    const targetCal = Math.round(bmr * act) + goalAdj;
-                    const minProtein = Math.round(1.6 * kg);
+            const scannerRef = useRef(null);
+            const chartRef = useRef(null);
+            const chartInstance = useRef(null);
 
-                    let pr=0.4, cr=0.3, fr=0.3;
-                    if(bodyType==='ecto'){ pr=0.3; cr=0.5; fr=0.2; } else if(bodyType==='endo'){ pr=0.4; cr=0.2; fr=0.4; }
+            useEffect(() => {
+                const unsubscribe = window.fb.onAuthStateChanged(window.fb.auth, (u) => {
+                    setUser(u);
+                    if(u) loadProfile(u.uid);
+                });
+                return () => unsubscribe();
+            }, []);
 
-                    let pG = Math.round((targetCal * pr) / 4);
-                    let cG = Math.round((targetCal * cr) / 4);
-                    let fG = Math.round((targetCal * fr) / 9);
+            const loadProfile = async (uid) => {
+                const docRef = window.fb.doc(window.fb.db, "users", uid, "data", "profile");
+                const snap = await window.fb.getDoc(docRef);
+                if (snap.exists()) setProfile(snap.data());
+                // Initial target load (fallback if no dynamic calc possible yet)
+                const targetRef = window.fb.doc(window.fb.db, "users", uid, "data", "targets");
+                const targetSnap = await window.fb.getDoc(targetRef);
+                if (targetSnap.exists()) setTargets(targetSnap.data());
+            };
 
-                    if (pG < minProtein) {
-                        pG = minProtein;
-                        cG = Math.round((targetCal * cr) / 4);
-                        fG = Math.max(0, Math.round((targetCal - (pG * 4) - (cG * 4)) / 9));
-                    }
-                    setTargets({ calories: targetCal, protein: pG, carbs: cG, fat: fG });
-                }
-            }, [dailyWeight, profile]);
+            // DYNAMIC CALORIE & MACRO CALCULATOR
+            useEffect(() => {
+                if (profile && dailyWeight) {
+                    const w = parseFloat(dailyWeight);
+                    if (!w || w < 50) return; // Basic validation
 
-            useEffect(() => {
-                if (!user || !window.fb) return;
-                const nQ = window.fb.query(window.fb.collection(window.fb.db, "users", user.uid, "logs"), window.fb.where("date", "==", currentDate));
-                const unsubN = window.fb.onSnapshot(nQ, (snap) => {
-                    const raw = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-                    raw.sort((a,b) => (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0));
-                    setNutritionLog(raw);
-                });
-                const wQ = window.fb.query(window.fb.collection(window.fb.db, "users", user.uid, "workout_logs"), window.fb.where("date", "==", currentDate));
-                const unsubW = window.fb.onSnapshot(wQ, (snap) => {
-                    setWorkoutLogs(snap.docs.map(d => ({id: d.id, ...d.data()})));
-                });
-                const rQ = window.fb.doc(window.fb.db, "users", user.uid, "active_routines", currentDate);
-                const unsubR = window.fb.onSnapshot(rQ, (doc) => {
-                    if(doc.exists()) setActiveRoutine(doc.data().exercises || []);
-                    else setActiveRoutine([]);
-                });
-                const fetchWeight = async () => {
-                    const docSnap = await window.fb.getDoc(window.fb.doc(window.fb.db, "users", user.uid, "daily_stats", currentDate));
-                    setDailyWeight(docSnap.exists() ? docSnap.data().weight : "");
-                };
-                fetchWeight();
-                return () => { unsubN(); unsubW(); unsubR(); };
-            }, [user, currentDate]);
+                    const weightKg = w * 0.453592;
+                    const heightCm = parseFloat(profile.height) > 100 ? parseFloat(profile.height) : (parseFloat(profile.height) * 2.54 || 175);
+                    const age = parseFloat(profile.age) || 30;
+                    const gender = profile.gender || 'male';
+                    const activity = parseFloat(profile.activity) || 1.55;
+                    const goal = parseFloat(profile.goal) || -500;
+                    const bodyType = profile.bodyType || 'meso';
 
-            // SCANNER CORE
-            useEffect(() => {
-                if (isScanning) {
-                    const scanner = new Html5Qrcode("reader");
-                    scannerRef.current = scanner;
-                    scanner.start({ facingMode: "environment" }, { fps: 15, qrbox: { width: 250, height: 250 } }, (text) => stopScanner(text), (err) => {}).catch(() => setIsScanning(false));
-                }
-                return () => { if (scannerRef.current?.isScanning) scannerRef.current.stop().catch(() => {}); }
-            }, [isScanning]);
+                    let bmr = (10 * weightKg) + (6.25 * heightCm) - (5 * age);
+                    bmr += (gender === 'male' ? 5 : -161);
 
-            const startScanner = () => { setResults([]); setIsScanning(true); };
-            const stopScanner = (foundCode = null) => {
-                if (scannerRef.current) {
-                    scannerRef.current.stop().then(() => {
-                        scannerRef.current.clear(); setIsScanning(false);
-                        if (foundCode) { setQuery(foundCode); setTimeout(() => handleSearch(null, foundCode), 100); }
-                    }).catch(() => setIsScanning(false));
-                } else setIsScanning(false);
-            };
+                    const tdee = Math.round(bmr * activity);
+                    const finalCals = tdee + goal;
 
-            const handleSearch = async (e, overrideQuery = null) => {
-                if (e) e.preventDefault();
-                const qTerm = overrideQuery || query;
-                if (!qTerm) return;
-                setLoading(true); setResults([]); setSelectedFood(null);
-                
-                if (/^\d+$/.test(qTerm)) {
-                    try {
-                        const res = await fetch(`https://api.nal.usda.gov/fdc/v1/foods/search?api_key=${API_KEY}&query=${qTerm}&pageSize=1&dataType=Branded,SR Legacy`);
-                        const data = await res.json();
-                        if (data.foods?.[0]) { await selectFood(data.foods[0]); setLoading(false); return; }
-                    } catch (e) {}
-                    try {
-                        const res = await fetch(`https://world.openfoodfacts.org/api/v0/product/${qTerm}.json`);
-                        const data = await res.json();
-                        if (data.status === 1) {
-                            const n = data.product.nutriments;
-                            setSelectedFood({ name: `(OFF) ${data.product.product_name}`, calories: n['energy-kcal_100g']||0, protein: n.proteins_100g||0, carbs: n.carbohydrates_100g||0, fat: n.fat_100g||0, fiber: n.fiber_100g||0, userGrams: 100 });
-                            setLoading(false); return;
-                        }
-                    } catch (e) {}
-                }
+                    const minProteinGrams = Math.round(1.6 * weightKg);
 
-                try {
-                    const res = await fetch(`https://api.nal.usda.gov/fdc/v1/foods/search?api_key=${API_KEY}&query=${qTerm}&pageSize=10&dataType=Foundation,SR Legacy,Branded`);
-                    const data = await res.json();
-                    if (data.foods) setResults(data.foods.map(f => ({ ...f, description: `(USDA) ${f.description}`, fdcId: f.fdcId })));
-                } catch (e) {}
-                setLoading(false);
-            };
+                    let pRatio, cRatio, fRatio;
+                    if (bodyType === 'ecto') { pRatio = 0.30; cRatio = 0.50; fRatio = 0.20; }
+                    else if (bodyType === 'endo') { pRatio = 0.40; cRatio = 0.20; fRatio = 0.40; }
+                    else { pRatio = 0.40; cRatio = 0.30; fRatio = 0.30; }
 
-            const selectFood = async (food) => {
-                setLoading(true);
-                if (food.userGrams) { setSelectedFood(food); setLoading(false); return; }
-                let nutrients = food.foodNutrients || []; 
-                try {
-                    const res = await fetch(`https://api.nal.usda.gov/fdc/v1/food/${food.fdcId}?api_key=${API_KEY}`);
-                    if (res.ok) { const d = await res.json(); nutrients = d.foodNutrients || []; }
-                } catch (err) {}
-                const getVal = (ids) => { 
-                    const n = nutrients.find(x => ids.includes(x.nutrientId || x.nutrient?.id));
-                    return n ? (n.amount || n.value || 0) : 0; 
-                };
-                setSelectedFood({ name: food.description, calories: getVal([1008, 208, 2047]), protein: getVal([1003, 203]), carbs: getVal([1005, 205]), fat: getVal([1004, 204]), fiber: getVal([1079, 291]), userGrams: 100 });
-                setResults([]); setLoading(false);
-            };
+                    let pGrams = Math.round((finalCals * pRatio) / 4);
+                    let cGrams = Math.round((finalCals * cRatio) / 4);
+                    let fGrams = Math.round((finalCals * fRatio) / 9);
 
-            const addToLog = async () => {
-                if(!selectedFood) return;
-                let grams = measureUnit === 'oz' ? parseFloat(displayAmount) * 28.3495 : parseFloat(displayAmount);
-                const f = grams / 100;
-                await window.fb.addDoc(window.fb.collection(window.fb.db, "users", user.uid, "logs"), { 
-                    name: selectedFood.name, grams, calories: selectedFood.calories * f, protein: parseFloat((selectedFood.protein * f).toFixed(1)), carbs: parseFloat((selectedFood.carbs * f).toFixed(1)), fat: parseFloat((selectedFood.fat * f).toFixed(1)), fiber: parseFloat((selectedFood.fiber * f).toFixed(1)), date: currentDate, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), createdAt: window.fb.serverTimestamp() 
-                });
-                setSelectedFood(null);
-            };
+                    if (pGrams < minProteinGrams) {
+                        pGrams = minProteinGrams;
+                        const pCals = pGrams * 4;
+                        const cCals = Math.round(finalCals * cRatio);
+                        cGrams = Math.round(cCals / 4);
+                        fGrams = Math.max(0, Math.round((finalCals - pCals - cCals) / 9));
+                    }
 
-            const changeDate = (offset) => {
-                const d = new Date(currentDate);
-                d.setDate(d.getDate() + offset);
-                setCurrentDate(d.toISOString().split('T')[0]);
-            };
+                    setTargets({
+                        calories: finalCals,
+                        protein: pGrams,
+                        carbs: cGrams,
+                        fat: fGrams
+                    });
+                }
+            }, [dailyWeight, profile]);
 
-            const saveEntry = async (exName, setIdx, reps, weight) => {
-                if(!user || !reps || !weight) return;
-                const entryId = `${currentDate}_${exName.replace(/\s+/g, '_')}_set${setIdx}`;
-                await window.fb.setDoc(window.fb.doc(window.fb.db, "users", user.uid, "workout_logs", entryId), {
-                    exercise: exName, setIndex: setIdx, reps: parseInt(reps), weight: parseFloat(weight), volume: parseInt(reps) * parseFloat(weight), date: currentDate, timestamp: window.fb.serverTimestamp()
-                });
-            };
+            useEffect(() => {
+                if (!user || !window.fb) return;
+                const nQ = window.fb.query(window.fb.collection(window.fb.db, "users", user.uid, "logs"), window.fb.where("date", "==", currentDate));
+                const unsubN = window.fb.onSnapshot(nQ, (snap) => {
+                    const raw = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                    raw.sort((a,b) => (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0));
+                    setNutritionLog(raw);
+                });
+                const wQ = window.fb.query(window.fb.collection(window.fb.db, "users", user.uid, "workout_logs"), window.fb.where("date", "==", currentDate));
+                const unsubW = window.fb.onSnapshot(wQ, (snap) => {
+                    setWorkoutLogs(snap.docs.map(d => ({id: d.id, ...d.data()})));
+                });
+                const rQ = window.fb.doc(window.fb.db, "users", user.uid, "active_routines", currentDate);
+                const unsubR = window.fb.onSnapshot(rQ, (doc) => {
+                    if(doc.exists()) setActiveRoutine(doc.data().exercises || []);
+                    else setActiveRoutine([]);
+                });
+                const fetchWeight = async () => {
+                    const docSnap = await window.fb.getDoc(window.fb.doc(window.fb.db, "users", user.uid, "daily_stats", currentDate));
+                    setDailyWeight(docSnap.exists() ? docSnap.data().weight : "");
+                };
+                fetchWeight();
+                return () => { unsubN(); unsubW(); unsubR(); };
+            }, [user, currentDate]);
 
-            const removeExercise = async (idx) => {
-                const exName = activeRoutine[idx].name;
-                const updatedRoutine = activeRoutine.filter((_, i) => i !== idx);
-                await window.fb.setDoc(window.fb.doc(window.fb.db, "users", user.uid, "active_routines", currentDate), { exercises: updatedRoutine });
-                if (exName) {
-                    const q = window.fb.query(window.fb.collection(window.fb.db, "users", user.uid, "workout_logs"), window.fb.where("date", "==", currentDate), window.fb.where("exercise", "==", exName));
-                    const snap = await window.fb.getDocs(q);
-                    const batch = window.fb.writeBatch(window.fb.db);
-                    snap.docs.forEach(d => batch.delete(d.ref));
-                    await batch.commit();
-                }
-            };
+            // SCANNER CORE
+            useEffect(() => {
+                if (isScanning) {
+                    const scanner = new Html5Qrcode("reader");
+                    scannerRef.current = scanner;
+                    scanner.start(
+                        { facingMode: "environment" },
+                        { fps: 15, qrbox: { width: 250, height: 250 } },
+                        (decodedText) => { 
+                            stopScanner(decodedText); 
+                        },
+                        (err) => {}
+                    ).catch(err => {
+                        console.error("Scanner Start Error", err);
+                        setIsScanning(false);
+                    });
+                }
+                return () => {
+                    if (scannerRef.current && scannerRef.current.isScanning) {
+                        scannerRef.current.stop().catch(() => {});
+                    }
+                }
+            }, [isScanning]);
 
-            const addExerciseToRoutine = async (exerciseName) => {
-                const updatedRoutine = [...activeRoutine, { name: exerciseName, type: 'lifting', sets: 3 }];
-                await window.fb.setDoc(window.fb.doc(window.fb.db, "users", user.uid, "active_routines", currentDate), { exercises: updatedRoutine });
-                setShowLibrary(false);
-            };
+            const startScanner = () => { setResults([]); setIsScanning(true); };
+            
+            const stopScanner = (foundCode = null) => {
+                if (scannerRef.current) {
+                    scannerRef.current.stop().then(() => {
+                        scannerRef.current.clear(); 
+                        setIsScanning(false);
+                        if (foundCode) {
+                            setQuery(foundCode);
+                            setTimeout(() => handleSearch(null, foundCode), 100);
+                        }
+                    }).catch(() => setIsScanning(false));
+                } else setIsScanning(false);
+            };
 
-            const exportMasterReport = async () => {
-                const { jsPDF } = window.jspdf;
-                const doc = new jsPDF();
-                const snap = await window.fb.getDocs(window.fb.collection(window.fb.db, "users", user.uid, "logs"));
-                const wSnap = await window.fb.getDocs(window.fb.collection(window.fb.db, "users", user.uid, "workout_logs"));
-                const allLogs = snap.docs.map(d => d.data());
-                const allWorkouts = wSnap.docs.map(d => d.data());
-                
-                const historyByDate = {};
-                allLogs.forEach(l => {
-                    if(!historyByDate[l.date]) historyByDate[l.date] = { nutrition: [], c:0, p:0, cr:0, f:0, fb:0, vol:0 };
-                    historyByDate[l.date].nutrition.push(l);
-                    historyByDate[l.date].c += l.calories; historyByDate[l.date].p += l.protein; historyByDate[l.date].cr += l.carbs; historyByDate[l.date].f += l.fat; historyByDate[l.date].fb += (l.fiber||0);
-                });
-                allWorkouts.forEach(w => {
-                    if(!historyByDate[w.date]) historyByDate[w.date] = { nutrition: [], c:0, p:0, cr:0, f:0, fb:0, vol:0 };
-                    historyByDate[w.date].vol += (Number(w.volume) || 0);
-                });
+            const handleSearch = async (e, overrideQuery = null) => {
+                if (e) e.preventDefault();
+                const qTerm = overrideQuery || query;
+                if (!qTerm) return;
+                setLoading(true); setResults([]); setSelectedFood(null);
+                
+                // BARCODE DETECTION LOGIC
+                if (/^\d+$/.test(qTerm)) {
+                    // 1. Try USDA
+                    try {
+                        const res = await fetch(`https://api.nal.usda.gov/fdc/v1/foods/search?api_key=${API_KEY}&query=${qTerm}&pageSize=1&dataType=Branded,SR Legacy`);
+                        const data = await res.json();
+                        if (data.foods && data.foods.length > 0) { 
+                            await selectFood(data.foods[0]); 
+                            setLoading(false); 
+                            return; 
+                        }
+                    } catch (e) { console.error("USDA Barcode fail", e); }
 
-                const sortedDates = Object.keys(historyByDate).sort().reverse();
-                doc.setFontSize(16); doc.text("ELITE PERFORMANCE HISTORY", 14, 20);
-                let yPos = 30;
+                    // 2. Try Open Food Facts (Fallback)
+                    try {
+                        const res = await fetch(`https://world.openfoodfacts.org/api/v0/product/${qTerm}.json`);
+                        const data = await res.json();
+                        if (data.status === 1) {
+                            const p = data.product;
+                            const n = p.nutriments;
+                            setSelectedFood({
+                                name: `(OFF) ${p.product_name}`,
+                                calories: n['energy-kcal_100g'] || 0,
+                                protein: n.proteins_100g || 0,
+                                carbs: n.carbohydrates_100g || 0,
+                                fat: n.fat_100g || 0,
+                                fiber: n.fiber_100g || 0,
+                                userGrams: 100
+                            });
+                            setDisplayAmount(100); setMeasureUnit('g');
+                            setLoading(false);
+                            return;
+                        }
+                    } catch (e) { console.error("OFF Barcode fail", e); }
+                }
 
-                sortedDates.forEach(date => {
-                    if(yPos > 240) { doc.addPage(); yPos = 20; }
-                    const day = historyByDate[date];
-                    doc.setFontSize(10); doc.text(`DATE: ${date} | VOL: ${day.vol.toLocaleString()} lbs`, 14, yPos);
-                    const rows = day.nutrition.map(n => [n.name, Math.round(n.calories), n.protein.toFixed(1)+'g', n.carbs.toFixed(1)+'g', n.fat.toFixed(1)+'g']);
-                    rows.push([{ content: 'DAILY TOTAL', styles: { fontStyle: 'bold', fillColor: [230, 230, 230] } }, Math.round(day.c), day.p.toFixed(1)+'g', day.cr.toFixed(1)+'g', day.f.toFixed(1)+'g']);
-                    doc.autoTable({ startY: yPos + 2, head: [['Food', 'Cals', 'P', 'C', 'F']], body: rows, theme: 'grid', styles: { fontSize: 7 } });
-                    yPos = doc.lastAutoTable.finalY + 10;
-                });
+                // TEXT SEARCH LOGIC
+                try {
+                    const res = await fetch(`https://api.nal.usda.gov/fdc/v1/foods/search?api_key=${API_KEY}&query=${qTerm}&pageSize=10&dataType=Foundation,SR Legacy,Branded`);
+                    const data = await res.json();
+                    if (data.foods) setResults(data.foods.map(f => ({ ...f, description: `(USDA) ${f.description}`, fdcId: f.fdcId })));
+                } catch (e) { console.error("Text search failed", e); }
+                setLoading(false);
+            };
 
-                // STRICT CALENDAR WEEK AVERAGES
-                doc.addPage();
-                doc.setFontSize(14); doc.text("WEEKLY AVERAGES (Fiscal)", 14, 20);
-                const anchor = new Date("2025-12-28T00:00:00");
-                const today = new Date();
-                const weekBuckets = [];
-                let currentStart = new Date(anchor);
-                while(currentStart <= today) {
-                    let weekDates = [];
-                    for(let i=0; i<7; i++) {
-                        let d = new Date(currentStart); d.setDate(d.getDate() + i);
-                        weekDates.push(d.toISOString().split('T')[0]);
-                    }
-                    const activeDays = weekDates.filter(d => historyByDate[d]);
-                    if(activeDays.length > 0) {
-                        const sum = activeDays.reduce((acc, d) => ({ c: acc.c + historyByDate[d].c, p: acc.p + historyByDate[d].p, cr: acc.cr + historyByDate[d].cr, f: acc.f + historyByDate[d].f }), {c:0, p:0, cr:0, f:0});
-                        const cnt = activeDays.length;
-                        weekBuckets.push([`Week ${weekBuckets.length+1} (${currentStart.toLocaleDateString()})`, Math.round(sum.c/cnt), (sum.p/cnt).toFixed(1)+'g', (sum.cr/cnt).toFixed(1)+'g', (sum.f/cnt).toFixed(1)+'g']);
-                    }
-                    currentStart.setDate(currentStart.getDate() + 7);
-                }
-                doc.autoTable({ startY: 30, head: [['Week', 'Avg Cals', 'Avg P', 'Avg C', 'Avg F']], body: weekBuckets.reverse(), theme: 'striped' });
-                doc.save(`Elite_Report_${currentDate}.pdf`);
-            };
+            const selectFood = async (food) => {
+                setLoading(true);
+                
+                if (food.userGrams) {
+                    setSelectedFood(food);
+                    setLoading(false);
+                    return;
+                }
 
-            const nutritionTotals = nutritionLog.reduce((acc, i) => ({ cals: acc.cals + i.calories, pro: acc.pro + i.protein, carb: acc.carb + i.carbs, fat: acc.fat + i.fat, fib: acc.fib + (i.fiber||0) }), { cals: 0, pro: 0, carb: 0, fat: 0, fib: 0 });
-            const totalVolume = workoutLogs.filter(log => activeRoutine.map(e=>e.name).includes(log.exercise)).reduce((acc, curr) => acc + (Number(curr.volume) || 0), 0);
-            
-            if (!user) return <AuthScreen />;
-            const ratio = selectedFood ? ((measureUnit === 'oz' ? parseFloat(displayAmount) * 28.3495 : parseFloat(displayAmount)) / 100) : 0;
+                let foodDetails = food;
+                let nutrients = food.foodNutrients || []; 
 
-            return (
-                <div className="max-w-4xl mx-auto px-4 pt-6 pb-24 font-sans text-white">
-                    <div className="flex bg-brand-card rounded-2xl p-1 mb-6 border border-slate-700">
-                        <button onClick={() => setAppMode("nutrition")} className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all ${appMode === 'nutrition' ? 'bg-brand-green text-brand-navy' : 'text-slate-400'}`}>Nutrition</button>
-                        <button onClick={() => setAppMode("workout")} className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all ${appMode === 'workout' ? 'bg-brand-teal text-brand-navy' : 'text-slate-400'}`}>Elite Workout</button>
-                    </div>
+                try {
+                    const res = await fetch(`https://api.nal.usda.gov/fdc/v1/food/${food.fdcId}?api_key=${API_KEY}`);
+                    if (res.ok) {
+                        const d = await res.json();
+                        foodDetails = d;
+                        nutrients = d.foodNutrients || [];
+                    }
+                } catch (err) { 
+                    console.log("Detail fetch failed, falling back to search result data"); 
+                }
 
-                    <div className="flex flex-col md:flex-row justify-between gap-4 mb-6">
-                        <div className="flex items-center bg-brand-card p-2 rounded-xl border border-slate-700">
-                            <button onClick={()=>changeDate(-1)} className="p-2 font-black">&lt;</button>
-                            <span className="mx-4 font-bold min-w-[100px] text-center">{currentDate}</span>
-                            <button onClick={()=>changeDate(1)} className="p-2 font-black">&gt;</button>
-                        </div>
-                        <div className="flex items-center bg-brand-input rounded-xl px-4 border border-slate-600">
-                            <span className="text-xs text-slate-400 mr-2 uppercase font-bold">Body Weight:</span>
-                            <input type="number" value={dailyWeight} onChange={(e)=>setDailyWeight(e.target.value)} onBlur={async()=>await window.fb.setDoc(window.fb.doc(window.fb.db, "users", user.uid, "daily_stats", currentDate), { weight: dailyWeight, date: currentDate }, { merge: true })} className="bg-transparent text-white font-bold w-16 text-right outline-none" placeholder="0.0" />
-                            <span className="text-[10px] text-brand-green ml-1 font-black">lbs</span>
-                        </div>
-                    </div>
+                const getVal = (ids) => { 
+                    if (!nutrients) return 0;
+                    const n = nutrients.find(x => {
+                        const nId = x.nutrientId || x.nutrient?.id;
+                        return ids.includes(nId);
+                    }); 
+                    return n ? (n.amount || n.value || 0) : 0; 
+                };
+                
+                setSelectedFood({ 
+                    name: foodDetails.description, 
+                    calories: getVal([1008, 208, 2047]), 
+                    protein: getVal([1003, 203]), 
+                    carbs: getVal([1005, 205]), 
+                    fat: getVal([1004, 204]), 
+                    fiber: getVal([1079, 291]), 
+                    userGrams: 100 
+                });
+                
+                setDisplayAmount(100); 
+                setMeasureUnit('g');
+                setResults([]); 
+                setLoading(false);
+            };
 
-                    {appMode === "nutrition" ? (
-                        <div className="animate-fade">
-                            <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mb-6 text-center font-bold">
-                                <div className="bg-brand-card p-3 rounded-xl border border-slate-700"><span className="text-[10px] text-slate-400 uppercase">Cals</span><div className={`text-lg ${nutritionTotals.cals > targets.calories ? 'text-red-400' : 'text-white'}`}>{Math.round(nutritionTotals.cals)} / <span className="text-slate-400 text-sm">{targets.calories}</span></div></div>
-                                <div className="bg-brand-card p-3 rounded-xl border border-slate-700"><span className="text-[10px] text-brand-teal uppercase">P</span><div className="text-sm">{Math.round(nutritionTotals.pro)} / {targets.protein}g</div></div>
-                                <div className="bg-brand-card p-3 rounded-xl border border-slate-700"><span className="text-[10px] text-brand-green uppercase">C</span><div className="text-sm">{Math.round(nutritionTotals.carb)} / {targets.carbs}g</div></div>
-                                <div className="bg-brand-card p-3 rounded-xl border border-slate-700"><span className="text-[10px] text-yellow-400 uppercase">F</span><div className="text-sm">{Math.round(nutritionTotals.fat)} / {targets.fat}g</div></div>
-                                <div className="bg-brand-card p-3 rounded-xl border border-slate-700"><span className="text-[10px] text-purple-400 uppercase">Fib</span><div className="text-sm">{Math.round(nutritionTotals.fib)}g</div></div>
-                            </div>
-                            <div className="flex gap-2 mb-6">
-                                <form onSubmit={handleSearch} className="flex-1 relative">
-                                    <input type="text" value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search or scan barcode..." className="w-full p-4 bg-brand-input rounded-xl outline-none text-sm text-white" />
-                                    <button type="button" onClick={startScanner} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-brand-green"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg></button>
-                                </form>
-                                <button onClick={handleSearch} className="bg-brand-green text-brand-navy px-4 rounded-xl font-bold">{loading ? "..." : "Find"}</button>
-                            </div>
-                            {selectedFood && (
-                                <div className="bg-brand-card p-5 rounded-2xl border border-brand-green mb-6 animate-fade">
-                                    <p className="font-bold mb-4 text-white">{selectedFood.name}</p>
-                                    <div className="flex items-center justify-between mb-4 bg-brand-input rounded-xl p-2 border border-slate-600">
-                                        <div className="flex items-center gap-2">
-                                            <input type="number" value={displayAmount} onChange={(e)=>setDisplayAmount(e.target.value)} className="w-20 bg-transparent text-white font-bold text-2xl text-center outline-none" />
-                                            <button onClick={()=>setMeasureUnit(measureUnit==='g'?'oz':'g')} className="px-3 py-1 bg-brand-card text-brand-green border border-brand-green rounded-lg font-bold text-xs uppercase">{measureUnit}</button>
-                                        </div>
-                                        <div className="text-right"><span className="block text-2xl font-bold">{Math.round(selectedFood.calories * ratio)}</span><span className="text-[10px] text-slate-400 font-bold uppercase">Est Cals</span></div>
-                                    </div>
-                                    <button onClick={addToLog} className="w-full bg-brand-green text-brand-navy py-4 rounded-xl font-black uppercase shadow-lg hover:bg-white transition-all">Add to Daily Log</button>
-                                </div>
-                            )}
-                            <div className="bg-brand-card rounded-2xl border border-slate-700 overflow-hidden shadow-2xl table-scroll overflow-x-auto">
-                                <table className="w-full text-xs text-left text-slate-300 min-w-[500px]">
-                                    <thead className="bg-slate-800 text-slate-400 uppercase">
-                                        <tr><th className="px-4 py-3">Food</th><th className="px-4 py-3 text-center">Cals</th><th className="px-4 py-3 text-center">P</th><th className="px-4 py-3 text-center">C</th><th className="px-4 py-3 text-center">F</th><th className="px-4 py-3 text-center">Fib</th><th className="px-4 py-3"></th></tr>
-                                    </thead>
-                                    <tbody>
-                                        {nutritionLog.map(item => (
-                                            <tr key={item.id} className="border-b border-slate-700 hover:bg-slate-700/20 transition-colors">
-                                                <td className="px-4 py-3 font-medium text-white max-w-[120px] truncate">{item.name}</td>
-                                                <td className="px-4 py-3 font-bold text-white text-center">{Math.round(item.calories)}</td>
-                                                <td className="px-4 py-3 text-brand-teal text-center font-bold">{item.protein.toFixed(1)}g</td>
-                                                <td className="px-4 py-3 text-brand-green text-center font-bold">{item.carbs.toFixed(1)}g</td>
-                                                <td className="px-4 py-3 text-yellow-400 text-center font-bold">{item.fat.toFixed(1)}g</td>
-                                                <td className="px-4 py-3 text-purple-400 text-center font-bold">{item.fiber?.toFixed(1) || 0}g</td>
-                                                <td className="px-4 py-3 text-right font-black"><button onClick={async()=>await window.fb.deleteDoc(window.fb.doc(window.fb.db,"users",user.uid,"logs",item.id))} className="text-red-400 p-1 hover:text-white transition-colors">✕</button></td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    ) : (
-                        <div className="animate-fade">
-                            <div className="bg-brand-card p-5 rounded-2xl border border-slate-700 mb-6 flex justify-between items-center shadow-xl">
-                                <div><h2 className="text-xl font-black text-brand-teal uppercase">Daily Volume</h2><p className="text-[10px] text-slate-500 font-bold uppercase">Lifting Performance</p></div>
-                                <div className="text-right font-black"><span className="text-2xl text-white">{totalVolume.toLocaleString()}</span><span className="ml-1 text-[10px] text-brand-teal uppercase font-bold">lbs</span></div>
-                            </div>
-                            <Timer seconds={90} label="Rest Timer" />
-                            <button onClick={() => setShowLibrary(true)} className="w-full py-4 bg-brand-navy border-2 border-dashed border-slate-600 rounded-2xl text-slate-400 font-bold mb-6 hover:border-brand-teal hover:text-brand-teal transition-all">+ Add Exercise</button>
-                            <div className="space-y-6">
-                                {activeRoutine.map((ex, i) => {
-                                    const exLogs = workoutLogs.filter(l => l.exercise === ex.name);
-                                    return (
-                                        <div key={i} className="bg-brand-card rounded-2xl p-5 border border-slate-700 shadow-lg">
-                                            <div className="flex justify-between items-center mb-4">
-                                                <h3 className="font-extrabold text-white text-sm uppercase">{ex.name}</h3>
-                                                <button onClick={() => removeExercise(i)} className="text-[9px] bg-red-900/30 text-red-400 px-2 py-1 rounded font-black uppercase">Remove</button>
-                                            </div>
-                                            <div className="space-y-4">
-                                                {[...Array(3 + (customSets[ex.name] || 0))].map((_, s) => {
-                                                    const log = exLogs.find(l => l.setIndex === s);
-                                                    return (
-                                                        <div key={s} className="grid grid-cols-2 gap-3 p-3 bg-slate-800/30 rounded-xl">
-                                                            <input type="number" placeholder="Reps" defaultValue={log?.reps || ""} className="bg-brand-input p-2 rounded-lg text-center font-bold text-white outline-none" onBlur={(e) => { const w = e.target.nextSibling?.value; if(e.target.value && w) saveEntry(ex.name, s, e.target.value, w); }} />
-                                                            <input type="number" placeholder="Lbs" defaultValue={log?.weight || ""} className="bg-brand-input p-2 rounded-lg text-center font-bold text-brand-teal outline-none" onBlur={(e) => { const r = e.target.previousSibling?.value; if(e.target.value && r) saveEntry(ex.name, s, r, e.target.value); }} />
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </div>
-                    )}
-                    {showLibrary && (
-                        <div className="fixed inset-0 z-[70] bg-black/95 p-4 overflow-y-auto">
-                            <div className="max-w-md mx-auto bg-brand-card rounded-3xl border border-slate-700 p-6 shadow-2xl">
-                                <div className="flex justify-between items-center mb-6">
-                                    <h2 className="text-xl font-bold text-white">Exercise Library</h2>
-                                    <button onClick={() => setShowLibrary(false)} className="text-slate-400 font-bold text-xl hover:text-white">✕</button>
-                                </div>
-                                {Object.keys(WORKOUT_LIBRARY).map(cat => (
-                                    <div key={cat} className="mb-6">
-                                        <h4 className="text-[10px] text-brand-teal uppercase tracking-widest mb-3 font-black">{cat}</h4>
-                                        <div className="grid grid-cols-1 gap-2">
-                                            {WORKOUT_LIBRARY[cat].map(ex => (
-                                                <button key={ex} onClick={() => addExerciseToRoutine(ex)} className="w-full text-left p-3 bg-slate-800 rounded-xl hover:bg-brand-teal hover:text-brand-navy transition-all font-bold text-sm text-slate-300">{ex}</button>
-                                            ))}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-                    {isScanning && (
-                        <div className="fixed inset-0 z-[60] bg-black/95 flex flex-col items-center justify-center p-4">
-                            <div className="bg-brand-card p-6 rounded-3xl w-full max-w-sm border border-slate-700 relative shadow-2xl">
-                                <h3 className="text-center font-bold text-white mb-4 uppercase">Scan Barcode</h3>
-                                <div id="reader" className="w-full overflow-hidden border-2 border-slate-600 rounded-2xl aspect-square"></div>
-                                <button onClick={() => setIsScanning(false)} className="mt-6 w-full py-4 bg-red-500/20 text-red-400 rounded-xl font-black uppercase">Cancel Scanning</button>
-                            </div>
-                        </div>
-                    )}
-                    <div className="fixed bottom-0 left-0 right-0 p-4 bg-brand-navy/90 flex gap-2 border-t border-slate-800 shadow-2xl">
-                        <button onClick={exportMasterReport} className="flex-1 bg-brand-green text-brand-navy font-black py-4 rounded-2xl uppercase tracking-tighter shadow-lg">Download Master Report (PDF)</button>
-                        <button onClick={() => window.fb.signOut(window.fb.auth)} className="bg-slate-800 p-4 rounded-2xl text-red-400 font-bold">Exit</button>
-                    </div>
-                </div>
-            );
-        };
+            const addToLog = async () => {
+                if(!selectedFood) return;
+                let rawVal = parseFloat(displayAmount) || 0;
+                let calculatedGrams = measureUnit === 'oz' ? rawVal * 28.3495 : rawVal;
+                const f = calculatedGrams / 100;
+                await window.fb.addDoc(window.fb.collection(window.fb.db, "users", user.uid, "logs"), { 
+                    name: selectedFood.name, grams: calculatedGrams, calories: selectedFood.calories * f, protein: parseFloat((selectedFood.protein * f).toFixed(1)), carbs: parseFloat((selectedFood.carbs * f).toFixed(1)), fat: parseFloat((selectedFood.fat * f).toFixed(1)), fiber: parseFloat((selectedFood.fiber * f).toFixed(1)), date: currentDate, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), createdAt: window.fb.serverTimestamp() 
+                });
+                setSelectedFood(null);
+            };
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
-    </script>
+            const submitManual = async (e) => {
+                e.preventDefault();
+                const p = parseFloat(manualForm.p)||0; const c = parseFloat(manualForm.c)||0; const f = parseFloat(manualForm.f)||0; const fib = parseFloat(manualForm.fib)||0;
+                const cals = (p*4) + (c*4) + (f*9);
+                await window.fb.addDoc(window.fb.collection(window.fb.db, "users", user.uid, "logs"), { name: manualForm.name || "Custom", grams: 0, calories: cals, protein: p, carbs: c, fat: f, fiber: fib, date: currentDate, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), createdAt: window.fb.serverTimestamp() });
+                setShowManual(false); setManualForm({ name: "", p: "", c: "", f: "", fib: "" });
+            };
+
+            const changeDate = (offset) => {
+                const d = new Date(currentDate);
+                d.setDate(d.getDate() + offset);
+                setCurrentDate(d.toISOString().split('T')[0]);
+            };
+
+            const saveEntry = async (exName, setIdx, reps, weight) => {
+                if(!user || !reps || !weight) return;
+                const entryId = `${currentDate}_${exName.replace(/\s+/g, '_')}_set${setIdx}`;
+                await window.fb.setDoc(window.fb.doc(window.fb.db, "users", user.uid, "workout_logs", entryId), {
+                    exercise: exName, setIndex: setIdx, reps: parseInt(reps), weight: parseFloat(weight), volume: parseInt(reps) * parseFloat(weight), date: currentDate, timestamp: window.fb.serverTimestamp()
+                });
+            };
+
+            const removeExercise = async (idx) => {
+                const exName = activeRoutine[idx].name;
+                const updatedRoutine = activeRoutine.filter((_, i) => i !== idx);
+                await window.fb.setDoc(window.fb.doc(window.fb.db, "users", user.uid, "active_routines", currentDate), { exercises: updatedRoutine });
+                
+                if (exName) {
+                    const q = window.fb.query(
+                        window.fb.collection(window.fb.db, "users", user.uid, "workout_logs"),
+                        window.fb.where("date", "==", currentDate),
+                        window.fb.where("exercise", "==", exName)
+                    );
+                    const snapshot = await window.fb.getDocs(q);
+                    const batch = window.fb.writeBatch(window.fb.db);
+                    snapshot.docs.forEach(doc => batch.delete(doc.ref));
+                    await batch.commit();
+                }
+            };
+
+            const addExerciseToRoutine = async (exerciseName) => {
+                const newEx = { name: exerciseName, type: 'lifting', sets: 3 };
+                const updatedRoutine = [...activeRoutine, newEx];
+                await window.fb.setDoc(window.fb.doc(window.fb.db, "users", user.uid, "active_routines", currentDate), { exercises: updatedRoutine });
+                setShowLibrary(false);
+            };
+
+            const exportMasterReport = async () => {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                const logsSnap = await window.fb.getDocs(window.fb.collection(window.fb.db, "users", user.uid, "logs"));
+                const workoutSnap = await window.fb.getDocs(window.fb.collection(window.fb.db, "users", user.uid, "workout_logs"));
+                const allNutrition = logsSnap.docs.map(d => d.data());
+                const allWorkouts = workoutSnap.docs.map(d => d.data());
+                
+                const historyByDate = {};
+                allNutrition.forEach(n => { 
+                    if(!historyByDate[n.date]) historyByDate[n.date] = { nutrition: [], cals: 0, pro: 0, carb: 0, fat: 0, fib: 0, grams: 0, volume: 0 }; 
+                    historyByDate[n.date].nutrition.push(n); 
+                    historyByDate[n.date].cals += (n.calories || 0);
+                    historyByDate[n.date].pro += (n.protein || 0);
+                    historyByDate[n.date].carb += (n.carbs || 0);
+                    historyByDate[n.date].fat += (n.fat || 0);
+                    historyByDate[n.date].fib += (n.fiber || 0);
+                    historyByDate[n.date].grams += (n.grams || 0);
+                });
+                allWorkouts.forEach(w => { 
+                    if(!historyByDate[w.date]) historyByDate[w.date] = { nutrition: [], cals: 0, pro: 0, carb: 0, fat: 0, fib: 0, grams: 0, volume: 0 }; 
+                    historyByDate[w.date].volume += (Number(w.volume) || 0); 
+                });
+                
+                const sortedDates = Object.keys(historyByDate).sort().reverse();
+                doc.setFontSize(18); doc.text("ELITE PERFORMANCE HISTORY", 14, 20);
+                let yPos = 35;
+                
+                // 1. Daily Logs
+                sortedDates.forEach(date => {
+                    if(yPos > 260) { doc.addPage(); yPos = 20; }
+                    const day = historyByDate[date];
+                    doc.setFontSize(10); doc.text(`DATE: ${date} | VOLUME: ${day.volume.toLocaleString()} lbs`, 14, yPos);
+                    
+                    const rows = day.nutrition.map(n => [
+                        n.name, 
+                        Math.round(n.grams || 0) + 'g',
+                        Math.round(n.calories || 0), 
+                        (n.protein||0).toFixed(1)+'g', 
+                        (n.carbs||0).toFixed(1)+'g', 
+                        (n.fat||0).toFixed(1)+'g', 
+                        (n.fiber||0).toFixed(1)+'g'
+                    ]);
+                    
+                    // Daily Total Row
+                    rows.push([
+                        { content: 'DAILY TOTAL', styles: { fontStyle: 'bold', fillColor: [230,230,230] } },
+                        { content: Math.round(day.grams) + 'g', styles: { fontStyle: 'bold', fillColor: [230,230,230] } },
+                        { content: Math.round(day.cals).toString(), styles: { fontStyle: 'bold', fillColor: [230,230,230] } },
+                        { content: day.pro.toFixed(1)+'g', styles: { fontStyle: 'bold', fillColor: [230,230,230] } },
+                        { content: day.carb.toFixed(1)+'g', styles: { fontStyle: 'bold', fillColor: [230,230,230] } },
+                        { content: day.fat.toFixed(1)+'g', styles: { fontStyle: 'bold', fillColor: [230,230,230] } },
+                        { content: day.fib.toFixed(1)+'g', styles: { fontStyle: 'bold', fillColor: [230,230,230] } }
+                    ]);
+
+                    doc.autoTable({ startY: yPos + 2, head: [['Food', 'Weight', 'Cals', 'P', 'C', 'F', 'Fib']], body: rows, theme: 'grid', styles: { fontSize: 7 } });
+                    yPos = doc.lastAutoTable.finalY + 10;
+                });
+
+                // 2. Weekly Averages
+                if (sortedDates.length > 0) {
+                    doc.addPage();
+                    doc.setFontSize(18); doc.text("WEEKLY AVERAGES", 14, 20);
+                    
+                    const getUTC = (ds) => { const [y,m,d] = ds.split('-'); return new Date(Date.UTC(y, m-1, d)); };
+                    
+                    const firstDataDateStr = sortedDates[sortedDates.length - 1];
+                    const lastDataDateStr = sortedDates[0];
+                    
+                    const weekRows = [];
+                    let currentAnchor = getUTC('2025-12-28');
+                    const endDateUTC = getUTC(lastDataDateStr);
+                    
+                    let weekNum = 1;
+                    
+                    while (currentAnchor <= endDateUTC || currentAnchor <= new Date()) {
+                        let weekStartStr = currentAnchor.toISOString().split('T')[0];
+                        let weekEndUTC = new Date(currentAnchor);
+                        weekEndUTC.setUTCDate(weekEndUTC.getUTCDate() + 6);
+                        let weekEndStr = weekEndUTC.toISOString().split('T')[0];
+                        
+                        let daysInWeek = [];
+                        for(let i=0; i<7; i++) {
+                            let d = new Date(currentAnchor);
+                            d.setUTCDate(d.getUTCDate() + i);
+                            daysInWeek.push(d.toISOString().split('T')[0]);
+                        }
+                        
+                        const activeDays = daysInWeek.filter(d => historyByDate[d]);
+                        
+                        if (activeDays.length > 0) {
+                            let sumCals = 0, sumPro = 0, sumCarb = 0, sumFat = 0, sumFib = 0, sumGrams = 0;
+                            activeDays.forEach(d => {
+                                sumCals += historyByDate[d].cals;
+                                sumPro += historyByDate[d].pro;
+                                sumCarb += historyByDate[d].carb;
+                                sumFat += historyByDate[d].fat;
+                                sumFib += historyByDate[d].fib;
+                                sumGrams += historyByDate[d].grams;
+                            });
+                            const n = activeDays.length;
+                            weekRows.push([
+                                `Week ${weekNum} (${weekStartStr} to ${weekEndStr})`,
+                                Math.round(sumGrams / n) + 'g',
+                                Math.round(sumCals / n),
+                                (sumPro / n).toFixed(1) + 'g',
+                                (sumCarb / n).toFixed(1) + 'g',
+                                (sumFat / n).toFixed(1) + 'g',
+                                (sumFib / n).toFixed(1) + 'g'
+                            ]);
+                        }
+                        
+                        currentAnchor.setUTCDate(currentAnchor.getUTCDate() + 7);
+                        weekNum++;
+                        if (weekNum > 500) break; // sanity fail-safe
+                    }
+                    
+                    if (weekRows.length > 0) {
+                        weekRows.reverse();
+                        doc.autoTable({ startY: 25, head: [['Week', 'Avg Wgt', 'Avg Cals', 'Avg P', 'Avg C', 'Avg F', 'Avg Fib']], body: weekRows, theme: 'striped', styles: { fontSize: 8 } });
+                    }
+                }
+
+                doc.save("Elite_Master_Report.pdf");
+            };
+
+            const nutritionTotals = nutritionLog.reduce((acc, i) => ({ cals: acc.cals + i.calories, pro: acc.pro + i.protein, carb: acc.carb + i.carbs, fat: acc.fat + i.fat, fib: acc.fib + (i.fiber||0) }), { cals: 0, pro: 0, carb: 0, fat: 0, fib: 0 });
+            
+            // Total Volume Logic: Filter workoutLogs to ONLY include exercises currently in activeRoutine
+            const activeExerciseNames = activeRoutine.map(e => e.name);
+            const totalVolume = workoutLogs
+                .filter(log => activeExerciseNames.includes(log.exercise))
+                .reduce((acc, curr) => acc + (Number(curr.volume) || 0), 0);
+
+            if (!user) return <AuthScreen />;
+
+            // Helper for dynamic card calculation
+            const currentRatio = selectedFood ? ((measureUnit === 'oz' ? parseFloat(displayAmount) * 28.3495 : parseFloat(displayAmount)) / 100) : 0;
+
+            return (
+                <div className="max-w-4xl mx-auto px-4 pt-6 pb-24 font-sans text-white">
+                    <div className="flex bg-brand-card rounded-2xl p-1 mb-6 border border-slate-700">
+                        <button onClick={() => setAppMode("nutrition")} className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all ${appMode === 'nutrition' ? 'bg-brand-green text-brand-navy' : 'text-slate-400'}`}>Nutrition</button>
+                        <button onClick={() => setAppMode("workout")} className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all ${appMode === 'workout' ? 'bg-brand-teal text-brand-navy' : 'text-slate-400'}`}>Elite Workout</button>
+                    </div>
+
+                    <div className="flex flex-col md:flex-row justify-between gap-4 mb-6">
+                        <div className="flex items-center bg-brand-card p-2 rounded-xl border border-slate-700">
+                            <button onClick={()=>changeDate(-1)} className="p-2 hover:text-brand-green font-black">&lt;</button>
+                            <span className="mx-4 font-bold min-w-[100px] text-center">{currentDate}</span>
+                            <button onClick={()=>changeDate(1)} className="p-2 hover:text-brand-green font-black">&gt;</button>
+                        </div>
+                        <div className="flex items-center bg-brand-input rounded-xl px-4 border border-slate-600">
+                            <span className="text-xs text-slate-400 mr-2 uppercase font-bold">Body Weight:</span>
+                            <input type="number" value={dailyWeight} onChange={(e)=>setDailyWeight(e.target.value)} onBlur={async()=>await window.fb.setDoc(window.fb.doc(window.fb.db, "users", user.uid, "daily_stats", currentDate), { weight: dailyWeight, date: currentDate }, { merge: true })} className="bg-transparent text-white font-bold w-16 text-right outline-none" placeholder="0.0" />
+                            <span className="text-[10px] text-brand-green ml-1 font-black uppercase">lbs</span>
+                        </div>
+                    </div>
+
+                    {appMode === "nutrition" ? (
+                        <div className="animate-fade">
+                            <div className="flex justify-center gap-4 mb-6">
+                                <button onClick={()=>setView('daily')} className={`text-xs px-4 py-1 rounded-full ${view==='daily' ? 'bg-brand-green text-brand-navy font-bold' : 'text-slate-400'}`}>Daily Log</button>
+                                <button onClick={()=>setView('trends')} className={`text-xs px-4 py-1 rounded-full ${view==='trends' ? 'bg-brand-green text-brand-navy font-bold' : 'text-slate-400'}`}>Analytics</button>
+                            </div>
+
+                            {view === 'daily' ? (
+                                <>
+                                    <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mb-6 text-center font-bold">
+                                        <div className="bg-brand-card p-3 rounded-xl border border-slate-700 font-bold"><span className="text-[10px] text-slate-400 uppercase">Cals</span><div className={`text-lg ${nutritionTotals.cals > targets.calories ? 'text-red-400' : 'text-white'}`}>{Math.round(nutritionTotals.cals)} / <span className="text-slate-400 text-sm">{targets.calories}</span></div></div>
+                                        <div className="bg-brand-card p-3 rounded-xl border border-slate-700 font-bold"><span className="text-[10px] text-brand-teal uppercase font-black">P</span><div className="text-sm">{Math.round(nutritionTotals.pro)} / <span className="text-slate-400 text-xs">{targets.protein}g</span></div></div>
+                                        <div className="bg-brand-card p-3 rounded-xl border border-slate-700 font-bold"><span className="text-[10px] text-brand-green uppercase font-black">C</span><div className="text-sm">{Math.round(nutritionTotals.carb)} / <span className="text-slate-400 text-xs">{targets.carbs}g</span></div></div>
+                                        <div className="bg-brand-card p-3 rounded-xl border border-slate-700 font-bold"><span className="text-[10px] text-yellow-400 uppercase font-black">F</span><div className="text-sm">{Math.round(nutritionTotals.fat)} / <span className="text-slate-400 text-xs">{targets.fat}g</span></div></div>
+                                        <div className="bg-brand-card p-3 rounded-xl border border-slate-700 font-bold"><span className="text-[10px] text-purple-400 uppercase font-black">Fib</span><div className="text-sm">{Math.round(nutritionTotals.fib)}g</div></div>
+                                    </div>
+
+                                    <div className="flex gap-2 mb-6">
+                                        <form onSubmit={handleSearch} className="flex-1 relative">
+                                            <input type="text" value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search or scan barcode..." className="w-full p-4 bg-brand-input rounded-xl outline-none pr-12 text-sm text-white" />
+                                            <button type="button" onClick={startScanner} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-brand-green">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+                                            </button>
+                                        </form>
+                                        <button onClick={handleSearch} className="bg-brand-green text-brand-navy px-4 rounded-xl font-bold">{loading ? "..." : "Find"}</button>
+                                        <button onClick={()=>setShowManual(!showManual)} className="bg-brand-card border border-slate-600 px-4 rounded-xl font-bold text-slate-300">Custom</button>
+                                    </div>
+
+                                    {showManual && (
+                                        <div className="bg-brand-card p-4 rounded-2xl border border-slate-600 mb-6 animate-fade relative">
+                                            <button onClick={() => setShowManual(false)} className="absolute top-4 right-4 text-slate-500 font-bold text-lg">✕</button>
+                                            <h3 className="font-bold mb-4">Add Custom Food</h3>
+                                            <form onSubmit={submitManual} className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                                                <input className="col-span-2 md:col-span-5 p-2 bg-brand-input rounded-lg text-white" placeholder="Food Name" required value={manualForm.name} onChange={e=>setManualForm({...manualForm, name: e.target.value})} />
+                                                <input type="number" className="p-2 bg-brand-input rounded-lg text-white" placeholder="Protein" required value={manualForm.p} onChange={e=>setManualForm({...manualForm, p: e.target.value})} />
+                                                <input type="number" className="p-2 bg-brand-input rounded-lg text-white" placeholder="Carbs" required value={manualForm.c} onChange={e=>setManualForm({...manualForm, c: e.target.value})} />
+                                                <input type="number" className="p-2 bg-brand-input rounded-lg text-white" placeholder="Fat" required value={manualForm.f} onChange={e=>setManualForm({...manualForm, f: e.target.value})} />
+                                                <input type="number" className="p-2 bg-brand-input rounded-lg text-white" placeholder="Fiber" value={manualForm.fib} onChange={e=>setManualForm({...manualForm, fib: e.target.value})} />
+                                                <button type="submit" className="col-span-2 md:col-span-1 bg-brand-green text-brand-navy font-bold rounded-lg">Add</button>
+                                            </form>
+                                        </div>
+                                    )}
+
+                                    {results.length > 0 && (
+                                        <div className="mt-4 bg-brand-card rounded-xl border border-slate-700 max-h-60 overflow-y-auto mb-6 shadow-2xl">
+                                            {results.map(f => <div key={f.fdcId} onClick={()=>selectFood(f)} className="p-4 border-b border-slate-700 cursor-pointer hover:bg-slate-700">{f.description}</div>)}
+                                        </div>
+                                    )}
+
+                                    {selectedFood && (
+                                        <div className="mt-4 bg-brand-card p-5 rounded-2xl border border-brand-green mb-6 animate-fade relative shadow-2xl shadow-brand-green/5">
+                                            <button onClick={() => setSelectedFood(null)} className="absolute top-4 right-4 text-slate-500 font-bold text-lg">✕</button>
+                                            <p className="font-bold mb-4 pr-10 text-white leading-snug">{selectedFood.name}</p>
+                                            <div className="flex items-center justify-between mb-4 bg-brand-input rounded-xl p-2 border border-slate-600 shadow-inner">
+                                                <div className="flex items-center gap-2">
+                                                    <input type="number" value={displayAmount} onFocus={(e)=>setDisplayAmount('')} onChange={(e)=>setDisplayAmount(e.target.value)} className="w-20 bg-transparent text-white font-bold text-2xl text-center outline-none" placeholder="0" />
+                                                    <button onClick={()=>{let n=measureUnit==='g'?'oz':'g'; setMeasureUnit(n)}} className="px-3 py-1 bg-brand-card text-brand-green border border-brand-green rounded-lg font-bold text-xs uppercase hover:bg-brand-green hover:text-brand-navy transition-colors">{measureUnit}</button>
+                                                </div>
+                                                <div className="text-right">
+                                                    <span className="block text-2xl font-bold text-white leading-none">
+                                                        {Math.round(selectedFood.calories * currentRatio || 0)}
+                                                    </span>
+                                                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Est Cals</span>
+                                                </div>
+                                            </div>
+                                            
+                                            {/* Dynamic Macro Calculation Grid */}
+                                            <div className="grid grid-cols-4 gap-2 mb-6 text-center text-xs">
+                                                <div className="bg-slate-800/50 p-2 rounded-lg border border-slate-700">
+                                                    <span className="text-brand-teal font-black block mb-1">P</span>
+                                                    {(selectedFood.protein * currentRatio).toFixed(1)}g
+                                                </div>
+                                                <div className="bg-slate-800/50 p-2 rounded-lg border border-slate-700">
+                                                    <span className="text-brand-green font-black block mb-1">C</span>
+                                                    {(selectedFood.carbs * currentRatio).toFixed(1)}g
+                                                </div>
+                                                <div className="bg-slate-800/50 p-2 rounded-lg border border-slate-700">
+                                                    <span className="text-yellow-400 font-black block mb-1">F</span>
+                                                    {(selectedFood.fat * currentRatio).toFixed(1)}g
+                                                </div>
+                                                <div className="bg-slate-800/50 p-2 rounded-lg border border-slate-700">
+                                                    <span className="text-purple-400 font-black block mb-1">Fib</span>
+                                                    {(selectedFood.fiber * currentRatio).toFixed(1)}g
+                                                </div>
+                                            </div>
+
+                                            <button onClick={addToLog} className="w-full bg-brand-green text-brand-navy py-4 rounded-xl font-black uppercase tracking-tighter shadow-lg shadow-brand-green/20 hover:bg-white transition-all">Add to Daily Log</button>
+                                        </div>
+                                    )}
+
+                                    <div className="bg-brand-card rounded-2xl border border-slate-700 overflow-hidden shadow-2xl table-scroll overflow-x-auto">
+                                        <table className="w-full text-xs text-left text-slate-300 min-w-[500px]">
+                                            <thead className="bg-slate-800 text-slate-400 uppercase">
+                                                <tr><th className="px-4 py-3 font-bold">Food</th><th className="px-4 py-3 text-brand-green font-bold text-center">Cals</th><th className="px-4 py-3 font-bold text-center">P</th><th className="px-4 py-3 font-bold text-center">C</th><th className="px-4 py-3 font-bold text-center">F</th><th className="px-4 py-3 font-bold text-center">Fib</th><th className="px-4 py-3"></th></tr>
+                                            </thead>
+                                            <tbody>
+                                                {nutritionLog.map(item => (
+                                                    <tr key={item.id} className="border-b border-slate-700 hover:bg-slate-700/20 transition-colors">
+                                                        <td className="px-4 py-3 font-medium text-white max-w-[120px] truncate">{item.name}</td>
+                                                        <td className="px-4 py-3 font-bold text-white text-center">{item.calories.toFixed(0)}</td>
+                                                        <td className="px-4 py-3 text-brand-teal text-center font-bold">{item.protein.toFixed(1)}g</td>
+                                                        <td className="px-4 py-3 text-brand-green text-center font-bold">{item.carbs.toFixed(1)}g</td>
+                                                        <td className="px-4 py-3 text-yellow-400 text-center font-bold">{item.fat.toFixed(1)}g</td>
+                                                        <td className="px-4 py-3 text-purple-400 text-center font-bold">{item.fiber?.toFixed(1) || 0}g</td>
+                                                        <td className="px-4 py-3 text-right font-black"><button onClick={async()=>await window.fb.deleteDoc(window.fb.doc(window.fb.db,"users",user.uid,"logs",item.id))} className="text-red-400 p-1 hover:text-white transition-colors">✕</button></td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </>
+                            ) : (
+                                <div className="space-y-6 animate-fade">
+                                    <div className="grid grid-cols-2 gap-4 text-center font-black uppercase">
+                                        <div className="bg-brand-card p-6 rounded-2xl border border-slate-700 shadow-lg"><span className="text-[10px] text-slate-400 tracking-widest leading-none">Adherence Score</span><div className="text-4xl text-brand-teal mt-2">{scores.adherence}%</div></div>
+                                        <div className="bg-brand-card p-6 rounded-2xl border border-slate-700 shadow-lg"><span className="text-[10px] text-slate-400 tracking-widest leading-none">Consistency Score</span><div className="text-4xl text-brand-green mt-2">{scores.consistency}%</div></div>
+                                    </div>
+                                    <div className="bg-brand-card p-4 rounded-2xl border border-slate-700 h-80 shadow-2xl">
+                                        <canvas ref={chartRef} id="trendChart"></canvas>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    ) : (
+                        <div className="animate-fade">
+                            <div className="bg-brand-card p-5 rounded-2xl border border-slate-700 mb-6 flex justify-between items-center shadow-xl">
+                                <div><h2 className="text-xl font-black text-brand-teal uppercase tracking-tighter leading-tight">Daily Volume</h2><p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest leading-none">Lifting Performance</p></div>
+                                <div className="text-right font-black leading-none"><span className="text-2xl text-white">{totalVolume.toLocaleString()}</span><span className="ml-1 text-[10px] text-brand-teal uppercase font-bold">lbs</span></div>
+                            </div>
+                            <Timer seconds={90} label="Rest Timer" />
+                            <button onClick={() => setShowLibrary(true)} className="w-full py-4 bg-brand-navy border-2 border-dashed border-slate-600 rounded-2xl text-slate-400 font-bold mb-6 hover:border-brand-teal hover:text-brand-teal transition-all shadow-lg">+ Add Exercise from Library</button>
+                            <div className="space-y-6">
+                                {activeRoutine.map((ex, i) => {
+                                    const exLogs = workoutLogs.filter(l => l.exercise === ex.name);
+                                    return (
+                                        <div key={i} className="bg-brand-card rounded-2xl p-5 border border-slate-700 shadow-lg animate-fade">
+                                            <div className="flex justify-between items-center mb-4">
+                                                <h3 className="font-extrabold text-white text-sm uppercase tracking-tight">{ex.name}</h3>
+                                                <div className="flex gap-2">
+                                                    <button onClick={() => setCustomSets(p => ({...p, [ex.name]: (p[ex.name]||0)+1}))} className="text-[9px] bg-slate-700 px-2 py-1 rounded font-black uppercase text-white hover:bg-slate-600 transition-colors">+ Set</button>
+                                                    <button onClick={() => removeExercise(i)} className="text-[9px] bg-red-900/30 text-red-400 px-2 py-1 rounded font-black uppercase hover:bg-red-900/50 transition-colors">Remove</button>
+                                                </div>
+                                            </div>
+                                            <div className="space-y-4">
+                                                {[...Array(3 + (customSets[ex.name] || 0))].map((_, s) => {
+                                                    const existing = exLogs.find(l => l.setIndex === s);
+                                                    return (
+                                                        <div key={s} className="grid grid-cols-2 gap-3 p-3 bg-slate-800/30 rounded-xl">
+                                                            <div>
+                                                                <input type="number" placeholder="Reps" defaultValue={existing?.reps || ""} className="w-full bg-brand-input p-2 rounded-lg text-center text-sm outline-none font-bold text-white border border-transparent focus:border-brand-teal transition-colors" onBlur={(e) => { const wIn = e.target.closest('.grid').querySelector('input[placeholder="Lbs"]'); if(e.target.value && wIn.value) saveEntry(ex.name, s, e.target.value, wIn.value); }} />
+                                                                {workoutHistory[ex.name] && <p className="text-[8px] text-slate-500 mt-1 uppercase text-center font-bold tracking-tighter">Last: {workoutHistory[ex.name].reps}</p>}
+                                                            </div>
+                                                            <div>
+                                                                <input type="number" placeholder="Lbs" defaultValue={existing?.weight || workoutHistory[ex.name]?.weight || ""} className="w-in w-full bg-brand-input p-2 rounded-lg text-center text-sm outline-none font-bold text-brand-teal border border-transparent focus:border-brand-teal transition-colors" onBlur={(e) => { const rIn = e.target.closest('.grid').querySelector('input[placeholder="Reps"]'); if(e.target.value && rIn.value) saveEntry(ex.name, s, rIn.value, e.target.value); }} />
+                                                                {workoutHistory[ex.name] && <p className="text-[8px] text-slate-500 mt-1 uppercase text-center font-bold tracking-tighter">Last: {workoutHistory[ex.name].weight}</p>}
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
+
+                    {showLibrary && (
+                        <div className="fixed inset-0 z-[70] bg-black/95 p-4 overflow-y-auto">
+                            <div className="max-w-md mx-auto bg-brand-card rounded-3xl border border-slate-700 p-6 shadow-2xl animate-fade">
+                                <div className="flex justify-between items-center mb-6">
+                                    <h2 className="text-xl font-bold text-white">Exercise Library</h2>
+                                    <button onClick={() => setShowLibrary(false)} className="text-slate-400 font-bold text-xl hover:text-white">✕</button>
+                                </div>
+                                {Object.keys(WORKOUT_LIBRARY).map(cat => (
+                                    <div key={cat} className="mb-6">
+                                        <h4 className="text-[10px] text-brand-teal uppercase tracking-widest mb-3 font-black">{cat}</h4>
+                                        <div className="grid grid-cols-1 gap-2">
+                                            {WORKOUT_LIBRARY[cat].map(ex => (
+                                                <button key={ex} onClick={() => addExerciseToRoutine(ex)} className="w-full text-left p-3 bg-slate-800 rounded-xl hover:bg-brand-teal hover:text-brand-navy transition-all font-bold text-sm text-slate-300">{ex}</button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {isScanning && (
+                        <div className="fixed inset-0 z-[60] bg-black/95 flex flex-col items-center justify-center p-4">
+                            <div className="bg-brand-card p-6 rounded-3xl w-full max-w-sm border border-slate-700 relative shadow-2xl">
+                                <h3 className="text-center font-bold text-white mb-4 uppercase tracking-widest text-sm">Scan Barcode</h3>
+                                <div id="reader" className="w-full overflow-hidden shadow-inner border-2 border-slate-600 rounded-2xl aspect-square"></div>
+                                <button onClick={() => setIsScanning(false)} className="mt-6 w-full py-4 bg-red-500/20 text-red-400 rounded-xl font-black uppercase text-xs tracking-widest hover:bg-red-500/30 transition-colors">Cancel Scanning</button>
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="fixed bottom-0 left-0 right-0 p-4 bg-brand-navy/90 flex gap-2 backdrop-blur-md border-t border-slate-800 shadow-2xl">
+                        <button onClick={exportMasterReport} className="flex-1 bg-brand-green text-brand-navy font-black py-4 rounded-2xl uppercase tracking-tighter shadow-lg shadow-brand-green/20 hover:scale-[1.01] transition-transform">Download Master Report (PDF)</button>
+                        <button onClick={() => window.fb.signOut(window.fb.auth)} className="bg-slate-800 p-4 rounded-2xl text-red-400 font-bold hover:bg-red-500/20 transition-colors">Exit</button>
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
 </body>
 </html>
