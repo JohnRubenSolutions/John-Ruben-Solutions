@@ -669,7 +669,7 @@
                             <button onClick={()=>changeDate(1)} className="p-2 hover:text-brand-green font-black">&gt;</button>
                         </div>
                         <div className="flex items-center bg-brand-input rounded-xl px-4 border border-slate-600">
-                            <span className="text-xs text-slate-400 mr-2 uppercase font-bold">Body Weight:</span>
+                            <span className="text-xs text-slate-400 mr-2 uppercase font-bold">Today's Body Weight:</span>
                             <input type="number" value={dailyWeight} onChange={(e)=>setDailyWeight(e.target.value)} onBlur={async()=>await window.fb.setDoc(window.fb.doc(window.fb.db, "users", user.uid, "daily_stats", currentDate), { weight: dailyWeight, date: currentDate }, { merge: true })} className="bg-transparent text-white font-bold w-16 text-right outline-none" placeholder="0.0" />
                             <span className="text-[10px] text-brand-green ml-1 font-black uppercase">lbs</span>
                         </div>
@@ -886,3 +886,4 @@
     </script>
 </body>
 </html>
+
