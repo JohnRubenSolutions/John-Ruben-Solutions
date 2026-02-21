@@ -217,6 +217,7 @@
             const [measureUnit, setMeasureUnit] = useState('g');
             const [isScanning, setIsScanning] = useState(false);
             const [loading, setLoading] = useState(false);
+            const [isChartLoading, setIsChartLoading] = useState(false);
             const [scores, setScores] = useState({ adherence: 0, consistency: 0 });
 
             const [workoutLogs, setWorkoutLogs] = useState([]);
@@ -644,15 +645,202 @@
 
             const nutritionTotals = nutritionLog.reduce((acc, i) => ({ cals: acc.cals + i.calories, pro: acc.pro + i.protein, carb: acc.carb + i.carbs, fat: acc.fat + i.fat, fib: acc.fib + (i.fiber||0) }), { cals: 0, pro: 0, carb: 0, fat: 0, fib: 0 });
             
-            // Total Volume Logic: Filter workoutLogs to ONLY include exercises currently in activeRoutine
             const activeExerciseNames = activeRoutine.map(e => e.name);
             const totalVolume = workoutLogs
                 .filter(log => activeExerciseNames.includes(log.exercise))
                 .reduce((acc, curr) => acc + (Number(curr.volume) || 0), 0);
 
+            // --- FULL DYNAMIC ANALYTICS LOGIC ---
+            useEffect(() => {
+                let isMounted = true;
+
+                const fetchAnalytics = async () => {
+                    if (view !== 'trends' || !user || !window.fb) return;
+                    setIsChartLoading(true);
+
+                    try {
+                        const logsSnap = await window.fb.getDocs(window.fb.collection(window.fb.db, "users", user.uid, "logs"));
+                        const weightSnap = await window.fb.getDocs(window.fb.collection(window.fb.db, "users", user.uid, "daily_stats"));
+                        const workoutsSnap = await window.fb.getDocs(window.fb.collection(window.fb.db, "users", user.uid, "workout_logs"));
+
+                        if (!isMounted) return;
+
+                        const allLogs = logsSnap.docs.map(d => d.data());
+                        const allWeights = weightSnap.docs.map(d => d.data());
+                        const allWorkouts = workoutsSnap.docs.map(d => d.data());
+
+                        const dayMap = {}; // Maps date string to { cals, weight, hasActivity }
+
+                        allLogs.forEach(l => {
+                            if (!dayMap[l.date]) dayMap[l.date] = { cals: 0, weight: null, hasActivity: false };
+                            dayMap[l.date].cals += (l.calories || 0);
+                            dayMap[l.date].hasActivity = true;
+                        });
+                        
+                        allWorkouts.forEach(w => {
+                            if (!dayMap[w.date]) dayMap[w.date] = { cals: 0, weight: null, hasActivity: false };
+                            dayMap[w.date].hasActivity = true;
+                        });
+
+                        allWeights.forEach(w => {
+                            if (w.weight) {
+                                if (!dayMap[w.date]) dayMap[w.date] = { cals: 0, weight: parseFloat(w.weight), hasActivity: false };
+                                else dayMap[w.date].weight = parseFloat(w.weight);
+                            }
+                        });
+
+                        // 1. Calculate Adherence: 10% tolerance on active nutrition days
+                        let compliantDays = 0;
+                        let daysWithCals = 0;
+                        const targetCals = targets.calories || 2000;
+                        const minCals = targetCals * 0.90;
+                        const maxCals = targetCals * 1.10;
+
+                        Object.values(dayMap).forEach(day => {
+                            if (day.cals > 0) {
+                                daysWithCals++;
+                                if (day.cals >= minCals && day.cals <= maxCals) {
+                                    compliantDays++;
+                                }
+                            }
+                        });
+                        const adherenceScore = daysWithCals > 0 ? Math.round((compliantDays / daysWithCals) * 100) : 0;
+
+                        // 2. Calculate Consistency: Unbroken continuous streak backward from today
+                        const sortedDates = Object.keys(dayMap).filter(d => dayMap[d].hasActivity).sort().reverse();
+                        let currentStreak = 0;
+                        
+                        if (sortedDates.length > 0) {
+                            let d = new Date();
+                            let dStr = d.toISOString().split('T')[0];
+                            
+                            let startChecking = false;
+                            let yesterday = new Date(d);
+                            yesterday.setDate(yesterday.getDate() - 1);
+                            let yStr = yesterday.toISOString().split('T')[0];
+
+                            // A streak is valid if the user logged something today OR yesterday
+                            if (dayMap[dStr]?.hasActivity) {
+                                startChecking = true;
+                            } else if (dayMap[yStr]?.hasActivity) {
+                                startChecking = true;
+                                d = yesterday;
+                                dStr = yStr;
+                            }
+
+                            if (startChecking) {
+                                while (dayMap[dStr]?.hasActivity) {
+                                    currentStreak++;
+                                    d.setDate(d.getDate() - 1);
+                                    dStr = d.toISOString().split('T')[0];
+                                }
+                            }
+                        }
+
+                        setScores({ adherence: adherenceScore, consistency: currentStreak });
+
+                        // 3. Weekly Chart Parsing
+                        const weekData = {};
+                        Object.keys(dayMap).sort().forEach(dateStr => {
+                            // Enforce generic time to prevent UTC/local shift bugs
+                            const dateObj = new Date(dateStr + "T00:00:00"); 
+                            const weekStr = getWeekNumber(dateObj);
+                            
+                            if (!weekData[weekStr]) weekData[weekStr] = { weights: [], cals: [] };
+                            if (dayMap[dateStr].weight > 0) weekData[weekStr].weights.push(dayMap[dateStr].weight);
+                            if (dayMap[dateStr].cals > 0) weekData[weekStr].cals.push(dayMap[dateStr].cals);
+                        });
+
+                        const labels = [];
+                        const avgWeights = [];
+                        const avgCals = [];
+
+                        Object.keys(weekData).sort().forEach(wk => {
+                            labels.push(formatWeekLabel(wk));
+                            const wkWeights = weekData[wk].weights;
+                            const wkCals = weekData[wk].cals;
+                            avgWeights.push(wkWeights.length > 0 ? (wkWeights.reduce((a,b)=>a+b,0)/wkWeights.length).toFixed(1) : null);
+                            avgCals.push(wkCals.length > 0 ? Math.round(wkCals.reduce((a,b)=>a+b,0)/wkCals.length) : null);
+                        });
+
+                        // 4. Render Chart.js
+                        if (chartRef.current) {
+                            if (chartInstance.current) chartInstance.current.destroy();
+                            const ctx = chartRef.current.getContext('2d');
+                            chartInstance.current = new Chart(ctx, {
+                                type: 'line',
+                                data: {
+                                    labels: labels,
+                                    datasets: [
+                                        {
+                                            label: 'Avg Weight (lbs)',
+                                            data: avgWeights,
+                                            borderColor: '#22d3ee',
+                                            backgroundColor: '#22d3ee',
+                                            yAxisID: 'y',
+                                            tension: 0.3,
+                                            spanGaps: true
+                                        },
+                                        {
+                                            label: 'Avg Calories',
+                                            data: avgCals,
+                                            borderColor: '#84cc16',
+                                            backgroundColor: '#84cc16',
+                                            type: 'bar',
+                                            yAxisID: 'y1',
+                                            barPercentage: 0.5,
+                                        }
+                                    ]
+                                },
+                                options: {
+                                    responsive: true,
+                                    maintainAspectRatio: false,
+                                    interaction: { mode: 'index', intersect: false },
+                                    plugins: {
+                                        title: { display: true, text: 'Weekly Trends: Average Weight vs Calories', color: '#f8fafc', font: { size: 14 } },
+                                        legend: { position: 'top', labels: { color: '#f8fafc' } }
+                                    },
+                                    scales: {
+                                        x: { 
+                                            title: { display: true, text: 'Week / Year', color: '#94a3b8' }, 
+                                            ticks: { color: '#94a3b8' },
+                                            grid: { color: '#334155' }
+                                        },
+                                        y: {
+                                            type: 'linear',
+                                            display: true,
+                                            position: 'left',
+                                            title: { display: true, text: 'Average Weight (lbs)', color: '#22d3ee' },
+                                            ticks: { color: '#94a3b8' },
+                                            grid: { color: '#334155' }
+                                        },
+                                        y1: {
+                                            type: 'linear',
+                                            display: true,
+                                            position: 'right',
+                                            title: { display: true, text: 'Average Calories', color: '#84cc16' },
+                                            ticks: { color: '#94a3b8' },
+                                            grid: { drawOnChartArea: false }, // Hides overlapping grid lines
+                                            min: 0
+                                        }
+                                    }
+                                }
+                            });
+                        }
+
+                    } catch (e) {
+                        console.error("Error fetching analytics data", e);
+                    } finally {
+                        if (isMounted) setIsChartLoading(false);
+                    }
+                };
+
+                fetchAnalytics();
+                return () => { isMounted = false; };
+            }, [view, user, targets.calories]);
+
             if (!user) return <AuthScreen />;
 
-            // Helper for dynamic card calculation
             const currentRatio = selectedFood ? ((measureUnit === 'oz' ? parseFloat(displayAmount) * 28.3495 : parseFloat(displayAmount)) / 100) : 0;
 
             return (
@@ -787,12 +975,13 @@
                                     </div>
                                 </>
                             ) : (
-                                <div className="space-y-6 animate-fade">
+                                <div className="space-y-6 animate-fade relative">
                                     <div className="grid grid-cols-2 gap-4 text-center font-black uppercase">
                                         <div className="bg-brand-card p-6 rounded-2xl border border-slate-700 shadow-lg"><span className="text-[10px] text-slate-400 tracking-widest leading-none">Adherence Score</span><div className="text-4xl text-brand-teal mt-2">{scores.adherence}%</div></div>
-                                        <div className="bg-brand-card p-6 rounded-2xl border border-slate-700 shadow-lg"><span className="text-[10px] text-slate-400 tracking-widest leading-none">Consistency Score</span><div className="text-4xl text-brand-green mt-2">{scores.consistency}%</div></div>
+                                        <div className="bg-brand-card p-6 rounded-2xl border border-slate-700 shadow-lg"><span className="text-[10px] text-slate-400 tracking-widest leading-none">Current Streak</span><div className="text-4xl text-brand-green mt-2">{scores.consistency} <span className="text-sm">Days</span></div></div>
                                     </div>
-                                    <div className="bg-brand-card p-4 rounded-2xl border border-slate-700 h-80 shadow-2xl">
+                                    <div className="bg-brand-card p-4 rounded-2xl border border-slate-700 h-80 shadow-2xl relative flex items-center justify-center">
+                                        {isChartLoading && <div className="absolute inset-0 z-10 bg-brand-card/80 flex items-center justify-center font-bold text-brand-green rounded-2xl">Loading Analytics...</div>}
                                         <canvas ref={chartRef} id="trendChart"></canvas>
                                     </div>
                                 </div>
@@ -886,4 +1075,3 @@
     </script>
 </body>
 </html>
-
