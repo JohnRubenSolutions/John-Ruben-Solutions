@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thomas: From Logic to Lord</title>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --accent: #3498db;
+            --success: #27ae60;
+            --warning: #e67e22;
+            --dark: #2f3640;
+            --light: #f8f9fa;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #dcdde1;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            padding: 20px;
+            color: var(--dark);
+        }
+        #app-container {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            max-width: 900px;
+            width: 100%;
+        }
+        .header-section { text-align: center; border-bottom: 3px solid var(--primary); margin-bottom: 20px; padding-bottom: 10px; }
+        
+        /* Typography */
+        h1, h2, h3 { color: var(--primary); }
+        .kjv-verse { font-style: italic; color: #444; border-left: 4px solid var(--accent); padding-left: 15px; margin: 15px 0; }
+        
+        /* Navigation */
+        .nav-tabs { display: flex; gap: 5px; margin-bottom: 20px; background: #eee; padding: 5px; border-radius: 8px; }
+        .tab-btn { flex: 1; padding: 10px; border: none; cursor: pointer; background: none; font-weight: bold; transition: 0.3s; }
+        .tab-btn.active { background: var(--primary); color: white; border-radius: 5px; }
+
+        /* Content Areas */
+        .content-section { display: none; animation: fadeIn 0.5s; }
+        .content-section.active { display: block; }
+
+        /* Quiz Specifics */
+        .verse-box { font-size: 1.2rem; padding: 20px; background: var(--light); border: 1px solid #ddd; border-radius: 8px; margin-bottom: 15px; }
+        .btn-container { display: flex; gap: 10px; justify-content: center; margin-top: 15px; }
+        button { padding: 12px 20px; border-radius: 6px; border: none; cursor: pointer; font-weight: bold; }
+        .btn-blue { background: var(--accent); color: white; }
+        .btn-green { background: var(--success); color: white; }
+        .btn-orange { background: var(--warning); color: white; }
+        
+        .resource-card { background: #f1f2f6; border: 1px dashed var(--primary); padding: 15px; border-radius: 8px; margin-top: 20px; }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    </style>
+</head>
+<body>
+
+<div id="app-container">
+    <div class="header-section">
+        <h1>Thomas: The Apostle of Evidence</h1>
+        <p>A Journey from Reasonable Doubt to Absolute Devotion</p>
+    </div>
+
+    <div class="nav-tabs">
+        <button class="tab-btn active" onclick="showTab('profile')">1. Thomas Profile</button>
+        <button class="tab-btn" onclick="showTab('prophecy')">2. Prophecy/Fullfillment</button>
+        <button class="tab-btn" onclick="showTab('quiz')">3. Authenticity Quiz</button>
+        <button class="tab-btn" onclick="showTab('resources')">4. Resources</button>
+    </div>
+
+    <div id="profile" class="content-section active">
+        <h3>The Three Facets of Thomas (Didymus)</h3>
+        <ul>
+            <li><strong>Brave & Loyal:</strong> "Let us also go, that we may die with him." (John 11:16)</li>
+            <li><strong>Rational & Inquisitive:</strong> "Lord, we know not whither thou goest; and how can we know the way?" (John 14:5)</li>
+            <li><strong>Empirical & Devoted:</strong> "Except I shall see in his hands the print of the nails... I will not believe." (John 20:25)</li>
+        </ul>
+        <div class="kjv-verse">
+            "And Thomas answered and said unto him, My Lord and my God." — John 20:28
+        </div>
+    </div>
+
+    <div id="prophecy" class="content-section">
+        <h3>The Divine Logic Chain</h3>
+        <p>Connecting the Old Testament Promise to the New Testament Reality.</p>
+        
+        <h4>The Prophecy (Isaiah 45:22-23)</h4>
+        <div class="kjv-verse">
+            "Look unto me, and be ye saved, all the ends of the earth: for I am God... That unto me every knee shall bow, every tongue shall swear."
+        </div>
+
+        <h4>The Fulfillment (Philippians 2:9-11)</h4>
+        <div class="kjv-verse">
+            "Wherefore God also hath highly exalted him, and given him a name which is above every name: That at the name of Jesus every knee should bow... And that every tongue should confess that Jesus Christ is Lord."
+        </div>
+    </div>
+
+    <div id="quiz" class="content-section">
+        <h3 style="text-align:center;">Can You Spot the Eyewitness Record?</h3>
+        <div id="verse-display" class="verse-box"></div>
+        <div id="quiz-controls" class="btn-container">
+            <button class="btn-green" onclick="checkAnswer(true)">Scripture (Eyewitness)</button>
+            <button class="btn-orange" onclick="checkAnswer(false)">Not in the Bible</button>
+        </div>
+        <div id="feedback" style="margin-top:15px; padding:15px; border-radius:8px; display:none; background:#fff3cd;"></div>
+        <div style="text-align:center;">
+            <button id="next-btn" class="btn-blue" style="display:none; margin-top:10px;" onclick="nextVerse()">Next Example</button>
+        </div>
+    </div>
+
+    <div id="resources" class="content-section">
+        <h3>Deepen Your Evidence-Based Faith</h3>
+        <p>For those who, like Thomas, seek to understand the historical reliability of the text:</p>
+        
+        <div class="resource-card">
+            <h4>Recommended Scholar: Wesley Huff</h4>
+            <p>A leading researcher and historian focusing on the transmission of the New Testament and the canonization process. His work provides the "metadata" for why we can trust the 27 books of the NT.</p>
+        </div>
+
+        <div class="resource-card">
+            <h4>Recommended Viewing: "Can I Trust the Bible?"</h4>
+            <p>A comprehensive documentary exploring archaeological evidence, manuscript consistency, and the historical reality of the Resurrection.</p>
+        </div>
+        
+        <p style="text-align:center; font-style:italic; margin-top:20px;">
+            "Blessed are they that have not seen, and yet have believed." — John 20:29
+        </p>
+    </div>
+</div>
+
+<script>
+    const verses = [
+        { 
+            text: "Salome said, 'Who are you, man... you have eaten from my table?' Jesus said, 'I am he who exists from the undivided.'", 
+            isCanon: false, 
+            reason: "Gospel of Thomas (v. 61). Lacks historical markers and reflects 2nd-century Gnostic philosophy." 
+        },
+        { 
+            text: "While Jesus was in Bethany in the home of Simon the Leper, a woman came with an alabaster jar of very expensive perfume.", 
+            isCanon: true, 
+            reason: "Matthew 26:6. Contains specific geography (Bethany) and specific persons (Simon the Leper)—hallmarks of eyewitness history." 
+        },
+        { 
+            text: "And the cross followed them, and a voice from the heavens said, 'Have you preached to those who fall asleep?' And a response was heard from the cross, 'Yes.'", 
+            isCanon: false, 
+            reason: "Gospel of Peter. A late, legendary account that includes fantastical elements (a talking cross) not found in the early eyewitness records." 
+        }
+    ];
+
+    let currentVerse = 0;
+
+    function showTab(tabId) {
+        document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active');
+        event.currentTarget.classList.add('active');
+        if(tabId === 'quiz') renderVerse();
+    }
+
+    function renderVerse() {
+        document.getElementById('verse-display').innerText = `"${verses[currentVerse].text}"`;
+        document.getElementById('feedback').style.display = 'none';
+        document.getElementById('next-btn').style.display = 'none';
+        document.getElementById('quiz-controls').style.display = 'flex';
+    }
+
+    function checkAnswer(choice) {
+        const v = verses[currentVerse];
+        const feedback = document.getElementById('feedback');
+        feedback.style.display = 'block';
+        feedback.innerHTML = `<strong>${choice === v.isCanon ? 'Correct!' : 'Incorrect.'}</strong><br>${v.reason}`;
+        document.getElementById('quiz-controls').style.display = 'none';
+        document.getElementById('next-btn').style.display = 'inline-block';
+    }
+
+    function nextVerse() {
+        currentVerse++;
+        if(currentVerse >= verses.length) {
+            document.getElementById('quiz').innerHTML = "<h3>Test Complete</h3><p>Evidence shows the 4 Gospels contain early, consistent, and geographically accurate details that later 'Gospels' lack.</p><button class='btn-blue' onclick='location.reload()'>Restart</button>";
+        } else {
+            renderVerse();
+        }
+    }
+</script>
+
+</body>
+</html>
