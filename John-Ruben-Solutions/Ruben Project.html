@@ -1,0 +1,1687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Ruben's FinHub — Daily Net Worth + Bi‑Weekly Planner</title>
+
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'sans-serif'] },
+          colors: {
+            brand: {
+              50: '#f0f9ff',
+              100: '#e0f2fe',
+              500: '#0ea5e9',
+              600: '#0284c7',
+              900: '#0c4a6e',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+    .hide-scrollbar::-webkit-scrollbar { display: none; }
+    .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    .modal-overlay { backdrop-filter: blur(4px); }
+  </style>
+</head>
+
+<body class="text-slate-800 h-screen flex overflow-hidden selection:bg-brand-500 selection:text-white">
+
+  <!-- AUTH VIEW -->
+  <div id="auth-view" class="fixed inset-0 z-50 bg-slate-900 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8 relative overflow-hidden">
+      <div class="absolute top-0 right-0 w-32 h-32 bg-brand-100 rounded-full blur-3xl -mr-10 -mt-10"></div>
+
+      <div class="text-center mb-8 relative z-10">
+        <div class="w-16 h-16 bg-brand-50 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-brand-100">
+          <svg class="w-8 h-8 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+        </div>
+        <h1 class="text-2xl font-bold text-slate-900">Ruben's FinHub</h1>
+        <p class="text-sm text-slate-500 mt-1" id="auth-subtitle">Sign in to access your secure financial vault.</p>
+      </div>
+
+      <form id="auth-form" class="space-y-4 relative z-10">
+        <div id="auth-error" class="hidden bg-rose-50 text-rose-600 text-sm p-3 rounded-lg border border-rose-100 text-center"></div>
+
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Email Address</label>
+          <input type="email" id="auth-email" required
+                 class="w-full border border-slate-300 rounded-lg px-4 py-2.5 outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-shadow">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Password</label>
+          <input type="password" id="auth-password" required
+                 class="w-full border border-slate-300 rounded-lg px-4 py-2.5 outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-shadow">
+        </div>
+
+        <button type="submit" id="auth-submit-btn"
+                class="w-full bg-brand-600 hover:bg-brand-700 text-white font-medium py-2.5 rounded-lg transition-colors mt-2 shadow-md">
+          Sign In
+        </button>
+      </form>
+
+      <div class="mt-6 text-center text-sm relative z-10">
+        <span class="text-slate-500" id="auth-toggle-text">Don't have an account?</span>
+        <button type="button" id="auth-toggle-btn"
+                class="text-brand-600 font-semibold hover:underline ml-1">
+          Register here
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- APP VIEW -->
+  <div id="app-view" class="hidden w-full h-full flex flex-col md:flex-row relative">
+
+    <!-- Sidebar -->
+    <nav class="w-64 bg-slate-900 text-white flex-shrink-0 hidden md:flex flex-col shadow-2xl z-20">
+      <div class="p-6 border-b border-slate-800">
+        <h1 class="text-xl font-bold tracking-tight text-white flex items-center gap-2">
+          <svg class="w-6 h-6 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+          Ruben's FinHub
+        </h1>
+      </div>
+
+      <div class="flex-1 px-4 py-6 space-y-2 overflow-y-auto hide-scrollbar">
+        <button data-route="dashboard" id="nav-dashboard"
+                class="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all nav-active">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path>
+          </svg>
+          Dashboard
+        </button>
+
+        <button data-route="period" id="nav-period"
+                class="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all nav-inactive">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+          </svg>
+          Period Planner
+        </button>
+
+        <button data-route="data" id="nav-data"
+                class="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all nav-inactive">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
+          </svg>
+          Data Entry
+        </button>
+      </div>
+
+      <div class="p-6 border-t border-slate-800 space-y-4">
+        <div class="text-sm text-slate-400">
+          Signed in as<br/>
+          <span id="user-email" class="text-slate-200 font-medium"></span>
+        </div>
+        <button id="logout-btn"
+                class="flex items-center gap-2 text-sm text-rose-400 hover:text-rose-300 transition-colors w-full">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+          </svg>
+          Sign Out
+        </button>
+      </div>
+    </nav>
+
+    <main class="flex-1 flex flex-col h-full relative w-full overflow-hidden">
+      <header class="md:hidden bg-slate-900 text-white px-4 py-3 flex items-center justify-between z-10 shadow-md">
+        <h1 class="text-lg font-bold flex items-center gap-2">
+          <svg class="w-5 h-5 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+          FinHub
+        </h1>
+        <div class="flex items-center gap-2">
+          <button id="mobile-nav-btn" class="p-2 bg-slate-800 rounded-lg">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+            </svg>
+          </button>
+        </div>
+      </header>
+
+      <!-- Mobile nav -->
+      <div id="mobile-nav" class="md:hidden hidden bg-slate-900 text-white px-4 py-3 border-b border-slate-800 z-10">
+        <div class="space-y-2">
+          <button data-route="dashboard" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all nav-active-mobile">
+            Dashboard
+          </button>
+          <button data-route="period" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all nav-inactive-mobile">
+            Period Planner
+          </button>
+          <button data-route="data" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all nav-inactive-mobile">
+            Data Entry
+          </button>
+        </div>
+      </div>
+
+      <!-- Content -->
+      <div class="flex-1 overflow-y-auto hide-scrollbar p-4 md:p-6 bg-slate-50">
+        <!-- ROUTE: DASHBOARD -->
+        <section id="route-dashboard" class="hidden">
+          <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <h2 class="text-2xl font-bold text-slate-900">Daily Net Worth</h2>
+              <p class="text-slate-500 mt-1" id="dashboard-subtitle">Calculates in real-time from your entries.</p>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full md:w-auto">
+              <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
+                <div class="text-xs text-slate-500">Today</div>
+                <div class="text-lg font-semibold" id="today-date"></div>
+              </div>
+              <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
+                <div class="text-xs text-slate-500">Assets</div>
+                <div class="text-lg font-semibold text-emerald-700" id="total-assets"></div>
+              </div>
+              <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
+                <div class="text-xs text-slate-500">Liabilities</div>
+                <div class="text-lg font-semibold text-rose-700" id="total-liabilities"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-4 grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+              <div class="flex items-start justify-between gap-4">
+                <div>
+                  <h3 class="text-lg font-semibold text-slate-900">Net Worth (Daily)</h3>
+                  <p class="text-sm text-slate-500 mt-1">Assets - Liabilities + Net Cashflow</p>
+                </div>
+                <div class="text-right">
+                  <div class="text-xs text-slate-500">Net Cashflow</div>
+                  <div class="text-2xl font-bold" id="net-cashflow"></div>
+                </div>
+              </div>
+
+              <div class="mt-4 p-4 rounded-xl bg-slate-50 border border-slate-200">
+                <div class="flex flex-wrap items-end justify-between gap-3">
+                  <div>
+                    <div class="text-xs text-slate-500">Net Worth</div>
+                    <div class="text-4xl font-extrabold text-brand-900" id="net-worth"></div>
+                  </div>
+                  <div class="flex flex-col gap-1">
+                    <div class="text-sm text-slate-600">
+                      <span class="font-medium">Incomes:</span> <span id="total-incomes" class="font-semibold text-emerald-700"></span>
+                    </div>
+                    <div class="text-sm text-slate-600">
+                      <span class="font-medium">Expenses:</span> <span id="total-expenses" class="font-semibold text-rose-700"></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div class="bg-white rounded-xl border border-slate-200 p-4">
+                  <div class="text-sm text-slate-500">Net Cashflow Formula</div>
+                  <div class="mt-2 font-semibold text-slate-900">
+                    (Total Incomes) - (Total Expenses)
+                  </div>
+                  <div class="mt-3 text-sm text-slate-600">
+                    <div>Bi-weekly Planner carry-forward updates your daily picture.</div>
+                    <div class="text-xs text-slate-500 mt-1">Expenses auto-deduct from the correct bi-weekly period.</div>
+                  </div>
+                </div>
+
+                <div class="bg-white rounded-xl border border-slate-200 p-4">
+                  <div class="text-sm text-slate-500">Planner Sync</div>
+                  <div class="mt-2 font-semibold text-slate-900">Credit card expenses</div>
+                  <div class="mt-3 text-sm text-slate-600">
+                    Every expense is linked by date to your <span class="font-semibold">14-day periods</span>.
+                  </div>
+                  <div class="mt-3 text-xs text-slate-500">
+                    Tip: Add “Future Bills” to pre-fill upcoming periods.
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+              <h3 class="text-lg font-semibold text-slate-900">Recent Activities</h3>
+              <p class="text-sm text-slate-500 mt-1">Quick glance of your latest entries.</p>
+              <div class="mt-4 space-y-3" id="recent-activity"></div>
+              <div class="mt-4 text-xs text-slate-500">
+                Stored securely per user UID in Firestore.
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ROUTE: PERIOD PLANNER -->
+        <section id="route-period" class="hidden">
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <h2 class="text-2xl font-bold text-slate-900">Bi‑Weekly Period Planner</h2>
+              <p class="text-slate-500 mt-1">
+                Groups cashflow into 14-day periods from your income dates. Expenses and bills auto-deduct from the matching period.
+              </p>
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="text-right">
+                <div class="text-xs text-slate-500">Carry-forward (next month)</div>
+                <div class="text-xl font-bold text-slate-900" id="carry-forward-next-month">$0.00</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-4 flex flex-col lg:flex-row gap-4">
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 lg:w-5/12">
+              <h3 class="text-lg font-semibold text-slate-900">Period Controls</h3>
+
+              <div class="mt-4 space-y-3">
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 mb-1">
+                    Plan horizon (days)
+                  </label>
+                  <input type="number" id="planner-horizon-days" min="14" max="3650" step="14"
+                         value="180"
+                         class="w-full border border-slate-300 rounded-lg px-3 py-2.5 outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-shadow">
+                </div>
+
+                <div class="flex items-end gap-2">
+                  <button id="recalc-planner-btn"
+                          class="w-full bg-brand-600 hover:bg-brand-700 text-white font-medium py-2.5 rounded-lg transition-colors shadow-md">
+                    Recalculate Planner
+                  </button>
+                </div>
+
+                <div class="text-xs text-slate-500 leading-relaxed">
+                  Periods are built as 14-day blocks anchored from the earliest income date (or today if none).
+                  Expenses are assigned to the period containing their date.
+                  Carry-forward rolls to the next period, then into subsequent months.
+                </div>
+              </div>
+            </div>
+
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 flex-1">
+              <div class="flex items-center justify-between gap-4">
+                <h3 class="text-lg font-semibold text-slate-900">Periods</h3>
+                <div class="text-sm text-slate-500" id="period-summary"></div>
+              </div>
+
+              <div class="mt-4 overflow-x-auto">
+                <table class="min-w-[880px] w-full text-sm">
+                  <thead>
+                    <tr class="bg-slate-50">
+                      <th class="text-left px-4 py-3 font-semibold text-slate-600">Period</th>
+                      <th class="text-right px-4 py-3 font-semibold text-slate-600">Incomes</th>
+                      <th class="text-right px-4 py-3 font-semibold text-slate-600">Expenses (incl. bills)</th>
+                      <th class="text-right px-4 py-3 font-semibold text-slate-600">Net</th>
+                      <th class="text-right px-4 py-3 font-semibold text-slate-600">Carry‑forward</th>
+                    </tr>
+                  </thead>
+                  <tbody id="period-table-body"></tbody>
+                </table>
+              </div>
+
+              <div class="mt-4 text-xs text-slate-500">
+                Bills and future expenses are treated as expenses on their selected dates.
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ROUTE: DATA ENTRY -->
+        <section id="route-data" class="hidden">
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <h2 class="text-2xl font-bold text-slate-900">Data Entry</h2>
+              <p class="text-slate-500 mt-1">
+                Add, edit, and delete assets, liabilities, incomes, expenses, and future bills—everything updates the dashboard and planner instantly.
+              </p>
+            </div>
+          </div>
+
+          <div class="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <!-- ASSETS -->
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+              <div class="flex items-center justify-between gap-3">
+                <h3 class="text-lg font-semibold text-slate-900">Assets</h3>
+                <button class="text-brand-600 font-semibold hover:underline" id="add-asset-btn">+ Add</button>
+              </div>
+
+              <form id="asset-form" class="mt-4 hidden">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Name</label>
+                    <input type="text" id="asset-name" required class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Value</label>
+                    <input type="number" id="asset-value" required step="0.01" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                  </div>
+                </div>
+
+                <div class="mt-3">
+                  <label class="block text-sm font-medium text-slate-700 mb-1">Type (optional)</label>
+                  <input type="text" id="asset-type" placeholder="Savings / Investment / Cash / Other"
+                         class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                </div>
+
+                <div class="flex items-center gap-2 mt-4">
+                  <button type="submit" class="bg-brand-600 hover:bg-brand-700 text-white font-medium py-2.5 rounded-lg transition-colors shadow-md w-full">
+                    Save Asset
+                  </button>
+                  <button type="button" id="asset-cancel-btn"
+                          class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium py-2.5 rounded-lg transition-colors">
+                    Cancel
+                  </button>
+                </div>
+              </form>
+
+              <div class="mt-4 overflow-x-auto">
+                <table class="w-full text-sm">
+                  <thead>
+                    <tr class="bg-slate-50">
+                      <th class="text-left px-3 py-2 font-semibold text-slate-600">Name</th>
+                      <th class="text-right px-3 py-2 font-semibold text-slate-600">Value</th>
+                      <th class="text-right px-3 py-2 font-semibold text-slate-600">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="assets-table-body"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- LIABILITIES -->
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+              <div class="flex items-center justify-between gap-3">
+                <h3 class="text-lg font-semibold text-slate-900">Liabilities</h3>
+                <button class="text-brand-600 font-semibold hover:underline" id="add-liability-btn">+ Add</button>
+              </div>
+
+              <form id="liability-form" class="mt-4 hidden">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Name</label>
+                    <input type="text" id="liability-name" required class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Balance</label>
+                    <input type="number" id="liability-value" required step="0.01" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                  </div>
+                </div>
+
+                <div class="mt-3">
+                  <label class="block text-sm font-medium text-slate-700 mb-1">Type (optional)</label>
+                  <input type="text" id="liability-type" placeholder="Loan / Mortgage / Credit / Other"
+                         class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                </div>
+
+                <div class="flex items-center gap-2 mt-4">
+                  <button type="submit" class="bg-brand-600 hover:bg-brand-700 text-white font-medium py-2.5 rounded-lg transition-colors shadow-md w-full">
+                    Save Liability
+                  </button>
+                  <button type="button" id="liability-cancel-btn"
+                          class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium py-2.5 rounded-lg transition-colors">
+                    Cancel
+                  </button>
+                </div>
+              </form>
+
+              <div class="mt-4 overflow-x-auto">
+                <table class="w-full text-sm">
+                  <thead>
+                    <tr class="bg-slate-50">
+                      <th class="text-left px-3 py-2 font-semibold text-slate-600">Name</th>
+                      <th class="text-right px-3 py-2 font-semibold text-slate-600">Balance</th>
+                      <th class="text-right px-3 py-2 font-semibold text-slate-600">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="liabilities-table-body"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- INCOME (DATES) -->
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 lg:col-span-2">
+              <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                <div>
+                  <h3 class="text-lg font-semibold text-slate-900">Income (by Date)</h3>
+                  <p class="text-sm text-slate-500 mt-1">Add incomes with specific dates. They anchor the bi-weekly periods.</p>
+                </div>
+              </div>
+
+              <form id="income-form" class="mt-4 grid grid-cols-1 md:grid-cols-4 gap-3">
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 mb-1">Income Source</label>
+                  <input type="text" id="income-source" required placeholder="Salary / Bonus / Other"
+                         class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 mb-1">Date</label>
+                  <input type="date" id="income-date" required
+                         class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 mb-1">Amount</label>
+                  <input type="number" id="income-amount" required step="0.01"
+                         class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                </div>
+                <div class="flex items-end">
+                  <button type="submit"
+                          class="w-full bg-brand-600 hover:bg-brand-700 text-white font-medium py-2.5 rounded-lg transition-colors shadow-md">
+                    Add Income
+                  </button>
+                </div>
+              </form>
+
+              <div class="mt-4 overflow-x-auto">
+                <table class="w-full text-sm">
+                  <thead>
+                    <tr class="bg-slate-50">
+                      <th class="text-left px-3 py-2 font-semibold text-slate-600">Source</th>
+                      <th class="text-left px-3 py-2 font-semibold text-slate-600">Date</th>
+                      <th class="text-right px-3 py-2 font-semibold text-slate-600">Amount</th>
+                      <th class="text-right px-3 py-2 font-semibold text-slate-600">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="income-table-body"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- EXPENSES (CREDIT CARDS) -->
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 lg:col-span-2">
+              <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                <div>
+                  <h3 class="text-lg font-semibold text-slate-900">Credit Cards & Daily Expenses</h3>
+                  <p class="text-sm text-slate-500 mt-1">
+                    Add expenses with the credit card used, description, date, and amount. They automatically deduct from the matching bi-weekly period.
+                  </p>
+                </div>
+              </div>
+
+              <form id="expense-form" class="mt-4 grid grid-cols-1 md:grid-cols-5 gap-3">
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 mb-1">Credit Card</label>
+                  <input type="text" id="expense-card" required placeholder="Visa / Amex / Mastercard"
+                         class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 mb-1">Description</label>
+                  <input type="text" id="expense-desc" required placeholder="Groceries / Fuel / Dining / ... "
+                         class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 mb-1">Date</label>
+                  <input type="date" id="expense-date" required
+                         class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 mb-1">Amount</label>
+                  <input type="number" id="expense-amount" required step="0.01"
+                         class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                </div>
+                <div class="flex items-end">
+                  <button type="submit"
+                          class="w-full bg-brand-600 hover:bg-brand-700 text-white font-medium py-2.5 rounded-lg transition-colors shadow-md">
+                    Add Expense
+                  </button>
+                </div>
+              </form>
+
+              <div class="mt-4 overflow-x-auto">
+                <table class="w-full text-sm">
+                  <thead>
+                    <tr class="bg-slate-50">
+                      <th class="text-left px-3 py-2 font-semibold text-slate-600">Card</th>
+                      <th class="text-left px-3 py-2 font-semibold text-slate-600">Description</th>
+                      <th class="text-left px-3 py-2 font-semibold text-slate-600">Date</th>
+                      <th class="text-right px-3 py-2 font-semibold text-slate-600">Amount</th>
+                      <th class="text-right px-3 py-2 font-semibold text-slate-600">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="expenses-table-body"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- FUTURE BILLS -->
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 lg:col-span-2">
+              <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                <div>
+                  <h3 class="text-lg font-semibold text-slate-900">Future Expense & Bills Planning</h3>
+                  <p class="text-sm text-slate-500 mt-1">
+                    Add future recurring expenses/bills/investments. Set their specific dates so they sync to the correct bi-weekly period and affect carry-forward.
+                  </p>
+                </div>
+              </div>
+
+              <form id="bill-form" class="mt-4 grid grid-cols-1 md:grid-cols-5 gap-3">
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 mb-1">Name</label>
+                  <input type="text" id="bill-name" required placeholder="Rent / Utilities / Investment / Insurance"
+                         class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 mb-1">Category (optional)</label>
+                  <input type="text" id="bill-category" placeholder="Housing / Debt / Investing / ... "
+                         class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 mb-1">Date</label>
+                  <input type="date" id="bill-date" required
+                         class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 mb-1">Amount</label>
+                  <input type="number" id="bill-amount" required step="0.01"
+                         class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                </div>
+                <div class="flex items-end">
+                  <button type="submit"
+                          class="w-full bg-brand-600 hover:bg-brand-700 text-white font-medium py-2.5 rounded-lg transition-colors shadow-md">
+                    Add Bill
+                  </button>
+                </div>
+              </form>
+
+              <div class="mt-4 overflow-x-auto">
+                <table class="w-full text-sm">
+                  <thead>
+                    <tr class="bg-slate-50">
+                      <th class="text-left px-3 py-2 font-semibold text-slate-600">Name</th>
+                      <th class="text-left px-3 py-2 font-semibold text-slate-600">Category</th>
+                      <th class="text-left px-3 py-2 font-semibold text-slate-600">Date</th>
+                      <th class="text-right px-3 py-2 font-semibold text-slate-600">Amount</th>
+                      <th class="text-right px-3 py-2 font-semibold text-slate-600">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="bills-table-body"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- ===========================
+       SECURITY RULES (Paste into Firebase Console)
+       =========================== -->
+  <script type="text/plain" id="firestore-rules">
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isAuthed() { return request.auth != null; }
+    function isOwner(uid) { return isAuthed() && request.auth.uid == uid; }
+
+    // User-isolated document structure:
+    // /users/{uid}/assets/{docId}
+    // /users/{uid}/liabilities/{docId}
+    // /users/{uid}/incomes/{docId}
+    // /users/{uid}/expenses/{docId}
+    // /users/{uid}/bills/{docId}
+
+    match /users/{uid}/{collection}/{docId} {
+      allow read, write: if isOwner(uid);
+    }
+
+    // Deny everything else by default
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
+  </script>
+
+  <!-- ===========================
+       APP SCRIPT (Firebase v10 modular)
+       =========================== -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import {
+      getAuth,
+      onAuthStateChanged,
+      signInWithEmailAndPassword,
+      createUserWithEmailAndPassword,
+      signOut
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import {
+      getFirestore,
+      collection,
+      doc,
+      addDoc,
+      setDoc,
+      updateDoc,
+      deleteDoc,
+      query,
+      orderBy,
+      onSnapshot,
+      serverTimestamp,
+      getDocs
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    // ===== Firebase Config (as provided) =====
+    const firebaseConfig = {
+      apiKey: "AIzaSyDJDtMrlW7nuOaL62iHbnP8okCJ6sumGTA",
+      authDomain: "ruben-project-ca37a.firebaseapp.com",
+      projectId: "ruben-project-ca37a",
+      storageBucket: "ruben-project-ca37a.firebasestorage.app",
+      messagingSenderId: "785470836410",
+      appId: "1:785470836410:web:db517a1c04beeb52037c83"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    // ===== State =====
+    let currentUser = null;
+    let state = {
+      assets: [],
+      liabilities: [],
+      incomes: [],
+      expenses: [],
+      bills: [],
+    };
+
+    let ui = {
+      mode: "signin", // or "register"
+      activeRoute: "dashboard",
+      planner: {
+        horizonDays: 180
+      },
+      // For editing
+      editing: {
+        assetId: null,
+        liabilityId: null,
+        incomeId: null,
+        expenseId: null,
+        billId: null
+      }
+    };
+
+    // ===== Helpers =====
+    const $ = (sel) => document.querySelector(sel);
+    const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+    const escapeHtml = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;"
+    }[c]));
+
+    function formatMoney(n) {
+      const v = Number(n ?? 0);
+      return v.toLocaleString(undefined, { style: "currency", currency: "USD" });
+    }
+
+    function toISODate(d) {
+      // Keep date-only in local time.
+      const dt = new Date(d);
+      const y = dt.getFullYear();
+      const m = String(dt.getMonth() + 1).padStart(2, "0");
+      const day = String(dt.getDate()).padStart(2, "0");
+      return `${y}-${m}-${day}`;
+    }
+
+    function parseISODateLocal(iso) {
+      // Treat iso "YYYY-MM-DD" as local date at midnight
+      const [y, m, d] = (iso || "").split("-").map(Number);
+      return new Date(y, (m - 1), d, 0, 0, 0, 0);
+    }
+
+    function addDays(date, days) {
+      const d = new Date(date);
+      d.setDate(d.getDate() + days);
+      return d;
+    }
+
+    function dateBetweenInclusive(date, start, end) {
+      return date >= start && date <= end;
+    }
+
+    function sortByDateAsc(items, dateKey) {
+      return items.slice().sort((a, b) => parseISODateLocal(a[dateKey]) - parseISODateLocal(b[dateKey]));
+    }
+
+    function monthKey(isoDate) {
+      const dt = parseISODateLocal(isoDate);
+      return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}`;
+    }
+
+    // ===== DOM: Auth =====
+    const authView = $("#auth-view");
+    const appView = $("#app-view");
+    const authForm = $("#auth-form");
+    const authToggleBtn = $("#auth-toggle-btn");
+    const authToggleText = $("#auth-toggle-text");
+    const authError = $("#auth-error");
+    const authSubtitle = $("#auth-subtitle");
+    const authSubmitBtn = $("#auth-submit-btn");
+
+    function setAuthError(msg) {
+      if (!msg) {
+        authError.classList.add("hidden");
+        authError.textContent = "";
+        return;
+      }
+      authError.classList.remove("hidden");
+      authError.textContent = msg;
+    }
+
+    function setAuthMode(mode) {
+      ui.mode = mode;
+      const isRegister = mode === "register";
+      authSubtitle.textContent = isRegister
+        ? "Create your account to start tracking every penny."
+        : "Sign in to access your secure financial vault.";
+      authSubmitBtn.textContent = isRegister ? "Register" : "Sign In";
+      authToggleText.textContent = isRegister ? "Already have an account?" : "Don't have an account?";
+      authToggleBtn.textContent = isRegister ? "Sign in here" : "Register here";
+      setAuthError("");
+    }
+
+    authToggleBtn.addEventListener("click", () => {
+      setAuthMode(ui.mode === "signin" ? "register" : "signin");
+    });
+
+    authForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      setAuthError("");
+
+      const email = $("#auth-email").value.trim();
+      const password = $("#auth-password").value;
+
+      try {
+        if (ui.mode === "register") {
+          await createUserWithEmailAndPassword(auth, email, password);
+        } else {
+          await signInWithEmailAndPassword(auth, email, password);
+        }
+      } catch (err) {
+        setAuthError(err?.message || "Authentication error. Please try again.");
+      }
+    });
+
+    // ===== DOM: Navigation =====
+    const routeDashboard = $("#route-dashboard");
+    const routePeriod = $("#route-period");
+    const routeData = $("#route-data");
+
+    function setRoute(route) {
+      ui.activeRoute = route;
+      routeDashboard.classList.toggle("hidden", route !== "dashboard");
+      routePeriod.classList.toggle("hidden", route !== "period");
+      routeData.classList.toggle("hidden", route !== "data");
+
+      // Desktop nav highlight
+      $$(".nav-active").forEach(x => x.classList.remove("nav-active"));
+      $$(".nav-active-mobile").forEach(x => x.classList.remove("nav-active-mobile"));
+
+      // Reset
+      $("#nav-dashboard").className = "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all nav-inactive";
+      $("#nav-period").className = "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all nav-inactive";
+      $("#nav-data").className = "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all nav-inactive";
+
+      const navId = route === "dashboard" ? "#nav-dashboard" : route === "period" ? "#nav-period" : "#nav-data";
+      $(navId).classList.remove("nav-inactive");
+      $(navId).classList.add("nav-active");
+    }
+
+    $$("[data-route]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        setRoute(btn.dataset.route);
+        $("#mobile-nav")?.classList.add("hidden");
+      });
+    });
+
+    // Mobile menu button
+    $("#mobile-nav-btn").addEventListener("click", () => {
+      $("#mobile-nav").classList.toggle("hidden");
+    });
+
+    // Logout
+    $("#logout-btn").addEventListener("click", async () => {
+      await signOut(auth);
+    });
+
+    // ===== Firestore Collections (user-scoped by UID) =====
+    function userCol(name) {
+      // Structure: /users/{uid}/{name}
+      return collection(db, "users", currentUser.uid, name);
+    }
+
+    let unsubscribers = [];
+
+    function clearSubscriptions() {
+      unsubscribers.forEach(fn => { try { fn(); } catch {} });
+      unsubscribers = [];
+    }
+
+    function subscribeAll() {
+      clearSubscriptions();
+      const uid = currentUser.uid;
+
+      const assetQ = query(userCol("assets"), orderBy("createdAt", "desc"));
+      const liabQ = query(userCol("liabilities"), orderBy("createdAt", "desc"));
+      const incomeQ = query(userCol("incomes"), orderBy("date", "desc"));
+      const expenseQ = query(userCol("expenses"), orderBy("date", "desc"));
+      const billsQ = query(userCol("bills"), orderBy("date", "desc"));
+
+      unsubscribers.push(onSnapshot(assetQ, (snap) => {
+        state.assets = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        refreshAllViews();
+      }));
+      unsubscribers.push(onSnapshot(liabQ, (snap) => {
+        state.liabilities = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        refreshAllViews();
+      }));
+      unsubscribers.push(onSnapshot(incomeQ, (snap) => {
+        state.incomes = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        refreshAllViews();
+      }));
+      unsubscribers.push(onSnapshot(expenseQ, (snap) => {
+        state.expenses = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        refreshAllViews();
+      }));
+      unsubscribers.push(onSnapshot(billsQ, (snap) => {
+        state.bills = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        refreshAllViews();
+      }));
+    }
+
+    // ===== CRUD: Assets =====
+    function openAssetForm(editing) {
+      $("#asset-form").classList.remove("hidden");
+      if (editing) {
+        $("#asset-name").value = editing.name ?? "";
+        $("#asset-value").value = editing.value ?? "";
+        $("#asset-type").value = editing.type ?? "";
+        ui.editing.assetId = editing.id;
+      } else {
+        $("#asset-form").reset?.();
+        $("#asset-name").value = "";
+        $("#asset-value").value = "";
+        $("#asset-type").value = "";
+        ui.editing.assetId = null;
+      }
+    }
+
+    $("#add-asset-btn").addEventListener("click", () => {
+      openAssetForm(null);
+    });
+
+    $("#asset-cancel-btn").addEventListener("click", () => {
+      $("#asset-form").classList.add("hidden");
+      ui.editing.assetId = null;
+    });
+
+    $("#asset-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const name = $("#asset-name").value.trim();
+      const value = Number($("#asset-value").value);
+      const type = $("#asset-type").value.trim();
+
+      if (!currentUser) return;
+
+      const payload = {
+        name,
+        value: Number.isFinite(value) ? value : 0,
+        type: type || "",
+        createdAt: serverTimestamp()
+      };
+
+      try {
+        if (ui.editing.assetId) {
+          await setDoc(doc(db, "users", currentUser.uid, "assets", ui.editing.assetId), payload, { merge: true });
+        } else {
+          await addDoc(userCol("assets"), payload);
+        }
+        $("#asset-form").classList.add("hidden");
+        ui.editing.assetId = null;
+      } catch (err) {
+        alert(err?.message || "Failed to save asset");
+      }
+    });
+
+    function renderAssets() {
+      const tbody = $("#assets-table-body");
+      tbody.innerHTML = "";
+
+      const items = state.assets.slice().sort((a,b) => (b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
+      if (!items.length) {
+        tbody.innerHTML = `<tr><td colspan="3" class="px-3 py-3 text-center text-slate-500">No assets yet.</td></tr>`;
+        return;
+      }
+
+      for (const a of items) {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td class="px-3 py-2 font-medium text-slate-800">${escapeHtml(a.name)}</td>
+          <td class="px-3 py-2 text-right font-semibold text-emerald-700">${formatMoney(a.value)}</td>
+          <td class="px-3 py-2 text-right">
+            <div class="inline-flex items-center gap-2">
+              <button class="text-brand-600 hover:underline text-sm" data-action="edit" data-id="${a.id}">Edit</button>
+              <button class="text-rose-600 hover:underline text-sm" data-action="del" data-id="${a.id}">Delete</button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      }
+
+      tbody.querySelectorAll("[data-action='edit']").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const id = btn.dataset.id;
+          const item = state.assets.find(x => x.id === id);
+          openAssetForm(item);
+        });
+      });
+
+      tbody.querySelectorAll("[data-action='del']").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          const id = btn.dataset.id;
+          if (!confirm("Delete this asset?")) return;
+          try {
+            await deleteDoc(doc(db, "users", currentUser.uid, "assets", id));
+          } catch (err) {
+            alert(err?.message || "Failed to delete asset");
+          }
+        });
+      });
+    }
+
+    // ===== CRUD: Liabilities =====
+    function openLiabilityForm(editing) {
+      $("#liability-form").classList.remove("hidden");
+      if (editing) {
+        $("#liability-name").value = editing.name ?? "";
+        $("#liability-value").value = editing.value ?? "";
+        $("#liability-type").value = editing.type ?? "";
+        ui.editing.liabilityId = editing.id;
+      } else {
+        $("#liability-form").reset?.();
+        $("#liability-name").value = "";
+        $("#liability-value").value = "";
+        $("#liability-type").value = "";
+        ui.editing.liabilityId = null;
+      }
+    }
+
+    $("#add-liability-btn").addEventListener("click", () => openLiabilityForm(null));
+    $("#liability-cancel-btn").addEventListener("click", () => {
+      $("#liability-form").classList.add("hidden");
+      ui.editing.liabilityId = null;
+    });
+
+    $("#liability-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const name = $("#liability-name").value.trim();
+      const value = Number($("#liability-value").value);
+      const type = $("#liability-type").value.trim();
+
+      if (!currentUser) return;
+
+      const payload = {
+        name,
+        value: Number.isFinite(value) ? value : 0,
+        type: type || "",
+        createdAt: serverTimestamp()
+      };
+
+      try {
+        if (ui.editing.liabilityId) {
+          await setDoc(doc(db, "users", currentUser.uid, "liabilities", ui.editing.liabilityId), payload, { merge: true });
+        } else {
+          await addDoc(userCol("liabilities"), payload);
+        }
+        $("#liability-form").classList.add("hidden");
+        ui.editing.liabilityId = null;
+      } catch (err) {
+        alert(err?.message || "Failed to save liability");
+      }
+    });
+
+    function renderLiabilities() {
+      const tbody = $("#liabilities-table-body");
+      tbody.innerHTML = "";
+
+      const items = state.liabilities.slice().sort((a,b) => (b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
+      if (!items.length) {
+        tbody.innerHTML = `<tr><td colspan="3" class="px-3 py-3 text-center text-slate-500">No liabilities yet.</td></tr>`;
+        return;
+      }
+
+      for (const l of items) {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td class="px-3 py-2 font-medium text-slate-800">${escapeHtml(l.name)}</td>
+          <td class="px-3 py-2 text-right font-semibold text-rose-700">${formatMoney(l.value)}</td>
+          <td class="px-3 py-2 text-right">
+            <div class="inline-flex items-center gap-2">
+              <button class="text-brand-600 hover:underline text-sm" data-action="edit" data-id="${l.id}">Edit</button>
+              <button class="text-rose-600 hover:underline text-sm" data-action="del" data-id="${l.id}">Delete</button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      }
+
+      tbody.querySelectorAll("[data-action='edit']").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const id = btn.dataset.id;
+          const item = state.liabilities.find(x => x.id === id);
+          openLiabilityForm(item);
+        });
+      });
+
+      tbody.querySelectorAll("[data-action='del']").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          const id = btn.dataset.id;
+          if (!confirm("Delete this liability?")) return;
+          try {
+            await deleteDoc(doc(db, "users", currentUser.uid, "liabilities", id));
+          } catch (err) {
+            alert(err?.message || "Failed to delete liability");
+          }
+        });
+      });
+    }
+
+    // ===== CRUD: Income =====
+    function renderIncomes() {
+      const tbody = $("#income-table-body");
+      tbody.innerHTML = "";
+
+      const items = sortByDateAsc(state.incomes, "date").reverse();
+      if (!items.length) {
+        tbody.innerHTML = `<tr><td colspan="4" class="px-3 py-3 text-center text-slate-500">No incomes yet.</td></tr>`;
+        return;
+      }
+
+      for (const i of items) {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td class="px-3 py-2 font-medium text-slate-800">${escapeHtml(i.source)}</td>
+          <td class="px-3 py-2 text-slate-700">${escapeHtml(i.date)}</td>
+          <td class="px-3 py-2 text-right font-semibold text-emerald-700">${formatMoney(i.amount)}</td>
+          <td class="px-3 py-2 text-right">
+            <div class="inline-flex items-center gap-2">
+              <button class="text-brand-600 hover:underline text-sm" data-action="edit" data-id="${i.id}">Edit</button>
+              <button class="text-rose-600 hover:underline text-sm" data-action="del" data-id="${i.id}">Delete</button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      }
+
+      tbody.querySelectorAll("[data-action='del']").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          const id = btn.dataset.id;
+          if (!confirm("Delete this income?")) return;
+          try {
+            await deleteDoc(doc(db, "users", currentUser.uid, "incomes", id));
+          } catch (err) {
+            alert(err?.message || "Failed to delete income");
+          }
+        });
+      });
+
+      tbody.querySelectorAll("[data-action='edit']").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const id = btn.dataset.id;
+          const item = state.incomes.find(x => x.id === id);
+          ui.editing.incomeId = id;
+          // prefill form
+          $("#income-source").value = item?.source ?? "";
+          $("#income-date").value = item?.date ?? toISODate(new Date());
+          $("#income-amount").value = item?.amount ?? "";
+        });
+      });
+    }
+
+    $("#income-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const source = $("#income-source").value.trim();
+      const date = $("#income-date").value;
+      const amount = Number($("#income-amount").value);
+
+      if (!currentUser) return;
+
+      const payload = {
+        source,
+        date,
+        amount: Number.isFinite(amount) ? amount : 0,
+        createdAt: serverTimestamp()
+      };
+
+      try {
+        if (ui.editing.incomeId) {
+          await setDoc(doc(db, "users", currentUser.uid, "incomes", ui.editing.incomeId), payload, { merge: true });
+          ui.editing.incomeId = null;
+        } else {
+          await addDoc(userCol("incomes"), payload);
+        }
+
+        $("#income-source").value = "";
+        $("#income-amount").value = "";
+      } catch (err) {
+        alert(err?.message || "Failed to save income");
+      }
+    });
+
+    // ===== CRUD: Expenses =====
+    function renderExpenses() {
+      const tbody = $("#expenses-table-body");
+      tbody.innerHTML = "";
+
+      const items = sortByDateAsc(state.expenses, "date").reverse();
+      if (!items.length) {
+        tbody.innerHTML = `<tr><td colspan="5" class="px-3 py-3 text-center text-slate-500">No expenses yet.</td></tr>`;
+        return;
+      }
+
+      for (const x of items) {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td class="px-3 py-2 font-medium text-slate-800">${escapeHtml(x.card)}</td>
+          <td class="px-3 py-2 text-slate-700">${escapeHtml(x.desc)}</td>
+          <td class="px-3 py-2 text-slate-700">${escapeHtml(x.date)}</td>
+          <td class="px-3 py-2 text-right font-semibold text-rose-700">${formatMoney(x.amount)}</td>
+          <td class="px-3 py-2 text-right">
+            <div class="inline-flex items-center gap-2">
+              <button class="text-brand-600 hover:underline text-sm" data-action="edit" data-id="${x.id}">Edit</button>
+              <button class="text-rose-600 hover:underline text-sm" data-action="del" data-id="${x.id}">Delete</button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      }
+
+      tbody.querySelectorAll("[data-action='del']").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          const id = btn.dataset.id;
+          if (!confirm("Delete this expense?")) return;
+          try {
+            await deleteDoc(doc(db, "users", currentUser.uid, "expenses", id));
+          } catch (err) {
+            alert(err?.message || "Failed to delete expense");
+          }
+        });
+      });
+
+      tbody.querySelectorAll("[data-action='edit']").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const id = btn.dataset.id;
+          const item = state.expenses.find(xx => xx.id === id);
+          ui.editing.expenseId = id;
+          $("#expense-card").value = item?.card ?? "";
+          $("#expense-desc").value = item?.desc ?? "";
+          $("#expense-date").value = item?.date ?? toISODate(new Date());
+          $("#expense-amount").value = item?.amount ?? "";
+        });
+      });
+    }
+
+    $("#expense-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const card = $("#expense-card").value.trim();
+      const desc = $("#expense-desc").value.trim();
+      const date = $("#expense-date").value;
+      const amount = Number($("#expense-amount").value);
+
+      if (!currentUser) return;
+
+      const payload = {
+        card,
+        desc,
+        date,
+        amount: Number.isFinite(amount) ? amount : 0,
+        createdAt: serverTimestamp()
+      };
+
+      try {
+        if (ui.editing.expenseId) {
+          await setDoc(doc(db, "users", currentUser.uid, "expenses", ui.editing.expenseId), payload, { merge: true });
+          ui.editing.expenseId = null;
+        } else {
+          await addDoc(userCol("expenses"), payload);
+        }
+        $("#expense-desc").value = "";
+        $("#expense-amount").value = "";
+      } catch (err) {
+        alert(err?.message || "Failed to save expense");
+      }
+    });
+
+    // ===== CRUD: Bills =====
+    function renderBills() {
+      const tbody = $("#bills-table-body");
+      tbody.innerHTML = "";
+
+      const items = sortByDateAsc(state.bills, "date").reverse();
+      if (!items.length) {
+        tbody.innerHTML = `<tr><td colspan="5" class="px-3 py-3 text-center text-slate-500">No future bills yet.</td></tr>`;
+        return;
+      }
+
+      for (const b of items) {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td class="px-3 py-2 font-medium text-slate-800">${escapeHtml(b.name)}</td>
+          <td class="px-3 py-2 text-slate-700">${escapeHtml(b.category || "-")}</td>
+          <td class="px-3 py-2 text-slate-700">${escapeHtml(b.date)}</td>
+          <td class="px-3 py-2 text-right font-semibold text-rose-700">${formatMoney(b.amount)}</td>
+          <td class="px-3 py-2 text-right">
+            <div class="inline-flex items-center gap-2">
+              <button class="text-brand-600 hover:underline text-sm" data-action="edit" data-id="${b.id}">Edit</button>
+              <button class="text-rose-600 hover:underline text-sm" data-action="del" data-id="${b.id}">Delete</button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      }
+
+      tbody.querySelectorAll("[data-action='del']").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          const id = btn.dataset.id;
+          if (!confirm("Delete this bill?")) return;
+          try {
+            await deleteDoc(doc(db, "users", currentUser.uid, "bills", id));
+          } catch (err) {
+            alert(err?.message || "Failed to delete bill");
+          }
+        });
+      });
+
+      tbody.querySelectorAll("[data-action='edit']").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const id = btn.dataset.id;
+          const item = state.bills.find(bb => bb.id === id);
+          ui.editing.billId = id;
+          $("#bill-name").value = item?.name ?? "";
+          $("#bill-category").value = item?.category ?? "";
+          $("#bill-date").value = item?.date ?? toISODate(new Date());
+          $("#bill-amount").value = item?.amount ?? "";
+        });
+      });
+    }
+
+    $("#bill-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const name = $("#bill-name").value.trim();
+      const category = $("#bill-category").value.trim();
+      const date = $("#bill-date").value;
+      const amount = Number($("#bill-amount").value);
+
+      if (!currentUser) return;
+
+      const payload = {
+        name,
+        category: category || "",
+        date,
+        amount: Number.isFinite(amount) ? amount : 0,
+        createdAt: serverTimestamp()
+      };
+
+      try {
+        if (ui.editing.billId) {
+          await setDoc(doc(db, "users", currentUser.uid, "bills", ui.editing.billId), payload, { merge: true });
+          ui.editing.billId = null;
+        } else {
+          await addDoc(userCol("bills"), payload);
+        }
+        $("#bill-name").value = "";
+        $("#bill-category").value = "";
+        $("#bill-amount").value = "";
+      } catch (err) {
+        alert(err?.message || "Failed to save bill");
+      }
+    });
+
+    // ===== Planner & Dashboard Calculations =====
+    function buildPeriods() {
+      // Determine anchor start: earliest income date if exists, else today.
+      const incomes = state.incomes || [];
+      const today = parseISODateLocal(toISODate(new Date()));
+
+      let anchorDate = today;
+      if (incomes.length) {
+        const earliest = sortByDateAsc(incomes, "date")[0]?.date;
+        if (earliest) anchorDate = parseISODateLocal(earliest);
+      }
+
+      // Make sure anchorDate aligns to local midnight (already midnight).
+      const horizonDays = ui.planner.horizonDays || 180;
+      const periods = [];
+
+      const start = anchorDate;
+      const end = addDays(start, horizonDays);
+
+      // 14-day blocks inclusive.
+      let cursor = new Date(start);
+      let idx = 1;
+      while (cursor <= end) {
+        const pStart = cursor;
+        const pEnd = addDays(cursor, 13); // 14 days inclusive
+        periods.push({
+          key: `p${idx}`,
+          start: pStart,
+          end: pEnd,
+          startISO: toISODate(pStart),
+          endISO: toISODate(pEnd)
+        });
+        cursor = addDays(cursor, 14);
+        idx++;
+        if (periods.length > 4000) break; // safety
+      }
+
+      return periods;
+    }
+
+    function assignToPeriod(dateISO, periods) {
+      const d = parseISODateLocal(dateISO);
+      for (let i = 0; i < periods.length; i++) {
+        const p = periods[i];
+        if (dateBetweenInclusive(d, p.start, p.end)) return i;
+      }
+      return -1;
+    }
+
+    function computePlanner() {
+      const periods = buildPeriods();
+      const horizonMonths = new Set();
+
+      // Aggregate incomes and expenses per period index
+      const incomes = state.incomes || [];
+      const expenses = state.expenses || [];
+      const bills = state.bills || [];
+
+      const periodIncome = new Array(periods.length).fill(0);
+      const periodExpense = new Array(periods.length).fill(0);
+
+      for (const inc of incomes) {
+        if (!inc.date) continue;
+        const idx = assignToPeriod(inc.date, periods);
+        if (idx >= 0) periodIncome[idx] += Number(inc.amount || 0);
+      }
+
+      const addExpenseDate = (x) => {
+        if (!x?.date) return;
+        const idx = assignToPeriod(x.date, periods);
+        if (idx >= 0) periodExpense[idx] += Number(x.amount || 0);
+      };
+
+      for (const ex of expenses) addExpenseDate(ex);
+      for (const b of bills) addExpenseDate(b);
+
+      // Carry-forward: start at 0, then CF += (Income - Expense) for each period.
+      let carry = 0;
+      const rows = [];
+
+      for (let i = 0; i < periods.length; i++) {
+        const income = periodIncome[i];
+        const exp = periodExpense[i];
+        const net = income - exp;
+        carry = carry + net;
+
+        const startMonth = monthKey(periods[i].startISO);
+        const endMonth = monthKey(periods[i].endISO);
+        horizonMonths.add(startMonth);
+        horizonMonths.add(endMonth);
+
+        rows.push({
+          i,
+          period: periods[i],
+          income,
+          expense: exp,
+          net,
+          carry
+        });
+      }
+
+      // "carry-forward balance rolling into the next month"
+      // We interpret as: carry value at the end of the first period that ends in the next calendar month relative to today.
+      const today = parseISODateLocal(toISODate(new Date()));
+      const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+      const nextMonthKey = `${nextMonth.getFullYear()}-${String(nextMonth.getMonth() + 1).padStart(2, "0")}`;
+
+      let carryNextMonth = 0;
+      for (const r of rows) {
+        const endKey = monthKey(r.period.endISO);
+        if (endKey === nextMonthKey) {
+          carryNextMonth = r.carry;
+          break;
+        }
+      }
+
+      return { periods, rows, carryNextMonth };
+    }
+
+    function computeDailyNetWorth() {
+      const todayISO = toISODate(new Date());
+      const todayDate = parseISODateLocal(todayISO);
+
+      const assetsTotal = (state.assets || []).reduce((s, a) => s + Number(a.value || 0), 0);
+      const liabilitiesTotal = (state.liabilities || []).reduce((s, l) => s + Number(l.value || 0), 0);
+
+      // Daily incomes/expenses = entries whose date == today
+      const totalIncomesToday = (state.incomes || []).reduce((s, i) => {
+        return (i.date === todayISO) ? s + Number(i.amount || 0) : s;
+      }, 0);
+
+      const totalExpensesToday = (state.expenses || []).reduce((s, e) => {
+        return (e.date === todayISO) ? s + Number(e.amount || 0) : s;
+      }, 0);
+
+      // Also treat bills due today as expenses for the daily net worth signal
+      const billsToday = (state.bills || []).reduce((s, b) => {
+        return (b.date === todayISO) ? s + Number(b.amount || 0) : s;
+      }, 0);
+
+      const totalExpenses = totalExpensesToday + billsToday;
+      const netCashflow = totalIncomesToday - totalExpenses;
+
+      const netWorth = assetsTotal - liabilitiesTotal + netCashflow;
+
+      return {
+        todayISO,
+        assetsTotal,
+        liabilitiesTotal,
+        totalIncomesToday,
+        totalExpenses,
+        netCashflow,
+        netWorth
+      };
+    }
+
+    function renderDashboard() {
+      const d = computeDailyNetWorth();
+
+      $("#today-date").textContent = d.todayISO;
+      $("#total-assets").textContent = formatMoney(d.assetsTotal);
+      $("#total-liabilities").textContent = formatMoney(d.liabilitiesTotal);
+
+      const nc = d.netCashflow;
+      $("#net-cashflow").textContent = formatMoney(nc);
+      $("#net-cashflow").className = "text-2xl font-bold " + (nc >= 0 ? "text-emerald-700" : "text-rose-700");
+
+      $("#total-incomes").textContent = formatMoney(d.totalIncomesToday);
+      $("#total-expenses").textContent = formatMoney(d.totalExpenses);
+
+      $("#net-worth").textContent = formatMoney(d.netWorth);
+      $("#net-worth").className = "text-4xl font-extrabold " + (d.netWorth >= 0 ? "text-brand-900" : "text-rose-700");
+    }
+
+    function renderPlanner() {
+      const { rows, carryNextMonth } = computePlanner();
+
+      $("#carry-forward-next-month").textContent = formatMoney(carryNextMonth);
+
+      const tbody = $("#period-table-body");
+      tbody.innerHTML = "";
+
+      if (!rows.length) {
+        tbody.innerHTML = `<tr><td colspan="5" class="px-4 py-4 text-center text-slate-500">No periods to display.</td></tr>`;
+        return;
+      }
+
+      for (const r of rows) {
+        const tr = document.createElement("tr");
+        const carryClass = r.carry >= 0 ? "text-emerald-700" : "text-rose-700";
+        const netClass = r.net >= 0 ? "text-emerald-700" : "text-rose-700";
+
+        tr.innerHTML = `
+          <td class="px-4 py-3 font-medium text-slate-800">
+            <div>${escapeHtml(r.period.startISO)} → ${escapeHtml(r.period.endISO)}</div>
+            <div class="text-xs text-slate-500 mt-1">#${r.i + 1}</div>
+          </td>
+          <td class="px-4 py-3 text-right font-semibold text-emerald-700">${formatMoney(r.income)}</td>
+          <td class="px-4 py-3 text-right font-semibold text-rose-700">${formatMoney(r.expense)}</td>
+          <td class="px-4 py-3 text-right font-semibold ${netClass}">${formatMoney(r.net)}</td>
+          <td class="px-4 py-3 text-right font-bold ${carryClass}">${formatMoney(r.carry)}</td>
+        `;
+        tbody.appendChild(tr);
+      }
+
+      $("#period-summary").textContent = `Showing ${rows.length} periods (${ui.planner.horizonDays} days).`;
+    }
+
+    function renderRecentActivity() {
+      const box = $("#recent-activity");
+      const items = [];
+
+      for (const a of state.assets || []) {
+        items.push({ type: "Asset", date: a.createdAt?.toDate?.()?.toISOString?.() || new Date().toISOString(), text: `Added/Updated asset: ${a.name} (${formatMoney(a.value)})` });
+      }
+      for (const l of state.liabilities || []) {
+        items.push({ type: "Liability", date: l.createdAt?.toDate?.()?.toISOString?.() || new Date().toISOString(), text: `Added/Updated liability: ${l.name} (${formatMoney(l.value)})` });
+      }
+      for (const i of state.incomes || []) {
+        items.push({ type: "Income", date: i.date || "", text: `Income: ${i.source} on ${i.date} (${formatMoney(i.amount)})` });
+      }
+      for (const e of state.expenses || []) {
+        items.push({ type: "Expense", date: e.date || "", text: `Expense: ${e.card} — ${e.desc} on ${e.date} (${formatMoney(e.amount)})` });
+      }
+      for (const b of state.bills || []) {
+        items.push({ type: "Bill", date: b.date || "", text: `Bill: ${b.name} (${b.category || "—"}) on ${b.date} (${formatMoney(b.amount)})` });
+      }
+
+      // Sort by date desc
+      items.sort((x, y) => {
+        const dx = parseISODateLocal((x.date || "").slice(0,10) || toISODate(new Date())).getTime();
+        const dy = parseISODateLocal((y.date || "").slice(0,10) || toISODate(new Date())).getTime();
+        return dy - dx;
+      });
+
+      const top = items.slice(0, 6);
+      box.innerHTML = "";
+      if (!top.length) {
+        box.innerHTML = `<div class="text-sm text-slate-500">Add your first entry to see activity here.</div>`;
+        return;
+      }
+
+      for (const it of top) {
+        const div = document.createElement("div");
+        div.className = "flex items-start justify-between gap-3 bg-slate-50 border border-slate-200 rounded-xl p-3";
+        div.innerHTML = `
+          <div>
+            <div class="text-sm font-semibold text-slate-900">${escapeHtml(it.type)}</div>
+            <div class="text-xs text-slate-600 mt-1">${escapeHtml(it.text)}</div>
+          </div>
+        `;
+        box.appendChild(div);
+      }
+    }
+
+    function refreshAllViews() {
+      // render tables always (they are part of data route)
+      renderAssets();
+      renderLiabilities();
+      renderIncomes();
+      renderExpenses();
+      renderBills();
+
+      // dashboard + planner only when visible to save a bit of work
+      if (!routeDashboard.classList.contains("hidden")) renderDashboard();
+      if (!routePeriod.classList.contains("hidden")) renderPlanner();
+
+      // recent activity is on dashboard route
+      if (!routeDashboard.classList.contains("hidden")) renderRecentActivity();
+
+      // Keep dashboard always reasonably fresh even when not visible
+      // (we recalc anyway when route is changed)
+    }
+
+    // ===== Planner controls =====
+    $("#planner-horizon-days").addEventListener("input", () => {
+      ui.planner.horizonDays = Number($("#planner-horizon-days").value || 180);
+    });
+
+    $("#recalc-planner-btn").addEventListener("click", () => {
+      ui.planner.horizonDays = Number($("#planner-horizon-days").value || 180);
+      renderPlanner();
+    });
+
+    // ===== Auth state boot =====
+    setAuthMode("signin");
+
+    onAuthStateChanged(auth, (user) => {
+      currentUser = user || null;
+
+      if (!currentUser) {
+        appView.classList.add("hidden");
+        authView.classList.remove("hidden");
+        clearSubscriptions();
+        // reset UI
+        state = { assets: [], liabilities: [], incomes: [], expenses: [], bills: [] };
+        setRoute("dashboard");
+        return;
+      }
+
+      // Signed in
+      authView.classList.add("hidden");
+      appView.classList.remove("hidden");
+      $("#user-email").textContent = currentUser.email || "(user)";
+
+      setRoute("dashboard");
+      // Set default dates for forms
+      const todayISO = toISODate(new Date());
+      $("#income-date").value = todayISO;
+      $("#expense-date").value = todayISO;
+      $("#bill-date").value = todayISO;
+
+      ui.planner.horizonDays = Number($("#planner-horizon-days").value || 180);
+      subscribeAll();
+      // initial render
+      refreshAllViews();
+    });
+
+    // Initial render preview (before auth)
+    $("#planner-horizon-days").value = "180";
+  </script>
+
+  <!-- Optional: quick copy helper (not required) -->
+  <script>
+    // Nothing here intentionally: all app JS is in module for scoped correctness.
+  </script>
+
+</body>
+</html>
