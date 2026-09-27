@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Ruben's FinHub — Daily Net Worth + Bi‑Weekly Planner</title>
+  <title>Ruben's FinHub — Net Worth, Cards &amp; Bi‑Weekly Planner</title>
 
   <!-- Tailwind -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -44,25 +44,31 @@
       color: #ffffff;
       box-shadow: inset 0 0 0 1px rgba(14, 165, 233, 0.35);
     }
-    .nav-inactive {
-      color: #cbd5e1;
-    }
-    .nav-inactive:hover {
-      background-color: rgba(255, 255, 255, 0.06);
-      color: #ffffff;
-    }
+    .nav-inactive { color: #cbd5e1; }
+    .nav-inactive:hover { background-color: rgba(255, 255, 255, 0.06); color: #ffffff; }
+
     /* Sidebar nav states (mobile) */
     .nav-active-mobile {
       background-color: rgba(14, 165, 233, 0.18);
       color: #ffffff;
       box-shadow: inset 0 0 0 1px rgba(14, 165, 233, 0.35);
     }
-    .nav-inactive-mobile {
-      color: #cbd5e1;
-    }
+    .nav-inactive-mobile { color: #cbd5e1; }
 
     .util-bar-track { background-color: #e2e8f0; border-radius: 9999px; height: 6px; overflow: hidden; }
     .util-bar-fill { height: 100%; border-radius: 9999px; }
+
+    .badge { display:inline-block; padding: 0.125rem 0.5rem; border-radius: 9999px; font-size: 0.7rem; font-weight: 600; white-space: nowrap; }
+    .badge-rose { background-color:#fff1f2; color:#be123c; border:1px solid #fecdd3; }
+    .badge-emerald { background-color:#ecfdf5; color:#047857; border:1px solid #a7f3d0; }
+    .badge-amber { background-color:#fffbeb; color:#b45309; border:1px solid #fde68a; }
+    .badge-brand { background-color:#f0f9ff; color:#0369a1; border:1px solid #bae6fd; }
+    .badge-slate { background-color:#f1f5f9; color:#475569; border:1px solid #e2e8f0; }
+
+    .quick-add-panel {
+      background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+      border: 1px solid #dbeafe;
+    }
   </style>
 </head>
 
@@ -131,7 +137,7 @@
 
       <div class="flex-1 px-4 py-6 space-y-2 overflow-y-auto hide-scrollbar">
         <button data-route="dashboard" id="nav-dashboard"
-                class="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all nav-active">
+                class="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all nav-inactive">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path>
@@ -148,17 +154,17 @@
           Period Planner
         </button>
 
-        <button data-route="cards" id="nav-cards"
+        <button data-route="accounts" id="nav-accounts"
                 class="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all nav-inactive">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M3 10h18M4 6h16a1 1 0 011 1v10a1 1 0 01-1 1H4a1 1 0 01-1-1V7a1 1 0 011-1zM6 15h4"></path>
           </svg>
-          Cards &amp; Payoffs
+          Accounts &amp; Cards
         </button>
 
         <button data-route="data" id="nav-data"
-                class="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all nav-inactive">
+                class="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all nav-active">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
@@ -204,23 +210,24 @@
       <!-- Mobile nav -->
       <div id="mobile-nav" class="md:hidden hidden bg-slate-900 text-white px-4 py-3 border-b border-slate-800 z-10">
         <div class="space-y-2">
-          <button data-route="dashboard" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all nav-active-mobile">
+          <button data-route="dashboard" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all nav-inactive-mobile">
             Dashboard
           </button>
           <button data-route="period" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all nav-inactive-mobile">
             Period Planner
           </button>
-          <button data-route="cards" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all nav-inactive-mobile">
-            Cards &amp; Payoffs
+          <button data-route="accounts" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all nav-inactive-mobile">
+            Accounts &amp; Cards
           </button>
-          <button data-route="data" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all nav-inactive-mobile">
+          <button data-route="data" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all nav-active-mobile">
             Data Entry
           </button>
         </div>
       </div>
 
       <!-- Content -->
-      <div class="flex-1 overflow-y-auto hide-scrollbar p-4 md:p-6 bg-slate-50">
+      <div class="flex-1 overflow-y-auto hide-scrollbar p-4 md:p-6 bg-slate-50" id="app-content-scroll">
+
         <!-- ROUTE: DASHBOARD -->
         <section id="route-dashboard" class="hidden">
           <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -235,11 +242,11 @@
                 <div class="text-lg font-semibold" id="today-date"></div>
               </div>
               <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
-                <div class="text-xs text-slate-500">Assets</div>
+                <div class="text-xs text-slate-500">Assets (incl. banks)</div>
                 <div class="text-lg font-semibold text-emerald-700" id="total-assets"></div>
               </div>
               <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
-                <div class="text-xs text-slate-500">Liabilities</div>
+                <div class="text-xs text-slate-500">Liabilities (incl. cards)</div>
                 <div class="text-lg font-semibold text-rose-700" id="total-liabilities"></div>
               </div>
             </div>
@@ -250,10 +257,10 @@
               <div class="flex items-start justify-between gap-4">
                 <div>
                   <h3 class="text-lg font-semibold text-slate-900">Net Worth (Daily)</h3>
-                  <p class="text-sm text-slate-500 mt-1">Assets - Liabilities + Net Cashflow</p>
+                  <p class="text-sm text-slate-500 mt-1">(Assets + Banks) − (Liabilities + Credit Cards) + Unbanked activity today</p>
                 </div>
                 <div class="text-right">
-                  <div class="text-xs text-slate-500">Net Cashflow</div>
+                  <div class="text-xs text-slate-500">Net Cashflow (MTD)</div>
                   <div class="text-2xl font-bold" id="net-cashflow"></div>
                 </div>
               </div>
@@ -264,12 +271,22 @@
                     <div class="text-xs text-slate-500">Net Worth</div>
                     <div class="text-4xl font-extrabold text-brand-900" id="net-worth"></div>
                   </div>
-                  <div class="flex flex-col gap-1">
-                    <div class="text-sm text-slate-600">
-                      <span class="font-medium">Incomes:</span> <span id="total-incomes" class="font-semibold text-emerald-700"></span>
+                  <div class="grid grid-cols-2 gap-x-6 gap-y-2">
+                    <div>
+                      <div class="text-xs text-slate-500">Carry Over from Previous Period</div>
+                      <div class="text-sm font-semibold" id="period-carry-in"></div>
                     </div>
-                    <div class="text-sm text-slate-600">
-                      <span class="font-medium">Expenses:</span> <span id="total-expenses" class="font-semibold text-rose-700"></span>
+                    <div>
+                      <div class="text-xs text-slate-500">Expected Carry Over to Next Period</div>
+                      <div class="text-sm font-semibold" id="period-carry-out"></div>
+                    </div>
+                    <div>
+                      <div class="text-xs text-slate-500">Expected Incomes (Current Period)</div>
+                      <div class="text-sm font-semibold text-emerald-700" id="period-income"></div>
+                    </div>
+                    <div>
+                      <div class="text-xs text-slate-500">Expected Expenses (Current Period)</div>
+                      <div class="text-sm font-semibold text-rose-700" id="period-expense"></div>
                     </div>
                   </div>
                 </div>
@@ -277,24 +294,20 @@
 
               <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div class="bg-white rounded-xl border border-slate-200 p-4">
-                  <div class="text-sm text-slate-500">Net Cashflow Formula</div>
+                  <div class="text-sm text-slate-500">How balances update</div>
                   <div class="mt-2 font-semibold text-slate-900">
-                    (Total Incomes) - (Total Expenses)
+                    Bank &amp; card balances are live
                   </div>
                   <div class="mt-3 text-sm text-slate-600">
-                    <div>Bi-weekly Planner carry-forward updates your daily picture.</div>
-                    <div class="text-xs text-slate-500 mt-1">Expenses auto-deduct from the correct bi-weekly period.</div>
+                    Income routed to a Bank Account, Debit Card spend, Credit Card spend, and Payoffs all update the relevant balance the instant you log them (as of today's date — future-dated entries don't count yet).
                   </div>
                 </div>
 
                 <div class="bg-white rounded-xl border border-slate-200 p-4">
                   <div class="text-sm text-slate-500">Planner Sync</div>
-                  <div class="mt-2 font-semibold text-slate-900">Credit card expenses</div>
+                  <div class="mt-2 font-semibold text-slate-900">Cash timing vs. balances</div>
                   <div class="mt-3 text-sm text-slate-600">
-                    Every expense is linked by date to your <span class="font-semibold">14-day periods</span>.
-                  </div>
-                  <div class="mt-3 text-xs text-slate-500">
-                    Tip: Add “Future Bills” to pre-fill upcoming periods.
+                    The Bi-Weekly Planner tracks real cash movement: incomes, debit spend, bill due-dates, and card payoffs. Credit card purchases show as informational (billed later) until paid off.
                   </div>
                 </div>
               </div>
@@ -310,23 +323,20 @@
             </div>
           </div>
 
-          <!-- Card Balances summary widget (new, non-destructive addition) -->
+          <!-- Accounts & Cards summary widget -->
           <div class="mt-4 bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
             <div class="flex items-center justify-between gap-3 flex-wrap">
               <div>
-                <h3 class="text-lg font-semibold text-slate-900">Card Balances</h3>
-                <p class="text-sm text-slate-500 mt-1">Live balances from card starting balances, linked expenses, and recorded payoffs.</p>
+                <h3 class="text-lg font-semibold text-slate-900">Bank &amp; Card Balances</h3>
+                <p class="text-sm text-slate-500 mt-1">Live balances (as of today) from starting amounts, routed income, transactions, and payoffs.</p>
               </div>
-              <button id="dashboard-view-cards-btn" type="button"
+              <button id="dashboard-view-accounts-btn" type="button"
                       class="text-brand-600 font-semibold hover:underline text-sm whitespace-nowrap">
-                Manage Cards &amp; Payoffs →
+                Manage Accounts &amp; Cards →
               </button>
             </div>
-            <div class="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3" id="dashboard-card-summary"></div>
-            <div class="mt-4" id="dashboard-card-list"></div>
-            <div class="mt-3 text-xs text-slate-500">
-              Card balances are shown for reference and are not currently added into the Net Worth formula above (which uses your manually entered Liabilities).
-            </div>
+            <div class="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3" id="dashboard-accounts-summary"></div>
+            <div class="mt-4" id="dashboard-accounts-list"></div>
           </div>
         </section>
 
@@ -336,7 +346,7 @@
             <div>
               <h2 class="text-2xl font-bold text-slate-900">Bi‑Weekly Period Planner</h2>
               <p class="text-slate-500 mt-1">
-                Groups cashflow into 14-day periods from your income dates. Expenses and bills auto-deduct from the matching period.
+                Groups cashflow into 14-day periods from your income dates. Debit spend, bills, and card payoffs are actual cash out; credit card purchases are shown as informational (billed at payoff). Recurring incomes and recurring bills both auto-project across the horizon.
               </p>
             </div>
             <div class="flex items-center gap-3">
@@ -370,7 +380,7 @@
 
                 <div class="text-xs text-slate-500 leading-relaxed">
                   Periods are built as 14-day blocks anchored from the earliest income date (or today if none).
-                  Expenses are assigned to the period containing their date.
+                  Recurring bills and recurring incomes are auto-projected across this horizon.
                   Carry-forward rolls to the next period, then into subsequent months.
                 </div>
               </div>
@@ -387,8 +397,8 @@
                   <thead>
                     <tr class="bg-slate-50">
                       <th class="text-left px-4 py-3 font-semibold text-slate-600">Period</th>
-                      <th class="text-right px-4 py-3 font-semibold text-slate-600">Incomes</th>
-                      <th class="text-right px-4 py-3 font-semibold text-slate-600">Expenses (incl. bills)</th>
+                      <th class="text-right px-4 py-3 font-semibold text-slate-600">Cash In (Income)</th>
+                      <th class="text-right px-4 py-3 font-semibold text-slate-600">Cash Out (Debit + Payoffs + Bills)</th>
                       <th class="text-right px-4 py-3 font-semibold text-slate-600">Net</th>
                       <th class="text-right px-4 py-3 font-semibold text-slate-600">Carry‑forward</th>
                     </tr>
@@ -398,19 +408,19 @@
               </div>
 
               <div class="mt-4 text-xs text-slate-500">
-                Bills and future expenses are treated as expenses on their selected dates.
+                Credit card purchases add to that card's liability but don't leave your bank until you log a Payoff.
               </div>
             </div>
           </div>
         </section>
 
-        <!-- ROUTE: CARDS & PAYOFFS (new) -->
-        <section id="route-cards" class="hidden">
+        <!-- ROUTE: ACCOUNTS & CARDS -->
+        <section id="route-accounts" class="hidden">
           <div class="flex items-start justify-between gap-4 flex-wrap">
             <div>
-              <h2 class="text-2xl font-bold text-slate-900">Cards &amp; Payoffs</h2>
+              <h2 class="text-2xl font-bold text-slate-900">Accounts &amp; Cards</h2>
               <p class="text-slate-500 mt-1">
-                Track a running balance per debit/credit card. Balance = Starting Balance + linked Expenses − recorded Payoffs.
+                Set up Bank Accounts, Credit Cards, and Debit Cards here. Then log day-to-day activity from Data Entry.
               </p>
             </div>
           </div>
@@ -418,72 +428,113 @@
           <!-- Summary strip -->
           <div class="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
-              <div class="text-xs text-slate-500">Total Credit Card Debt</div>
-              <div class="text-xl font-bold text-rose-700" id="cards-total-credit-debt">$0.00</div>
+              <div class="text-xs text-slate-500">Total in Bank Accounts</div>
+              <div class="text-xl font-bold text-emerald-700" id="accounts-total-bank">$0.00</div>
             </div>
             <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
-              <div class="text-xs text-slate-500">Total Debit Card Balance</div>
-              <div class="text-xl font-bold text-slate-900" id="cards-total-debit-balance">$0.00</div>
+              <div class="text-xs text-slate-500">Total Credit Card Debt</div>
+              <div class="text-xl font-bold text-rose-700" id="accounts-total-credit-debt">$0.00</div>
             </div>
             <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
               <div class="text-xs text-slate-500">Total Available Credit</div>
-              <div class="text-xl font-bold text-emerald-700" id="cards-total-available-credit">$0.00</div>
+              <div class="text-xl font-bold text-brand-900" id="accounts-total-available-credit">$0.00</div>
             </div>
           </div>
 
           <div class="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <!-- CARDS LIST + FORM -->
+            <!-- BANK ACCOUNTS -->
             <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
               <div class="flex items-center justify-between gap-3">
                 <div>
-                  <h3 class="text-lg font-semibold text-slate-900">Your Cards</h3>
-                  <p class="text-sm text-slate-500 mt-1">Debit &amp; credit cards you want tracked.</p>
+                  <h3 class="text-lg font-semibold text-slate-900">Bank Accounts</h3>
+                  <p class="text-sm text-slate-500 mt-1">Liquid assets. Income &amp; debit cards attach here.</p>
                 </div>
-                <button class="text-brand-600 font-semibold hover:underline" id="add-card-btn">+ Add</button>
+                <button class="text-brand-600 font-semibold hover:underline" id="add-bank-btn">+ Add</button>
               </div>
 
-              <form id="card-form" class="mt-4 hidden">
+              <form id="bank-form" class="mt-4 hidden">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Account Name</label>
+                    <input type="text" id="bank-name" required placeholder="Chase Checking / BofA Savings"
+                           class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Starting Balance</label>
+                    <input type="number" id="bank-starting-balance" step="0.01" value="0"
+                           class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                  </div>
+                </div>
+                <div class="mt-3">
+                  <label class="block text-sm font-medium text-slate-700 mb-1">Notes (optional)</label>
+                  <input type="text" id="bank-notes" placeholder="Last 4 digits, bank name, etc."
+                         class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                </div>
+                <div class="flex items-center gap-2 mt-4">
+                  <button type="submit" class="bg-brand-600 hover:bg-brand-700 text-white font-medium py-2.5 rounded-lg transition-colors shadow-md w-full">
+                    Save Bank Account
+                  </button>
+                  <button type="button" id="bank-cancel-btn"
+                          class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium py-2.5 rounded-lg transition-colors">
+                    Cancel
+                  </button>
+                </div>
+              </form>
+
+              <div class="mt-4 overflow-x-auto">
+                <table class="w-full text-sm">
+                  <thead>
+                    <tr class="bg-slate-50">
+                      <th class="text-left px-3 py-2 font-semibold text-slate-600">Account</th>
+                      <th class="text-right px-3 py-2 font-semibold text-slate-600">Balance</th>
+                      <th class="text-right px-3 py-2 font-semibold text-slate-600">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="banks-table-body"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- CREDIT CARDS -->
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+              <div class="flex items-center justify-between gap-3">
+                <div>
+                  <h3 class="text-lg font-semibold text-slate-900">Credit Cards</h3>
+                  <p class="text-sm text-slate-500 mt-1">Balance owed auto-updates from expenses, credits &amp; payoffs.</p>
+                </div>
+                <button class="text-brand-600 font-semibold hover:underline" id="add-credit-card-btn">+ Add</button>
+              </div>
+
+              <form id="credit-card-form" class="mt-4 hidden">
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label class="block text-sm font-medium text-slate-700 mb-1">Card Name</label>
-                    <input type="text" id="card-name" required placeholder="Chase Sapphire / BofA Debit"
+                    <input type="text" id="credit-card-name" required placeholder="Chase Sapphire / Amex Gold"
                            class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
                   </div>
                   <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-1">Type</label>
-                    <select id="card-type" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
-                      <option value="credit">Credit Card</option>
-                      <option value="debit">Debit Card</option>
-                    </select>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Starting Balance Owed</label>
+                    <input type="number" id="credit-card-starting-balance" step="0.01" value="0"
+                           class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
                   </div>
                 </div>
-
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
                   <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-1" id="card-starting-balance-label">
-                      Starting Balance Owed
-                    </label>
-                    <input type="number" id="card-starting-balance" step="0.01" value="0"
-                           class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
-                  </div>
-                  <div id="card-credit-limit-wrap">
                     <label class="block text-sm font-medium text-slate-700 mb-1">Credit Limit (optional)</label>
-                    <input type="number" id="card-credit-limit" step="0.01"
+                    <input type="number" id="credit-card-limit" step="0.01"
+                           class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Notes (optional)</label>
+                    <input type="text" id="credit-card-notes" placeholder="Last 4 digits, issuer, etc."
                            class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
                   </div>
                 </div>
-
-                <div class="mt-3">
-                  <label class="block text-sm font-medium text-slate-700 mb-1">Notes (optional)</label>
-                  <input type="text" id="card-notes" placeholder="Last 4 digits, issuer, etc."
-                         class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
-                </div>
-
                 <div class="flex items-center gap-2 mt-4">
                   <button type="submit" class="bg-brand-600 hover:bg-brand-700 text-white font-medium py-2.5 rounded-lg transition-colors shadow-md w-full">
-                    Save Card
+                    Save Credit Card
                   </button>
-                  <button type="button" id="card-cancel-btn"
+                  <button type="button" id="credit-card-cancel-btn"
                           class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium py-2.5 rounded-lg transition-colors">
                     Cancel
                   </button>
@@ -495,93 +546,339 @@
                   <thead>
                     <tr class="bg-slate-50">
                       <th class="text-left px-3 py-2 font-semibold text-slate-600">Card</th>
-                      <th class="text-left px-3 py-2 font-semibold text-slate-600">Type</th>
-                      <th class="text-right px-3 py-2 font-semibold text-slate-600">Balance</th>
+                      <th class="text-right px-3 py-2 font-semibold text-slate-600">Balance Owed</th>
                       <th class="text-right px-3 py-2 font-semibold text-slate-600">Actions</th>
                     </tr>
                   </thead>
-                  <tbody id="cards-table-body"></tbody>
+                  <tbody id="credit-cards-table-body"></tbody>
                 </table>
               </div>
             </div>
 
-            <!-- PAYOFFS -->
-            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-              <div>
-                <h3 class="text-lg font-semibold text-slate-900">Record a Payoff / Payment</h3>
-                <p class="text-sm text-slate-500 mt-1">Payments reduce the balance of the selected card.</p>
+            <!-- DEBIT CARDS -->
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 lg:col-span-2">
+              <div class="flex items-center justify-between gap-3">
+                <div>
+                  <h3 class="text-lg font-semibold text-slate-900">Debit Cards</h3>
+                  <p class="text-sm text-slate-500 mt-1">Each debit card is linked to a Bank Account. Expenses deduct directly from that account.</p>
+                </div>
+                <button class="text-brand-600 font-semibold hover:underline" id="add-debit-card-btn">+ Add</button>
               </div>
 
-              <form id="payment-form" class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div class="sm:col-span-2">
-                  <label class="block text-sm font-medium text-slate-700 mb-1">Card</label>
-                  <select id="payment-card-select" required
-                          class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
-                    <option value="">Select a card…</option>
-                  </select>
+              <form id="debit-card-form" class="mt-4 hidden">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Card Name</label>
+                    <input type="text" id="debit-card-name" required placeholder="BofA Debit / Chase Debit"
+                           class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Linked Bank Account</label>
+                    <select id="debit-card-bank" required
+                            class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                      <option value="">Select a bank account…</option>
+                    </select>
+                  </div>
                 </div>
-                <div>
-                  <label class="block text-sm font-medium text-slate-700 mb-1">Date</label>
-                  <input type="date" id="payment-date" required
+                <div class="mt-3">
+                  <label class="block text-sm font-medium text-slate-700 mb-1">Notes (optional)</label>
+                  <input type="text" id="debit-card-notes" placeholder="Last 4 digits, etc."
                          class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
                 </div>
-                <div>
-                  <label class="block text-sm font-medium text-slate-700 mb-1">Amount</label>
-                  <input type="number" id="payment-amount" required step="0.01"
-                         class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
-                </div>
-                <div class="sm:col-span-2">
-                  <label class="block text-sm font-medium text-slate-700 mb-1">Note (optional)</label>
-                  <input type="text" id="payment-note" placeholder="Autopay / manual transfer / etc."
-                         class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
-                </div>
-                <div class="sm:col-span-2">
-                  <button type="submit"
-                          class="w-full bg-brand-600 hover:bg-brand-700 text-white font-medium py-2.5 rounded-lg transition-colors shadow-md">
-                    Save Payoff
+                <div class="flex items-center gap-2 mt-4">
+                  <button type="submit" class="bg-brand-600 hover:bg-brand-700 text-white font-medium py-2.5 rounded-lg transition-colors shadow-md w-full">
+                    Save Debit Card
+                  </button>
+                  <button type="button" id="debit-card-cancel-btn"
+                          class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium py-2.5 rounded-lg transition-colors">
+                    Cancel
                   </button>
                 </div>
               </form>
 
-              <div class="mt-5">
-                <h4 class="text-sm font-semibold text-slate-700">Payoff History</h4>
-                <div class="mt-2 overflow-x-auto">
-                  <table class="w-full text-sm">
-                    <thead>
-                      <tr class="bg-slate-50">
-                        <th class="text-left px-3 py-2 font-semibold text-slate-600">Card</th>
-                        <th class="text-left px-3 py-2 font-semibold text-slate-600">Date</th>
-                        <th class="text-right px-3 py-2 font-semibold text-slate-600">Amount</th>
-                        <th class="text-left px-3 py-2 font-semibold text-slate-600">Note</th>
-                        <th class="text-right px-3 py-2 font-semibold text-slate-600">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody id="payments-table-body"></tbody>
-                  </table>
-                </div>
+              <div class="mt-4 overflow-x-auto">
+                <table class="w-full text-sm">
+                  <thead>
+                    <tr class="bg-slate-50">
+                      <th class="text-left px-3 py-2 font-semibold text-slate-600">Card</th>
+                      <th class="text-left px-3 py-2 font-semibold text-slate-600">Linked Bank Account</th>
+                      <th class="text-right px-3 py-2 font-semibold text-slate-600">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="debit-cards-table-body"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- RECENT PAYOFFS -->
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 lg:col-span-2">
+              <h3 class="text-lg font-semibold text-slate-900">Recent Payoffs</h3>
+              <p class="text-sm text-slate-500 mt-1">Log new payoffs from the Quick Add form on the Data Entry page.</p>
+              <div class="mt-4 overflow-x-auto">
+                <table class="w-full text-sm">
+                  <thead>
+                    <tr class="bg-slate-50">
+                      <th class="text-left px-3 py-2 font-semibold text-slate-600">Card</th>
+                      <th class="text-left px-3 py-2 font-semibold text-slate-600">Date</th>
+                      <th class="text-left px-3 py-2 font-semibold text-slate-600">From Bank</th>
+                      <th class="text-right px-3 py-2 font-semibold text-slate-600">Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody id="recent-payoffs-table-body"></tbody>
+                </table>
               </div>
             </div>
           </div>
         </section>
 
-        <!-- ROUTE: DATA ENTRY -->
+        <!-- ROUTE: DATA ENTRY (default) -->
         <section id="route-data" class="hidden">
           <div class="flex items-start justify-between gap-4">
             <div>
               <h2 class="text-2xl font-bold text-slate-900">Data Entry</h2>
               <p class="text-slate-500 mt-1">
-                Add, edit, and delete assets, liabilities, incomes, expenses, and future bills—everything updates the dashboard and planner instantly.
+                Log a transaction below in seconds. Income, Future Bills, Assets, and Liabilities are further down the page.
               </p>
             </div>
           </div>
 
+          <!-- QUICK ADD TRANSACTION (top priority) -->
+          <div class="mt-4 quick-add-panel rounded-2xl shadow-sm p-5">
+            <div class="flex items-center justify-between gap-3 flex-wrap">
+              <div>
+                <h3 class="text-lg font-semibold text-slate-900">⚡ Quick Add Expense / Transaction</h3>
+                <p class="text-sm text-slate-500 mt-1">Fast entry for Credit &amp; Debit card activity — expenses, refunds, and payoffs.</p>
+              </div>
+              <div id="txn-editing-banner" class="hidden text-sm bg-amber-50 text-amber-700 border border-amber-200 rounded-lg px-3 py-1.5 flex items-center gap-2">
+                Editing a transaction
+                <button type="button" id="txn-cancel-edit-btn" class="font-semibold underline">Cancel</button>
+              </div>
+            </div>
+
+            <form id="txn-form" class="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
+              <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">Date</label>
+                <input type="date" id="txn-date" required
+                       class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">Amount</label>
+                <input type="number" id="txn-amount" required step="0.01" placeholder="0.00"
+                       class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">Card Type</label>
+                <select id="txn-card-type"
+                        class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                  <option value="credit">Credit Card</option>
+                  <option value="debit">Debit Card</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">Specific Card</label>
+                <select id="txn-card-select" required
+                        class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                  <option value="">Select a card…</option>
+                </select>
+                <div id="txn-card-hint" class="text-xs text-amber-600 mt-1"></div>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">Description</label>
+                <input type="text" id="txn-desc" required placeholder="Groceries / Fuel / Dining"
+                       class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">Transaction Type</label>
+                <select id="txn-type"
+                        class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                  <option value="expense">Expense (Purchase)</option>
+                  <option value="credit">Statement Credit / Refund</option>
+                  <option value="payoff">Card Payoff</option>
+                </select>
+              </div>
+
+              <div id="txn-source-bank-wrap" class="hidden sm:col-span-2 lg:col-span-3">
+                <label class="block text-sm font-medium text-slate-700 mb-1">Pay From (Bank Account)</label>
+                <select id="txn-source-bank"
+                        class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                  <option value="">Select source bank account…</option>
+                </select>
+              </div>
+
+              <div class="sm:col-span-2 lg:col-span-6">
+                <button type="submit"
+                        class="w-full sm:w-auto bg-brand-600 hover:bg-brand-700 text-white font-semibold px-6 py-2.5 rounded-lg transition-colors shadow-md">
+                  Save Transaction
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- TRANSACTION LEDGER -->
+          <div class="mt-4 bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+            <div class="flex items-center justify-between gap-3">
+              <h3 class="text-lg font-semibold text-slate-900">Transaction Ledger</h3>
+              <div class="text-sm text-slate-500" id="txn-ledger-summary"></div>
+            </div>
+            <div class="mt-4 overflow-x-auto">
+              <table class="min-w-[760px] w-full text-sm">
+                <thead>
+                  <tr class="bg-slate-50">
+                    <th class="text-left px-3 py-2 font-semibold text-slate-600">Date</th>
+                    <th class="text-left px-3 py-2 font-semibold text-slate-600">Card</th>
+                    <th class="text-left px-3 py-2 font-semibold text-slate-600">Type</th>
+                    <th class="text-left px-3 py-2 font-semibold text-slate-600">Description</th>
+                    <th class="text-right px-3 py-2 font-semibold text-slate-600">Amount</th>
+                    <th class="text-right px-3 py-2 font-semibold text-slate-600">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="transactions-table-body"></tbody>
+              </table>
+            </div>
+          </div>
+
           <div class="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <!-- INCOME -->
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 lg:col-span-2">
+              <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                <div>
+                  <h3 class="text-lg font-semibold text-slate-900">Income (by Date)</h3>
+                  <p class="text-sm text-slate-500 mt-1">Add incomes with specific dates. Route to a Bank Account to increase that account's balance. Make an income recurring to auto-project it into the Period Planner.</p>
+                </div>
+              </div>
+
+              <form id="income-form" class="mt-4 grid grid-cols-1 md:grid-cols-6 gap-3 items-end">
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 mb-1">Income Source</label>
+                  <input type="text" id="income-source" required placeholder="Salary / Bonus / Other"
+                         class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 mb-1">Date</label>
+                  <input type="date" id="income-date" required
+                         class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 mb-1">Amount</label>
+                  <input type="number" id="income-amount" required step="0.01"
+                         class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 mb-1">Bank Account</label>
+                  <select id="income-bank-account"
+                          class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                    <option value="">— Not tracked in a bank account —</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="flex items-center gap-2 text-sm font-medium text-slate-700 mb-1">
+                    <input type="checkbox" id="income-recurring" class="rounded border-slate-300 text-brand-600 focus:ring-brand-500">
+                    Make Recurring
+                  </label>
+                  <select id="income-recurrence-type" class="hidden w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none mt-1">
+                    <option value="monthly">Monthly (on this date's day)</option>
+                    <option value="biweekly">Bi-Weekly (every 14 days)</option>
+                  </select>
+                </div>
+                <div class="flex items-end">
+                  <button type="submit"
+                          class="w-full bg-brand-600 hover:bg-brand-700 text-white font-medium py-2.5 rounded-lg transition-colors shadow-md">
+                    Add Income
+                  </button>
+                </div>
+              </form>
+
+              <div class="mt-4 overflow-x-auto">
+                <table class="w-full text-sm">
+                  <thead>
+                    <tr class="bg-slate-50">
+                      <th class="text-left px-3 py-2 font-semibold text-slate-600">Source</th>
+                      <th class="text-left px-3 py-2 font-semibold text-slate-600">Date</th>
+                      <th class="text-left px-3 py-2 font-semibold text-slate-600">Bank Account</th>
+                      <th class="text-left px-3 py-2 font-semibold text-slate-600">Recurrence</th>
+                      <th class="text-right px-3 py-2 font-semibold text-slate-600">Amount</th>
+                      <th class="text-right px-3 py-2 font-semibold text-slate-600">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="income-table-body"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- FUTURE BILLS -->
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 lg:col-span-2">
+              <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                <div>
+                  <h3 class="text-lg font-semibold text-slate-900">Future Expense &amp; Bills Planning</h3>
+                  <p class="text-sm text-slate-500 mt-1">
+                    One-time or recurring bills. Recurring bills auto-project into the Period Planner across its horizon.
+                  </p>
+                </div>
+              </div>
+
+              <form id="bill-form" class="mt-4 grid grid-cols-1 md:grid-cols-6 gap-3 items-end">
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 mb-1">Name</label>
+                  <input type="text" id="bill-name" required placeholder="Rent / Utilities / Insurance"
+                         class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 mb-1">Category (optional)</label>
+                  <input type="text" id="bill-category" placeholder="Housing / Debt / Investing"
+                         class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 mb-1">First Due Date</label>
+                  <input type="date" id="bill-date" required
+                         class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 mb-1">Amount</label>
+                  <input type="number" id="bill-amount" required step="0.01"
+                         class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                </div>
+                <div>
+                  <label class="flex items-center gap-2 text-sm font-medium text-slate-700 mb-1">
+                    <input type="checkbox" id="bill-recurring" class="rounded border-slate-300 text-brand-600 focus:ring-brand-500">
+                    Make Recurring
+                  </label>
+                  <select id="bill-recurrence-type" class="hidden w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none mt-1">
+                    <option value="monthly">Monthly (on this due date's day)</option>
+                    <option value="biweekly">Bi-Weekly (every 14 days)</option>
+                  </select>
+                </div>
+                <div>
+                  <button type="submit"
+                          class="w-full bg-brand-600 hover:bg-brand-700 text-white font-medium py-2.5 rounded-lg transition-colors shadow-md">
+                    Save Bill
+                  </button>
+                </div>
+              </form>
+
+              <div class="mt-4 overflow-x-auto">
+                <table class="w-full text-sm">
+                  <thead>
+                    <tr class="bg-slate-50">
+                      <th class="text-left px-3 py-2 font-semibold text-slate-600">Name</th>
+                      <th class="text-left px-3 py-2 font-semibold text-slate-600">Category</th>
+                      <th class="text-left px-3 py-2 font-semibold text-slate-600">First Due</th>
+                      <th class="text-left px-3 py-2 font-semibold text-slate-600">Recurrence</th>
+                      <th class="text-right px-3 py-2 font-semibold text-slate-600">Amount</th>
+                      <th class="text-right px-3 py-2 font-semibold text-slate-600">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="bills-table-body"></tbody>
+                </table>
+              </div>
+            </div>
+
             <!-- ASSETS -->
             <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
               <div class="flex items-center justify-between gap-3">
-                <h3 class="text-lg font-semibold text-slate-900">Assets</h3>
+                <h3 class="text-lg font-semibold text-slate-900">Other Assets</h3>
                 <button class="text-brand-600 font-semibold hover:underline" id="add-asset-btn">+ Add</button>
               </div>
+              <p class="text-sm text-slate-500 mt-1">Investments, property, cash not in a tracked bank account, etc.</p>
 
               <form id="asset-form" class="mt-4 hidden">
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -629,9 +926,10 @@
             <!-- LIABILITIES -->
             <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
               <div class="flex items-center justify-between gap-3">
-                <h3 class="text-lg font-semibold text-slate-900">Liabilities</h3>
+                <h3 class="text-lg font-semibold text-slate-900">Other Liabilities</h3>
                 <button class="text-brand-600 font-semibold hover:underline" id="add-liability-btn">+ Add</button>
               </div>
+              <p class="text-sm text-slate-500 mt-1">Loans, mortgages, and debts other than your tracked Credit Cards.</p>
 
               <form id="liability-form" class="mt-4 hidden">
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -647,7 +945,7 @@
 
                 <div class="mt-3">
                   <label class="block text-sm font-medium text-slate-700 mb-1">Type (optional)</label>
-                  <input type="text" id="liability-type" placeholder="Loan / Mortgage / Credit / Other"
+                  <input type="text" id="liability-type" placeholder="Loan / Mortgage / Other"
                          class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
                 </div>
 
@@ -675,173 +973,6 @@
                 </table>
               </div>
             </div>
-
-            <!-- INCOME (DATES) -->
-            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 lg:col-span-2">
-              <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                <div>
-                  <h3 class="text-lg font-semibold text-slate-900">Income (by Date)</h3>
-                  <p class="text-sm text-slate-500 mt-1">Add incomes with specific dates. They anchor the bi-weekly periods.</p>
-                </div>
-              </div>
-
-              <form id="income-form" class="mt-4 grid grid-cols-1 md:grid-cols-4 gap-3">
-                <div>
-                  <label class="block text-sm font-medium text-slate-700 mb-1">Income Source</label>
-                  <input type="text" id="income-source" required placeholder="Salary / Bonus / Other"
-                         class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-slate-700 mb-1">Date</label>
-                  <input type="date" id="income-date" required
-                         class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-slate-700 mb-1">Amount</label>
-                  <input type="number" id="income-amount" required step="0.01"
-                         class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
-                </div>
-                <div class="flex items-end">
-                  <button type="submit"
-                          class="w-full bg-brand-600 hover:bg-brand-700 text-white font-medium py-2.5 rounded-lg transition-colors shadow-md">
-                    Add Income
-                  </button>
-                </div>
-              </form>
-
-              <div class="mt-4 overflow-x-auto">
-                <table class="w-full text-sm">
-                  <thead>
-                    <tr class="bg-slate-50">
-                      <th class="text-left px-3 py-2 font-semibold text-slate-600">Source</th>
-                      <th class="text-left px-3 py-2 font-semibold text-slate-600">Date</th>
-                      <th class="text-right px-3 py-2 font-semibold text-slate-600">Amount</th>
-                      <th class="text-right px-3 py-2 font-semibold text-slate-600">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody id="income-table-body"></tbody>
-                </table>
-              </div>
-            </div>
-
-            <!-- EXPENSES (CREDIT CARDS) -->
-            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 lg:col-span-2">
-              <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                <div>
-                  <h3 class="text-lg font-semibold text-slate-900">Credit Cards &amp; Daily Expenses</h3>
-                  <p class="text-sm text-slate-500 mt-1">
-                    Add expenses with the credit card used, description, date, and amount. They automatically deduct from the matching bi-weekly period, and — if you link a saved card below — from that card's running balance too.
-                  </p>
-                </div>
-              </div>
-
-              <form id="expense-form" class="mt-4 grid grid-cols-1 md:grid-cols-6 gap-3">
-                <div>
-                  <label class="block text-sm font-medium text-slate-700 mb-1">Link Saved Card (optional)</label>
-                  <select id="expense-card-choice"
-                          class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
-                    <option value="">— none / type below —</option>
-                  </select>
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-slate-700 mb-1">Credit Card</label>
-                  <input type="text" id="expense-card" required placeholder="Visa / Amex / Mastercard"
-                         class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-slate-700 mb-1">Description</label>
-                  <input type="text" id="expense-desc" required placeholder="Groceries / Fuel / Dining / ... "
-                         class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-slate-700 mb-1">Date</label>
-                  <input type="date" id="expense-date" required
-                         class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-slate-700 mb-1">Amount</label>
-                  <input type="number" id="expense-amount" required step="0.01"
-                         class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
-                </div>
-                <div class="flex items-end">
-                  <button type="submit"
-                          class="w-full bg-brand-600 hover:bg-brand-700 text-white font-medium py-2.5 rounded-lg transition-colors shadow-md">
-                    Add Expense
-                  </button>
-                </div>
-              </form>
-
-              <div class="mt-4 overflow-x-auto">
-                <table class="w-full text-sm">
-                  <thead>
-                    <tr class="bg-slate-50">
-                      <th class="text-left px-3 py-2 font-semibold text-slate-600">Card</th>
-                      <th class="text-left px-3 py-2 font-semibold text-slate-600">Description</th>
-                      <th class="text-left px-3 py-2 font-semibold text-slate-600">Date</th>
-                      <th class="text-right px-3 py-2 font-semibold text-slate-600">Amount</th>
-                      <th class="text-right px-3 py-2 font-semibold text-slate-600">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody id="expenses-table-body"></tbody>
-                </table>
-              </div>
-            </div>
-
-            <!-- FUTURE BILLS -->
-            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 lg:col-span-2">
-              <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                <div>
-                  <h3 class="text-lg font-semibold text-slate-900">Future Expense & Bills Planning</h3>
-                  <p class="text-sm text-slate-500 mt-1">
-                    Add future recurring expenses/bills/investments. Set their specific dates so they sync to the correct bi-weekly period and affect carry-forward.
-                  </p>
-                </div>
-              </div>
-
-              <form id="bill-form" class="mt-4 grid grid-cols-1 md:grid-cols-5 gap-3">
-                <div>
-                  <label class="block text-sm font-medium text-slate-700 mb-1">Name</label>
-                  <input type="text" id="bill-name" required placeholder="Rent / Utilities / Investment / Insurance"
-                         class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-slate-700 mb-1">Category (optional)</label>
-                  <input type="text" id="bill-category" placeholder="Housing / Debt / Investing / ... "
-                         class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-slate-700 mb-1">Date</label>
-                  <input type="date" id="bill-date" required
-                         class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-slate-700 mb-1">Amount</label>
-                  <input type="number" id="bill-amount" required step="0.01"
-                         class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
-                </div>
-                <div class="flex items-end">
-                  <button type="submit"
-                          class="w-full bg-brand-600 hover:bg-brand-700 text-white font-medium py-2.5 rounded-lg transition-colors shadow-md">
-                    Add Bill
-                  </button>
-                </div>
-              </form>
-
-              <div class="mt-4 overflow-x-auto">
-                <table class="w-full text-sm">
-                  <thead>
-                    <tr class="bg-slate-50">
-                      <th class="text-left px-3 py-2 font-semibold text-slate-600">Name</th>
-                      <th class="text-left px-3 py-2 font-semibold text-slate-600">Category</th>
-                      <th class="text-left px-3 py-2 font-semibold text-slate-600">Date</th>
-                      <th class="text-right px-3 py-2 font-semibold text-slate-600">Amount</th>
-                      <th class="text-right px-3 py-2 font-semibold text-slate-600">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody id="bills-table-body"></tbody>
-                </table>
-              </div>
-            </div>
           </div>
         </section>
       </div>
@@ -863,10 +994,13 @@ service cloud.firestore {
     // /users/{uid}/assets/{docId}
     // /users/{uid}/liabilities/{docId}
     // /users/{uid}/incomes/{docId}
-    // /users/{uid}/expenses/{docId}
+    // /users/{uid}/incomeOverrides/{docId}   (per-occurrence edits/skips for recurring incomes)
     // /users/{uid}/bills/{docId}
-    // /users/{uid}/cards/{docId}
-    // /users/{uid}/payments/{docId}   (card payoffs)
+    // /users/{uid}/billOverrides/{docId}     (per-occurrence edits/skips for recurring bills)
+    // /users/{uid}/bankAccounts/{docId}
+    // /users/{uid}/creditCards/{docId}
+    // /users/{uid}/debitCards/{docId}
+    // /users/{uid}/transactions/{docId}      (credit/debit expenses, credits/refunds, payoffs)
 
     match /users/{uid}/{collection}/{docId} {
       allow read, write: if isOwner(uid);
@@ -927,27 +1061,32 @@ service cloud.firestore {
       assets: [],
       liabilities: [],
       incomes: [],
-      expenses: [],
+      incomeOverrides: [],
       bills: [],
-      cards: [],
-      payments: [],
+      billOverrides: [],
+      bankAccounts: [],
+      creditCards: [],
+      debitCards: [],
+      transactions: [],
     };
 
     let ui = {
       mode: "signin", // or "register"
-      activeRoute: "dashboard",
+      activeRoute: "data",
       planner: {
         horizonDays: 180
       },
-      // For editing
+      expandedBillIds: new Set(),
+      expandedIncomeIds: new Set(),
       editing: {
         assetId: null,
         liabilityId: null,
         incomeId: null,
-        expenseId: null,
         billId: null,
-        cardId: null,
-        paymentId: null
+        bankAccountId: null,
+        creditCardId: null,
+        debitCardId: null,
+        transactionId: null
       }
     };
 
@@ -964,7 +1103,6 @@ service cloud.firestore {
     }
 
     function toISODate(d) {
-      // Keep date-only in local time.
       const dt = new Date(d);
       const y = dt.getFullYear();
       const m = String(dt.getMonth() + 1).padStart(2, "0");
@@ -973,7 +1111,6 @@ service cloud.firestore {
     }
 
     function parseISODateLocal(iso) {
-      // Treat iso "YYYY-MM-DD" as local date at midnight
       const [y, m, d] = (iso || "").split("-").map(Number);
       return new Date(y, (m - 1), d, 0, 0, 0, 0);
     }
@@ -995,6 +1132,11 @@ service cloud.firestore {
     function monthKey(isoDate) {
       const dt = parseISODateLocal(isoDate);
       return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}`;
+    }
+
+    function clampedMonthDate(year, monthIdx, day) {
+      const lastDay = new Date(year, monthIdx + 1, 0).getDate();
+      return new Date(year, monthIdx, Math.min(day, lastDay));
     }
 
     // ===== DOM: Auth =====
@@ -1054,17 +1196,17 @@ service cloud.firestore {
     // ===== DOM: Navigation =====
     const routeDashboard = $("#route-dashboard");
     const routePeriod = $("#route-period");
-    const routeCards = $("#route-cards");
+    const routeAccounts = $("#route-accounts");
     const routeData = $("#route-data");
+    const contentScroll = $("#app-content-scroll");
 
     function setRoute(route) {
       ui.activeRoute = route;
       routeDashboard.classList.toggle("hidden", route !== "dashboard");
       routePeriod.classList.toggle("hidden", route !== "period");
-      routeCards.classList.toggle("hidden", route !== "cards");
+      routeAccounts.classList.toggle("hidden", route !== "accounts");
       routeData.classList.toggle("hidden", route !== "data");
 
-      // Highlight nav buttons (desktop + mobile) based on data-route
       $$("[data-route]").forEach((btn) => {
         const active = btn.dataset.route === route;
         const inMobile = !!btn.closest("#mobile-nav");
@@ -1084,24 +1226,20 @@ service cloud.firestore {
       });
     });
 
-    // Mobile menu button
     $("#mobile-nav-btn").addEventListener("click", () => {
       $("#mobile-nav").classList.toggle("hidden");
     });
 
-    // Dashboard -> Cards shortcut
-    $("#dashboard-view-cards-btn").addEventListener("click", () => {
-      setRoute("cards");
+    $("#dashboard-view-accounts-btn").addEventListener("click", () => {
+      setRoute("accounts");
     });
 
-    // Logout
     $("#logout-btn").addEventListener("click", async () => {
       await signOut(auth);
     });
 
     // ===== Firestore Collections (user-scoped by UID) =====
     function userCol(name) {
-      // Structure: /users/{uid}/{name}
       return collection(db, "users", currentUser.uid, name);
     }
 
@@ -1114,15 +1252,17 @@ service cloud.firestore {
 
     function subscribeAll() {
       clearSubscriptions();
-      const uid = currentUser.uid;
 
       const assetQ = query(userCol("assets"), orderBy("createdAt", "desc"));
       const liabQ = query(userCol("liabilities"), orderBy("createdAt", "desc"));
       const incomeQ = query(userCol("incomes"), orderBy("date", "desc"));
-      const expenseQ = query(userCol("expenses"), orderBy("date", "desc"));
+      const incomeOverridesQ = query(userCol("incomeOverrides"), orderBy("occurrenceDate", "desc"));
       const billsQ = query(userCol("bills"), orderBy("date", "desc"));
-      const cardsQ = query(userCol("cards"), orderBy("createdAt", "desc"));
-      const paymentsQ = query(userCol("payments"), orderBy("date", "desc"));
+      const billOverridesQ = query(userCol("billOverrides"), orderBy("occurrenceDate", "desc"));
+      const bankQ = query(userCol("bankAccounts"), orderBy("createdAt", "desc"));
+      const creditCardQ = query(userCol("creditCards"), orderBy("createdAt", "desc"));
+      const debitCardQ = query(userCol("debitCards"), orderBy("createdAt", "desc"));
+      const txnQ = query(userCol("transactions"), orderBy("date", "desc"));
 
       unsubscribers.push(onSnapshot(assetQ, (snap) => {
         state.assets = snap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -1136,20 +1276,32 @@ service cloud.firestore {
         state.incomes = snap.docs.map(d => ({ id: d.id, ...d.data() }));
         refreshAllViews();
       }));
-      unsubscribers.push(onSnapshot(expenseQ, (snap) => {
-        state.expenses = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      unsubscribers.push(onSnapshot(incomeOverridesQ, (snap) => {
+        state.incomeOverrides = snap.docs.map(d => ({ id: d.id, ...d.data() }));
         refreshAllViews();
       }));
       unsubscribers.push(onSnapshot(billsQ, (snap) => {
         state.bills = snap.docs.map(d => ({ id: d.id, ...d.data() }));
         refreshAllViews();
       }));
-      unsubscribers.push(onSnapshot(cardsQ, (snap) => {
-        state.cards = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      unsubscribers.push(onSnapshot(billOverridesQ, (snap) => {
+        state.billOverrides = snap.docs.map(d => ({ id: d.id, ...d.data() }));
         refreshAllViews();
       }));
-      unsubscribers.push(onSnapshot(paymentsQ, (snap) => {
-        state.payments = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      unsubscribers.push(onSnapshot(bankQ, (snap) => {
+        state.bankAccounts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        refreshAllViews();
+      }));
+      unsubscribers.push(onSnapshot(creditCardQ, (snap) => {
+        state.creditCards = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        refreshAllViews();
+      }));
+      unsubscribers.push(onSnapshot(debitCardQ, (snap) => {
+        state.debitCards = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        refreshAllViews();
+      }));
+      unsubscribers.push(onSnapshot(txnQ, (snap) => {
+        state.transactions = snap.docs.map(d => ({ id: d.id, ...d.data() }));
         refreshAllViews();
       }));
     }
@@ -1171,10 +1323,7 @@ service cloud.firestore {
       }
     }
 
-    $("#add-asset-btn").addEventListener("click", () => {
-      openAssetForm(null);
-    });
-
+    $("#add-asset-btn").addEventListener("click", () => openAssetForm(null));
     $("#asset-cancel-btn").addEventListener("click", () => {
       $("#asset-form").classList.add("hidden");
       ui.editing.assetId = null;
@@ -1185,14 +1334,10 @@ service cloud.firestore {
       const name = $("#asset-name").value.trim();
       const value = Number($("#asset-value").value);
       const type = $("#asset-type").value.trim();
-
       if (!currentUser) return;
 
       const payload = {
-        name,
-        value: Number.isFinite(value) ? value : 0,
-        type: type || "",
-        createdAt: serverTimestamp()
+        name, value: Number.isFinite(value) ? value : 0, type: type || "", createdAt: serverTimestamp()
       };
 
       try {
@@ -1211,13 +1356,11 @@ service cloud.firestore {
     function renderAssets() {
       const tbody = $("#assets-table-body");
       tbody.innerHTML = "";
-
       const items = state.assets.slice().sort((a,b) => (b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
       if (!items.length) {
-        tbody.innerHTML = `<tr><td colspan="3" class="px-3 py-3 text-center text-slate-500">No assets yet.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="3" class="px-3 py-3 text-center text-slate-500">No other assets yet.</td></tr>`;
         return;
       }
-
       for (const a of items) {
         const tr = document.createElement("tr");
         tr.innerHTML = `
@@ -1232,24 +1375,17 @@ service cloud.firestore {
         `;
         tbody.appendChild(tr);
       }
-
       tbody.querySelectorAll("[data-action='edit']").forEach(btn => {
         btn.addEventListener("click", () => {
-          const id = btn.dataset.id;
-          const item = state.assets.find(x => x.id === id);
+          const item = state.assets.find(x => x.id === btn.dataset.id);
           openAssetForm(item);
         });
       });
-
       tbody.querySelectorAll("[data-action='del']").forEach(btn => {
         btn.addEventListener("click", async () => {
-          const id = btn.dataset.id;
           if (!confirm("Delete this asset?")) return;
-          try {
-            await deleteDoc(doc(db, "users", currentUser.uid, "assets", id));
-          } catch (err) {
-            alert(err?.message || "Failed to delete asset");
-          }
+          try { await deleteDoc(doc(db, "users", currentUser.uid, "assets", btn.dataset.id)); }
+          catch (err) { alert(err?.message || "Failed to delete asset"); }
         });
       });
     }
@@ -1282,15 +1418,9 @@ service cloud.firestore {
       const name = $("#liability-name").value.trim();
       const value = Number($("#liability-value").value);
       const type = $("#liability-type").value.trim();
-
       if (!currentUser) return;
 
-      const payload = {
-        name,
-        value: Number.isFinite(value) ? value : 0,
-        type: type || "",
-        createdAt: serverTimestamp()
-      };
+      const payload = { name, value: Number.isFinite(value) ? value : 0, type: type || "", createdAt: serverTimestamp() };
 
       try {
         if (ui.editing.liabilityId) {
@@ -1308,13 +1438,11 @@ service cloud.firestore {
     function renderLiabilities() {
       const tbody = $("#liabilities-table-body");
       tbody.innerHTML = "";
-
       const items = state.liabilities.slice().sort((a,b) => (b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
       if (!items.length) {
-        tbody.innerHTML = `<tr><td colspan="3" class="px-3 py-3 text-center text-slate-500">No liabilities yet.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="3" class="px-3 py-3 text-center text-slate-500">No other liabilities yet.</td></tr>`;
         return;
       }
-
       for (const l of items) {
         const tr = document.createElement("tr");
         tr.innerHTML = `
@@ -1329,162 +1457,239 @@ service cloud.firestore {
         `;
         tbody.appendChild(tr);
       }
-
       tbody.querySelectorAll("[data-action='edit']").forEach(btn => {
         btn.addEventListener("click", () => {
-          const id = btn.dataset.id;
-          const item = state.liabilities.find(x => x.id === id);
+          const item = state.liabilities.find(x => x.id === btn.dataset.id);
           openLiabilityForm(item);
         });
       });
-
       tbody.querySelectorAll("[data-action='del']").forEach(btn => {
         btn.addEventListener("click", async () => {
-          const id = btn.dataset.id;
           if (!confirm("Delete this liability?")) return;
-          try {
-            await deleteDoc(doc(db, "users", currentUser.uid, "liabilities", id));
-          } catch (err) {
-            alert(err?.message || "Failed to delete liability");
-          }
+          try { await deleteDoc(doc(db, "users", currentUser.uid, "liabilities", btn.dataset.id)); }
+          catch (err) { alert(err?.message || "Failed to delete liability"); }
         });
       });
     }
 
-    // ===== CRUD: Cards (new) =====
-    function cardTypeLabel(type) {
-      return type === "debit" ? "Debit" : "Credit";
-    }
-
-    function toggleCardFormForType(type) {
-      const isCredit = type !== "debit";
-      $("#card-starting-balance-label").textContent = isCredit ? "Starting Balance Owed" : "Starting Balance / Amount Tracked";
-      $("#card-credit-limit-wrap").classList.toggle("hidden", !isCredit);
-    }
-
-    $("#card-type").addEventListener("change", () => {
-      toggleCardFormForType($("#card-type").value);
-    });
-
-    function openCardForm(editing) {
-      $("#card-form").classList.remove("hidden");
+    // ===== CRUD: Bank Accounts =====
+    function openBankForm(editing) {
+      $("#bank-form").classList.remove("hidden");
       if (editing) {
-        $("#card-name").value = editing.name ?? "";
-        $("#card-type").value = editing.type ?? "credit";
-        $("#card-starting-balance").value = editing.startingBalance ?? 0;
-        $("#card-credit-limit").value = editing.creditLimit ?? "";
-        $("#card-notes").value = editing.notes ?? "";
-        ui.editing.cardId = editing.id;
+        $("#bank-name").value = editing.name ?? "";
+        $("#bank-starting-balance").value = editing.startingBalance ?? 0;
+        $("#bank-notes").value = editing.notes ?? "";
+        ui.editing.bankAccountId = editing.id;
       } else {
-        $("#card-form").reset?.();
-        $("#card-name").value = "";
-        $("#card-type").value = "credit";
-        $("#card-starting-balance").value = 0;
-        $("#card-credit-limit").value = "";
-        $("#card-notes").value = "";
-        ui.editing.cardId = null;
+        $("#bank-form").reset?.();
+        $("#bank-name").value = "";
+        $("#bank-starting-balance").value = 0;
+        $("#bank-notes").value = "";
+        ui.editing.bankAccountId = null;
       }
-      toggleCardFormForType($("#card-type").value);
     }
 
-    $("#add-card-btn").addEventListener("click", () => openCardForm(null));
-    $("#card-cancel-btn").addEventListener("click", () => {
-      $("#card-form").classList.add("hidden");
-      ui.editing.cardId = null;
+    $("#add-bank-btn").addEventListener("click", () => openBankForm(null));
+    $("#bank-cancel-btn").addEventListener("click", () => {
+      $("#bank-form").classList.add("hidden");
+      ui.editing.bankAccountId = null;
     });
 
-    $("#card-form").addEventListener("submit", async (e) => {
+    $("#bank-form").addEventListener("submit", async (e) => {
       e.preventDefault();
-      const name = $("#card-name").value.trim();
-      const type = $("#card-type").value === "debit" ? "debit" : "credit";
-      const startingBalance = Number($("#card-starting-balance").value);
-      const creditLimitRaw = $("#card-credit-limit").value;
-      const creditLimit = (type === "credit" && creditLimitRaw !== "") ? Number(creditLimitRaw) : null;
-      const notes = $("#card-notes").value.trim();
-
+      const name = $("#bank-name").value.trim();
+      const startingBalance = Number($("#bank-starting-balance").value);
+      const notes = $("#bank-notes").value.trim();
       if (!currentUser) return;
 
       const payload = {
-        name,
-        type,
-        startingBalance: Number.isFinite(startingBalance) ? startingBalance : 0,
-        creditLimit: (creditLimit !== null && Number.isFinite(creditLimit)) ? creditLimit : null,
-        notes: notes || "",
-        createdAt: serverTimestamp()
+        name, startingBalance: Number.isFinite(startingBalance) ? startingBalance : 0,
+        notes: notes || "", createdAt: serverTimestamp()
       };
 
       try {
-        if (ui.editing.cardId) {
-          await setDoc(doc(db, "users", currentUser.uid, "cards", ui.editing.cardId), payload, { merge: true });
+        if (ui.editing.bankAccountId) {
+          await setDoc(doc(db, "users", currentUser.uid, "bankAccounts", ui.editing.bankAccountId), payload, { merge: true });
         } else {
-          await addDoc(userCol("cards"), payload);
+          await addDoc(userCol("bankAccounts"), payload);
         }
-        $("#card-form").classList.add("hidden");
-        ui.editing.cardId = null;
+        $("#bank-form").classList.add("hidden");
+        ui.editing.bankAccountId = null;
       } catch (err) {
-        alert(err?.message || "Failed to save card");
+        alert(err?.message || "Failed to save bank account");
       }
     });
 
-    // Balance = starting balance + linked expenses (by cardId, or by matching name for
-    // legacy expenses that predate the Cards feature) - recorded payoffs.
-    function computeCardBalance(card) {
-      const expenseTotal = (state.expenses || []).reduce((s, e) => {
-        const matches = e.cardId
-          ? e.cardId === card.id
-          : (e.card && card.name && e.card.trim().toLowerCase() === card.name.trim().toLowerCase());
-        return matches ? s + Number(e.amount || 0) : s;
-      }, 0);
-
-      const paymentTotal = (state.payments || []).reduce((s, p) => {
-        return p.cardId === card.id ? s + Number(p.amount || 0) : s;
-      }, 0);
-
-      const balance = Number(card.startingBalance || 0) + expenseTotal - paymentTotal;
-      return { balance, expenseTotal, paymentTotal };
+    // "As of today" — future-dated incomes/transactions do not inflate the current balance.
+    function computeBankAccountBalance(bank) {
+      const todayISO = toISODate(new Date());
+      let balance = Number(bank.startingBalance || 0);
+      for (const inc of state.incomes || []) {
+        if (inc.bankAccountId === bank.id && inc.date && inc.date <= todayISO) {
+          balance += Number(inc.amount || 0);
+        }
+      }
+      for (const t of state.transactions || []) {
+        if (!t.date || t.date > todayISO) continue;
+        if (t.cardType === "debit" && t.bankAccountId === bank.id) {
+          const amt = Number(t.amount || 0);
+          if (t.txnType === "expense") balance -= amt;
+          else if (t.txnType === "credit") balance += amt;
+        }
+        if (t.txnType === "payoff" && t.sourceBankAccountId === bank.id) {
+          balance -= Number(t.amount || 0);
+        }
+      }
+      return balance;
     }
 
-    function populateCardSelects() {
-      const cards = state.cards.slice().sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+    function renderBankAccounts() {
+      const tbody = $("#banks-table-body");
+      const items = state.bankAccounts.slice().sort((a,b) => (b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
+      if (!items.length) {
+        tbody.innerHTML = `<tr><td colspan="3" class="px-3 py-3 text-center text-slate-500">No bank accounts yet — add one to route income and debit cards.</td></tr>`;
+      } else {
+        tbody.innerHTML = "";
+        for (const b of items) {
+          const balance = computeBankAccountBalance(b);
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td class="px-3 py-2 font-medium text-slate-800">
+              ${escapeHtml(b.name)}
+              ${b.notes ? `<div class="text-xs text-slate-500">${escapeHtml(b.notes)}</div>` : ""}
+            </td>
+            <td class="px-3 py-2 text-right font-semibold ${balance >= 0 ? 'text-emerald-700' : 'text-rose-700'}">${formatMoney(balance)}</td>
+            <td class="px-3 py-2 text-right">
+              <div class="inline-flex items-center gap-2">
+                <button class="text-brand-600 hover:underline text-sm" data-action="edit" data-id="${b.id}">Edit</button>
+                <button class="text-rose-600 hover:underline text-sm" data-action="del" data-id="${b.id}">Delete</button>
+              </div>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        }
+        tbody.querySelectorAll("[data-action='edit']").forEach(btn => {
+          btn.addEventListener("click", () => openBankForm(state.bankAccounts.find(x => x.id === btn.dataset.id)));
+        });
+        tbody.querySelectorAll("[data-action='del']").forEach(btn => {
+          btn.addEventListener("click", async () => {
+            if (!confirm("Delete this bank account? Linked debit cards and routed incomes will remain but stop matching a bank.")) return;
+            try { await deleteDoc(doc(db, "users", currentUser.uid, "bankAccounts", btn.dataset.id)); }
+            catch (err) { alert(err?.message || "Failed to delete bank account"); }
+          });
+        });
+      }
 
-      const expenseSelect = $("#expense-card-choice");
-      const paymentSelect = $("#payment-card-select");
-      if (!expenseSelect || !paymentSelect) return;
-
-      const prevExpenseVal = expenseSelect.value;
-      const prevPaymentVal = paymentSelect.value;
-
-      expenseSelect.innerHTML = `<option value="">— none / type below —</option>` +
-        cards.map(c => `<option value="${c.id}">${escapeHtml(c.name)} (${cardTypeLabel(c.type)})</option>`).join("");
-
-      paymentSelect.innerHTML = `<option value="">Select a card…</option>` +
-        cards.map(c => `<option value="${c.id}">${escapeHtml(c.name)} (${cardTypeLabel(c.type)})</option>`).join("");
-
-      if (cards.some(c => c.id === prevExpenseVal)) expenseSelect.value = prevExpenseVal;
-      if (cards.some(c => c.id === prevPaymentVal)) paymentSelect.value = prevPaymentVal;
+      populateBankAccountSelects();
+      renderAccountsSummary();
     }
 
-    $("#expense-card-choice").addEventListener("change", () => {
-      const id = $("#expense-card-choice").value;
-      if (!id) return;
-      const c = state.cards.find(x => x.id === id);
-      if (c) $("#expense-card").value = c.name;
+    function populateBankAccountSelects() {
+      const banks = state.bankAccounts.slice().sort((a,b) => (a.name||"").localeCompare(b.name||""));
+      const optsHtml = banks.map(b => `<option value="${b.id}">${escapeHtml(b.name)}</option>`).join("");
+
+      const incomeSel = $("#income-bank-account");
+      if (incomeSel) {
+        const prev = incomeSel.value;
+        incomeSel.innerHTML = `<option value="">— Not tracked in a bank account —</option>` + optsHtml;
+        if (banks.some(b => b.id === prev)) incomeSel.value = prev;
+      }
+
+      const debitCardBankSel = $("#debit-card-bank");
+      if (debitCardBankSel) {
+        const prev = debitCardBankSel.value;
+        debitCardBankSel.innerHTML = `<option value="">Select a bank account…</option>` + optsHtml;
+        if (banks.some(b => b.id === prev)) debitCardBankSel.value = prev;
+      }
+
+      const txnSourceBankSel = $("#txn-source-bank");
+      if (txnSourceBankSel) {
+        const prev = txnSourceBankSel.value;
+        txnSourceBankSel.innerHTML = `<option value="">Select source bank account…</option>` + optsHtml;
+        if (banks.some(b => b.id === prev)) txnSourceBankSel.value = prev;
+      }
+    }
+
+    // ===== CRUD: Credit Cards =====
+    function openCreditCardForm(editing) {
+      $("#credit-card-form").classList.remove("hidden");
+      if (editing) {
+        $("#credit-card-name").value = editing.name ?? "";
+        $("#credit-card-starting-balance").value = editing.startingBalance ?? 0;
+        $("#credit-card-limit").value = editing.creditLimit ?? "";
+        $("#credit-card-notes").value = editing.notes ?? "";
+        ui.editing.creditCardId = editing.id;
+      } else {
+        $("#credit-card-form").reset?.();
+        $("#credit-card-name").value = "";
+        $("#credit-card-starting-balance").value = 0;
+        $("#credit-card-limit").value = "";
+        $("#credit-card-notes").value = "";
+        ui.editing.creditCardId = null;
+      }
+    }
+
+    $("#add-credit-card-btn").addEventListener("click", () => openCreditCardForm(null));
+    $("#credit-card-cancel-btn").addEventListener("click", () => {
+      $("#credit-card-form").classList.add("hidden");
+      ui.editing.creditCardId = null;
     });
 
-    function renderCards() {
-      const tbody = $("#cards-table-body");
-      const items = state.cards.slice().sort((a,b) => (b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
+    $("#credit-card-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const name = $("#credit-card-name").value.trim();
+      const startingBalance = Number($("#credit-card-starting-balance").value);
+      const limitRaw = $("#credit-card-limit").value;
+      const creditLimit = limitRaw !== "" ? Number(limitRaw) : null;
+      const notes = $("#credit-card-notes").value.trim();
+      if (!currentUser) return;
 
+      const payload = {
+        name, startingBalance: Number.isFinite(startingBalance) ? startingBalance : 0,
+        creditLimit: (creditLimit !== null && Number.isFinite(creditLimit)) ? creditLimit : null,
+        notes: notes || "", createdAt: serverTimestamp()
+      };
+
+      try {
+        if (ui.editing.creditCardId) {
+          await setDoc(doc(db, "users", currentUser.uid, "creditCards", ui.editing.creditCardId), payload, { merge: true });
+        } else {
+          await addDoc(userCol("creditCards"), payload);
+        }
+        $("#credit-card-form").classList.add("hidden");
+        ui.editing.creditCardId = null;
+      } catch (err) {
+        alert(err?.message || "Failed to save credit card");
+      }
+    });
+
+    // "As of today" — future-dated transactions do not inflate the current balance owed.
+    function computeCreditCardBalance(card) {
+      const todayISO = toISODate(new Date());
+      let balance = Number(card.startingBalance || 0);
+      for (const t of state.transactions || []) {
+        if (t.cardType !== "credit" || t.cardId !== card.id) continue;
+        if (!t.date || t.date > todayISO) continue;
+        const amt = Number(t.amount || 0);
+        if (t.txnType === "expense") balance += amt;
+        else if (t.txnType === "credit") balance -= amt;
+        else if (t.txnType === "payoff") balance -= amt;
+      }
+      return balance;
+    }
+
+    function renderCreditCards() {
+      const tbody = $("#credit-cards-table-body");
+      const items = state.creditCards.slice().sort((a,b) => (b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
       if (!items.length) {
-        tbody.innerHTML = `<tr><td colspan="4" class="px-3 py-3 text-center text-slate-500">No cards yet — add one to start tracking balances.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="3" class="px-3 py-3 text-center text-slate-500">No credit cards yet.</td></tr>`;
       } else {
         tbody.innerHTML = "";
         for (const c of items) {
-          const { balance } = computeCardBalance(c);
+          const balance = computeCreditCardBalance(c);
           const balanceClass = balance > 0 ? "text-rose-700" : (balance < 0 ? "text-emerald-700" : "text-slate-700");
-
           let utilHtml = "";
-          if (c.type === "credit" && c.creditLimit) {
+          if (c.creditLimit) {
             const pct = Math.max(0, Math.min(100, (balance / c.creditLimit) * 100));
             const barColor = pct >= 70 ? "#e11d48" : (pct >= 30 ? "#f59e0b" : "#10b981");
             utilHtml = `
@@ -1492,15 +1697,13 @@ service cloud.firestore {
               <div class="text-[11px] text-slate-500 mt-0.5">${pct.toFixed(0)}% of ${formatMoney(c.creditLimit)} limit</div>
             `;
           }
-
           const tr = document.createElement("tr");
           tr.innerHTML = `
             <td class="px-3 py-2 font-medium text-slate-800">
               ${escapeHtml(c.name)}
               ${c.notes ? `<div class="text-xs text-slate-500">${escapeHtml(c.notes)}</div>` : ""}
             </td>
-            <td class="px-3 py-2 text-slate-700">${cardTypeLabel(c.type)}</td>
-            <td class="px-3 py-2 text-right font-semibold ${balanceClass}">
+            <td class="px-3 py-2 text-right align-top font-semibold ${balanceClass}">
               ${formatMoney(balance)}
               ${utilHtml}
             </td>
@@ -1513,232 +1716,450 @@ service cloud.firestore {
           `;
           tbody.appendChild(tr);
         }
-
         tbody.querySelectorAll("[data-action='edit']").forEach(btn => {
-          btn.addEventListener("click", () => {
-            const id = btn.dataset.id;
-            const item = state.cards.find(x => x.id === id);
-            openCardForm(item);
-          });
+          btn.addEventListener("click", () => openCreditCardForm(state.creditCards.find(x => x.id === btn.dataset.id)));
         });
-
         tbody.querySelectorAll("[data-action='del']").forEach(btn => {
           btn.addEventListener("click", async () => {
-            const id = btn.dataset.id;
-            if (!confirm("Delete this card? Linked expenses/payoffs will remain but stop being matched.")) return;
-            try {
-              await deleteDoc(doc(db, "users", currentUser.uid, "cards", id));
-            } catch (err) {
-              alert(err?.message || "Failed to delete card");
-            }
+            if (!confirm("Delete this credit card? Linked transactions will remain but stop being matched.")) return;
+            try { await deleteDoc(doc(db, "users", currentUser.uid, "creditCards", btn.dataset.id)); }
+            catch (err) { alert(err?.message || "Failed to delete credit card"); }
           });
         });
       }
 
-      populateCardSelects();
-      renderCardsSummary();
+      updateTxnCardOptions();
+      renderAccountsSummary();
     }
 
-    function renderCardsSummary() {
-      const creditCards = state.cards.filter(c => c.type === "credit");
-      const debitCards = state.cards.filter(c => c.type === "debit");
+    // ===== CRUD: Debit Cards =====
+    function openDebitCardForm(editing) {
+      $("#debit-card-form").classList.remove("hidden");
+      if (editing) {
+        $("#debit-card-name").value = editing.name ?? "";
+        $("#debit-card-notes").value = editing.notes ?? "";
+        ui.editing.debitCardId = editing.id;
+        populateBankAccountSelects();
+        $("#debit-card-bank").value = editing.bankAccountId ?? "";
+      } else {
+        $("#debit-card-form").reset?.();
+        $("#debit-card-name").value = "";
+        $("#debit-card-notes").value = "";
+        ui.editing.debitCardId = null;
+        populateBankAccountSelects();
+        $("#debit-card-bank").value = "";
+      }
+    }
 
-      const totalCreditDebt = creditCards.reduce((s, c) => s + computeCardBalance(c).balance, 0);
-      const totalDebitBalance = debitCards.reduce((s, c) => s + computeCardBalance(c).balance, 0);
-      const totalAvailableCredit = creditCards.reduce((s, c) => {
+    $("#add-debit-card-btn").addEventListener("click", () => openDebitCardForm(null));
+    $("#debit-card-cancel-btn").addEventListener("click", () => {
+      $("#debit-card-form").classList.add("hidden");
+      ui.editing.debitCardId = null;
+    });
+
+    $("#debit-card-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const name = $("#debit-card-name").value.trim();
+      const bankAccountId = $("#debit-card-bank").value;
+      const notes = $("#debit-card-notes").value.trim();
+      if (!currentUser) return;
+      if (!bankAccountId) { alert("Please link a bank account."); return; }
+
+      const payload = { name, bankAccountId, notes: notes || "", createdAt: serverTimestamp() };
+
+      try {
+        if (ui.editing.debitCardId) {
+          await setDoc(doc(db, "users", currentUser.uid, "debitCards", ui.editing.debitCardId), payload, { merge: true });
+        } else {
+          await addDoc(userCol("debitCards"), payload);
+        }
+        $("#debit-card-form").classList.add("hidden");
+        ui.editing.debitCardId = null;
+      } catch (err) {
+        alert(err?.message || "Failed to save debit card");
+      }
+    });
+
+    function renderDebitCards() {
+      const tbody = $("#debit-cards-table-body");
+      const items = state.debitCards.slice().sort((a,b) => (b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
+      if (!items.length) {
+        tbody.innerHTML = `<tr><td colspan="3" class="px-3 py-3 text-center text-slate-500">No debit cards yet.</td></tr>`;
+      } else {
+        tbody.innerHTML = "";
+        for (const d of items) {
+          const bank = state.bankAccounts.find(b => b.id === d.bankAccountId);
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td class="px-3 py-2 font-medium text-slate-800">
+              ${escapeHtml(d.name)}
+              ${d.notes ? `<div class="text-xs text-slate-500">${escapeHtml(d.notes)}</div>` : ""}
+            </td>
+            <td class="px-3 py-2 text-slate-700">${bank ? escapeHtml(bank.name) : '<span class="text-rose-600">Unlinked bank</span>'}</td>
+            <td class="px-3 py-2 text-right">
+              <div class="inline-flex items-center gap-2">
+                <button class="text-brand-600 hover:underline text-sm" data-action="edit" data-id="${d.id}">Edit</button>
+                <button class="text-rose-600 hover:underline text-sm" data-action="del" data-id="${d.id}">Delete</button>
+              </div>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        }
+        tbody.querySelectorAll("[data-action='edit']").forEach(btn => {
+          btn.addEventListener("click", () => openDebitCardForm(state.debitCards.find(x => x.id === btn.dataset.id)));
+        });
+        tbody.querySelectorAll("[data-action='del']").forEach(btn => {
+          btn.addEventListener("click", async () => {
+            if (!confirm("Delete this debit card? Past transactions will remain.")) return;
+            try { await deleteDoc(doc(db, "users", currentUser.uid, "debitCards", btn.dataset.id)); }
+            catch (err) { alert(err?.message || "Failed to delete debit card"); }
+          });
+        });
+      }
+
+      updateTxnCardOptions();
+    }
+
+    // ===== Accounts Summary (Accounts route + Dashboard mirror) =====
+    function computeAccountsTotals() {
+      const bankTotal = state.bankAccounts.reduce((s, b) => s + computeBankAccountBalance(b), 0);
+      const creditTotal = state.creditCards.reduce((s, c) => s + computeCreditCardBalance(c), 0);
+      const availableCredit = state.creditCards.reduce((s, c) => {
         if (!c.creditLimit) return s;
-        return s + Math.max(0, c.creditLimit - computeCardBalance(c).balance);
+        return s + Math.max(0, c.creditLimit - computeCreditCardBalance(c));
       }, 0);
+      return { bankTotal, creditTotal, availableCredit };
+    }
 
-      const elCredit = $("#cards-total-credit-debt");
-      const elDebit = $("#cards-total-debit-balance");
-      const elAvail = $("#cards-total-available-credit");
-      if (elCredit) elCredit.textContent = formatMoney(totalCreditDebt);
-      if (elDebit) elDebit.textContent = formatMoney(totalDebitBalance);
-      if (elAvail) elAvail.textContent = formatMoney(totalAvailableCredit);
+    function renderAccountsSummary() {
+      const { bankTotal, creditTotal, availableCredit } = computeAccountsTotals();
 
-      // Dashboard mirror widgets
-      const dashSummary = $("#dashboard-card-summary");
+      const elBank = $("#accounts-total-bank");
+      const elCredit = $("#accounts-total-credit-debt");
+      const elAvail = $("#accounts-total-available-credit");
+      if (elBank) elBank.textContent = formatMoney(bankTotal);
+      if (elCredit) elCredit.textContent = formatMoney(creditTotal);
+      if (elAvail) elAvail.textContent = formatMoney(availableCredit);
+
+      const dashSummary = $("#dashboard-accounts-summary");
       if (dashSummary) {
         dashSummary.innerHTML = `
           <div class="bg-slate-50 rounded-xl border border-slate-200 p-4">
-            <div class="text-xs text-slate-500">Total Credit Card Debt</div>
-            <div class="text-lg font-bold text-rose-700">${formatMoney(totalCreditDebt)}</div>
+            <div class="text-xs text-slate-500">Total in Bank Accounts</div>
+            <div class="text-lg font-bold text-emerald-700">${formatMoney(bankTotal)}</div>
           </div>
           <div class="bg-slate-50 rounded-xl border border-slate-200 p-4">
-            <div class="text-xs text-slate-500">Total Debit Card Balance</div>
-            <div class="text-lg font-bold text-slate-900">${formatMoney(totalDebitBalance)}</div>
+            <div class="text-xs text-slate-500">Total Credit Card Debt</div>
+            <div class="text-lg font-bold text-rose-700">${formatMoney(creditTotal)}</div>
           </div>
           <div class="bg-slate-50 rounded-xl border border-slate-200 p-4">
             <div class="text-xs text-slate-500">Total Available Credit</div>
-            <div class="text-lg font-bold text-emerald-700">${formatMoney(totalAvailableCredit)}</div>
+            <div class="text-lg font-bold text-brand-900">${formatMoney(availableCredit)}</div>
           </div>
         `;
       }
 
-      const dashList = $("#dashboard-card-list");
+      const dashList = $("#dashboard-accounts-list");
       if (dashList) {
-        const items = state.cards.slice()
-          .map(c => ({ c, balance: computeCardBalance(c).balance }))
-          .sort((a, b) => b.balance - a.balance)
-          .slice(0, 4);
+        const bankItems = state.bankAccounts.map(b => ({ name: b.name, balance: computeBankAccountBalance(b), kind: "bank" }));
+        const cardItems = state.creditCards.map(c => ({ name: c.name, balance: computeCreditCardBalance(c), kind: "credit" }));
+        const combined = [...bankItems, ...cardItems].sort((a,b) => Math.abs(b.balance) - Math.abs(a.balance)).slice(0, 6);
 
-        if (!items.length) {
-          dashList.innerHTML = `<div class="text-sm text-slate-500">No cards added yet.</div>`;
+        if (!combined.length) {
+          dashList.innerHTML = `<div class="text-sm text-slate-500">Add a bank account or credit card to see balances here.</div>`;
         } else {
-          dashList.innerHTML = items.map(({ c, balance }) => `
+          dashList.innerHTML = combined.map(item => `
             <div class="flex items-center justify-between py-2 border-b border-slate-100 last:border-b-0">
-              <div class="text-sm font-medium text-slate-800">${escapeHtml(c.name)} <span class="text-xs text-slate-500">(${cardTypeLabel(c.type)})</span></div>
-              <div class="text-sm font-semibold ${balance > 0 ? 'text-rose-700' : 'text-emerald-700'}">${formatMoney(balance)}</div>
+              <div class="text-sm font-medium text-slate-800">${escapeHtml(item.name)} <span class="badge ${item.kind === 'bank' ? 'badge-emerald' : 'badge-brand'} ml-1">${item.kind === 'bank' ? 'Bank' : 'Credit'}</span></div>
+              <div class="text-sm font-semibold ${item.kind === 'bank' ? (item.balance >= 0 ? 'text-emerald-700' : 'text-rose-700') : (item.balance > 0 ? 'text-rose-700' : 'text-emerald-700')}">${formatMoney(item.balance)}</div>
             </div>
           `).join("");
         }
       }
+
+      const payoffsBody = $("#recent-payoffs-table-body");
+      if (payoffsBody) {
+        const payoffs = (state.transactions || [])
+          .filter(t => t.txnType === "payoff")
+          .slice()
+          .sort((a,b) => parseISODateLocal(b.date) - parseISODateLocal(a.date))
+          .slice(0, 8);
+
+        if (!payoffs.length) {
+          payoffsBody.innerHTML = `<tr><td colspan="4" class="px-3 py-3 text-center text-slate-500">No payoffs recorded yet.</td></tr>`;
+        } else {
+          payoffsBody.innerHTML = payoffs.map(p => {
+            const bank = state.bankAccounts.find(b => b.id === p.sourceBankAccountId);
+            return `
+              <tr>
+                <td class="px-3 py-2 font-medium text-slate-800">${escapeHtml(p.cardName || "")}</td>
+                <td class="px-3 py-2 text-slate-700">${escapeHtml(p.date || "")}</td>
+                <td class="px-3 py-2 text-slate-700">${bank ? escapeHtml(bank.name) : "-"}</td>
+                <td class="px-3 py-2 text-right font-semibold text-emerald-700">${formatMoney(p.amount)}</td>
+              </tr>
+            `;
+          }).join("");
+        }
+      }
     }
 
-    // ===== CRUD: Payments / Payoffs (new) =====
-    function openPaymentEdit(editing) {
-      if (!editing) return;
-      ui.editing.paymentId = editing.id;
-      $("#payment-card-select").value = editing.cardId || "";
-      $("#payment-date").value = editing.date || toISODate(new Date());
-      $("#payment-amount").value = editing.amount ?? "";
-      $("#payment-note").value = editing.note || "";
+    // ===== Quick Add Transaction (Credit/Debit expenses, credits, payoffs) =====
+    function updateTxnCardOptions() {
+      const cardTypeSel = $("#txn-card-type");
+      const select = $("#txn-card-select");
+      if (!cardTypeSel || !select) return;
+
+      const cardType = cardTypeSel.value;
+      const list = (cardType === "debit" ? state.debitCards : state.creditCards)
+        .slice().sort((a,b) => (a.name||"").localeCompare(b.name||""));
+      const prev = select.value;
+      select.innerHTML = `<option value="">Select a card…</option>` + list.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join("");
+      if (list.some(c => c.id === prev)) select.value = prev;
+
+      const hint = $("#txn-card-hint");
+      if (hint) {
+        hint.textContent = list.length ? "" : `No ${cardType === "debit" ? "debit" : "credit"} cards yet — add one on the Accounts & Cards page.`;
+      }
+
+      updateTxnTypeOptions();
     }
 
-    $("#payment-form").addEventListener("submit", async (e) => {
+    function updateTxnTypeOptions() {
+      const cardType = $("#txn-card-type").value;
+      const sel = $("#txn-type");
+      const prev = sel.value;
+      if (cardType === "credit") {
+        sel.innerHTML = `
+          <option value="expense">Expense (Purchase)</option>
+          <option value="credit">Statement Credit / Refund</option>
+          <option value="payoff">Card Payoff</option>
+        `;
+      } else {
+        sel.innerHTML = `
+          <option value="expense">Expense (Purchase)</option>
+          <option value="credit">Refund / Credit</option>
+        `;
+      }
+      const validValues = Array.from(sel.options).map(o => o.value);
+      if (validValues.includes(prev)) sel.value = prev;
+      updateTxnSourceBankVisibility();
+    }
+
+    function updateTxnSourceBankVisibility() {
+      const show = $("#txn-card-type").value === "credit" && $("#txn-type").value === "payoff";
+      $("#txn-source-bank-wrap").classList.toggle("hidden", !show);
+      $("#txn-source-bank").required = show;
+    }
+
+    $("#txn-card-type").addEventListener("change", updateTxnCardOptions);
+    $("#txn-type").addEventListener("change", updateTxnSourceBankVisibility);
+
+    $("#txn-form").addEventListener("submit", async (e) => {
       e.preventDefault();
-      const cardId = $("#payment-card-select").value;
-      const date = $("#payment-date").value;
-      const amount = Number($("#payment-amount").value);
-      const note = $("#payment-note").value.trim();
-
       if (!currentUser) return;
-      const card = state.cards.find(c => c.id === cardId);
-      if (!card) {
-        alert("Please select a valid card.");
+
+      const cardType = $("#txn-card-type").value === "debit" ? "debit" : "credit";
+      const cardId = $("#txn-card-select").value;
+      const txnType = $("#txn-type").value;
+      const date = $("#txn-date").value;
+      const amount = Number($("#txn-amount").value);
+      const description = $("#txn-desc").value.trim();
+      const sourceBankAccountId = (cardType === "credit" && txnType === "payoff") ? $("#txn-source-bank").value : null;
+
+      if (!cardId) { alert("Please select a card."); return; }
+      const cardList = cardType === "debit" ? state.debitCards : state.creditCards;
+      const card = cardList.find(c => c.id === cardId);
+      if (!card) { alert("Please select a valid card."); return; }
+      if (cardType === "credit" && txnType === "payoff" && !sourceBankAccountId) {
+        alert("Please select the bank account the payoff is coming from.");
         return;
       }
 
       const payload = {
-        cardId,
-        cardName: card.name,
-        date,
-        amount: Number.isFinite(amount) ? amount : 0,
-        note: note || "",
+        date, amount: Number.isFinite(amount) ? amount : 0, description,
+        cardType, cardId, cardName: card.name, txnType,
+        sourceBankAccountId: sourceBankAccountId || null,
+        bankAccountId: cardType === "debit" ? (card.bankAccountId || null) : null,
         createdAt: serverTimestamp()
       };
 
       try {
-        if (ui.editing.paymentId) {
-          await setDoc(doc(db, "users", currentUser.uid, "payments", ui.editing.paymentId), payload, { merge: true });
-          ui.editing.paymentId = null;
+        if (ui.editing.transactionId) {
+          await setDoc(doc(db, "users", currentUser.uid, "transactions", ui.editing.transactionId), payload, { merge: true });
+          ui.editing.transactionId = null;
+          $("#txn-editing-banner").classList.add("hidden");
         } else {
-          await addDoc(userCol("payments"), payload);
+          await addDoc(userCol("transactions"), payload);
         }
-        $("#payment-amount").value = "";
-        $("#payment-note").value = "";
+        $("#txn-amount").value = "";
+        $("#txn-desc").value = "";
       } catch (err) {
-        alert(err?.message || "Failed to save payoff");
+        alert(err?.message || "Failed to save transaction");
       }
     });
 
-    function renderPayments() {
-      const tbody = $("#payments-table-body");
-      const items = sortByDateAsc(state.payments, "date").reverse();
+    $("#txn-cancel-edit-btn").addEventListener("click", () => {
+      ui.editing.transactionId = null;
+      $("#txn-form").reset();
+      $("#txn-date").value = toISODate(new Date());
+      updateTxnCardOptions();
+      $("#txn-editing-banner").classList.add("hidden");
+    });
+
+    function txnTypeBadge(t) {
+      if (t.txnType === "expense") return `<span class="badge badge-rose">Expense</span>`;
+      if (t.txnType === "credit") return `<span class="badge badge-emerald">Credit/Refund</span>`;
+      if (t.txnType === "payoff") return `<span class="badge badge-amber">Payoff</span>`;
+      return "";
+    }
+
+    function cardTypeBadge(t) {
+      return t.cardType === "debit"
+        ? `<span class="badge badge-slate">Debit</span>`
+        : `<span class="badge badge-brand">Credit</span>`;
+    }
+
+    function renderTransactionsLedger() {
+      const tbody = $("#transactions-table-body");
+      const items = sortByDateAsc(state.transactions, "date").reverse();
 
       if (!items.length) {
-        tbody.innerHTML = `<tr><td colspan="5" class="px-3 py-3 text-center text-slate-500">No payoffs recorded yet.</td></tr>`;
-        return;
+        tbody.innerHTML = `<tr><td colspan="6" class="px-3 py-3 text-center text-slate-500">No transactions logged yet.</td></tr>`;
+      } else {
+        tbody.innerHTML = "";
+        for (const t of items) {
+          const amtClass = t.txnType === "credit" ? "text-emerald-700" : (t.txnType === "payoff" ? "text-amber-700" : "text-rose-700");
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td class="px-3 py-2 text-slate-700">${escapeHtml(t.date)}</td>
+            <td class="px-3 py-2 font-medium text-slate-800">${escapeHtml(t.cardName)} ${cardTypeBadge(t)}</td>
+            <td class="px-3 py-2">${txnTypeBadge(t)}</td>
+            <td class="px-3 py-2 text-slate-700">${escapeHtml(t.description)}</td>
+            <td class="px-3 py-2 text-right font-semibold ${amtClass}">${formatMoney(t.amount)}</td>
+            <td class="px-3 py-2 text-right">
+              <div class="inline-flex items-center gap-2">
+                <button class="text-brand-600 hover:underline text-sm" data-action="edit" data-id="${t.id}">Edit</button>
+                <button class="text-rose-600 hover:underline text-sm" data-action="del" data-id="${t.id}">Delete</button>
+              </div>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        }
+
+        tbody.querySelectorAll("[data-action='del']").forEach(btn => {
+          btn.addEventListener("click", async () => {
+            if (!confirm("Delete this transaction?")) return;
+            try { await deleteDoc(doc(db, "users", currentUser.uid, "transactions", btn.dataset.id)); }
+            catch (err) { alert(err?.message || "Failed to delete transaction"); }
+          });
+        });
+
+        tbody.querySelectorAll("[data-action='edit']").forEach(btn => {
+          btn.addEventListener("click", () => {
+            const t = state.transactions.find(x => x.id === btn.dataset.id);
+            if (!t) return;
+            ui.editing.transactionId = t.id;
+            $("#txn-date").value = t.date || toISODate(new Date());
+            $("#txn-amount").value = t.amount ?? "";
+            $("#txn-desc").value = t.description || "";
+            $("#txn-card-type").value = t.cardType || "credit";
+            updateTxnCardOptions();
+            $("#txn-card-select").value = t.cardId || "";
+            $("#txn-type").value = t.txnType || "expense";
+            updateTxnSourceBankVisibility();
+            if (t.sourceBankAccountId) $("#txn-source-bank").value = t.sourceBankAccountId;
+            $("#txn-editing-banner").classList.remove("hidden");
+            contentScroll?.scrollTo?.({ top: 0, behavior: "smooth" });
+          });
+        });
       }
 
-      tbody.innerHTML = "";
-      for (const p of items) {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td class="px-3 py-2 font-medium text-slate-800">${escapeHtml(p.cardName)}</td>
-          <td class="px-3 py-2 text-slate-700">${escapeHtml(p.date)}</td>
-          <td class="px-3 py-2 text-right font-semibold text-emerald-700">${formatMoney(p.amount)}</td>
-          <td class="px-3 py-2 text-slate-700">${escapeHtml(p.note || "-")}</td>
-          <td class="px-3 py-2 text-right">
-            <div class="inline-flex items-center gap-2">
-              <button class="text-brand-600 hover:underline text-sm" data-action="edit" data-id="${p.id}">Edit</button>
-              <button class="text-rose-600 hover:underline text-sm" data-action="del" data-id="${p.id}">Delete</button>
-            </div>
-          </td>
-        `;
-        tbody.appendChild(tr);
-      }
-
-      tbody.querySelectorAll("[data-action='del']").forEach(btn => {
-        btn.addEventListener("click", async () => {
-          const id = btn.dataset.id;
-          if (!confirm("Delete this payoff record?")) return;
-          try {
-            await deleteDoc(doc(db, "users", currentUser.uid, "payments", id));
-          } catch (err) {
-            alert(err?.message || "Failed to delete payoff");
-          }
-        });
-      });
-
-      tbody.querySelectorAll("[data-action='edit']").forEach(btn => {
-        btn.addEventListener("click", () => {
-          const id = btn.dataset.id;
-          const item = state.payments.find(x => x.id === id);
-          openPaymentEdit(item);
-        });
-      });
+      const summaryEl = $("#txn-ledger-summary");
+      if (summaryEl) summaryEl.textContent = `${items.length} transaction${items.length === 1 ? "" : "s"} logged.`;
     }
 
     // ===== CRUD: Income =====
+    function openIncomeForm(item) {
+      ui.editing.incomeId = item ? item.id : null;
+      $("#income-source").value = item?.source ?? "";
+      $("#income-date").value = item?.date ?? toISODate(new Date());
+      $("#income-amount").value = item?.amount ?? "";
+      populateBankAccountSelects();
+      $("#income-bank-account").value = item?.bankAccountId || "";
+      $("#income-recurring").checked = !!item?.isRecurring;
+      $("#income-recurrence-type").classList.toggle("hidden", !item?.isRecurring);
+      if (item?.isRecurring) $("#income-recurrence-type").value = item.recurrenceType === "biweekly" ? "biweekly" : "monthly";
+      $("#income-source")?.scrollIntoView?.({ behavior: "smooth", block: "center" });
+    }
+
+    $("#income-recurring").addEventListener("change", () => {
+      $("#income-recurrence-type").classList.toggle("hidden", !$("#income-recurring").checked);
+    });
+
     function renderIncomes() {
       const tbody = $("#income-table-body");
       tbody.innerHTML = "";
-
       const items = sortByDateAsc(state.incomes, "date").reverse();
       if (!items.length) {
-        tbody.innerHTML = `<tr><td colspan="4" class="px-3 py-3 text-center text-slate-500">No incomes yet.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" class="px-3 py-3 text-center text-slate-500">No incomes yet.</td></tr>`;
         return;
       }
-
       for (const i of items) {
+        const bank = state.bankAccounts.find(b => b.id === i.bankAccountId);
+        const recurLabel = !i.isRecurring
+          ? "One-time"
+          : (i.recurrenceType === "biweekly" ? "Bi-Weekly" : `Monthly (day ${parseISODateLocal(i.date).getDate()})`);
+
         const tr = document.createElement("tr");
         tr.innerHTML = `
           <td class="px-3 py-2 font-medium text-slate-800">${escapeHtml(i.source)}</td>
           <td class="px-3 py-2 text-slate-700">${escapeHtml(i.date)}</td>
+          <td class="px-3 py-2 text-slate-700">${bank ? escapeHtml(bank.name) : '<span class="text-slate-400">Not tracked</span>'}</td>
+          <td class="px-3 py-2">
+            <span class="badge ${i.isRecurring ? "badge-brand" : "badge-slate"}">${recurLabel}</span>
+          </td>
           <td class="px-3 py-2 text-right font-semibold text-emerald-700">${formatMoney(i.amount)}</td>
           <td class="px-3 py-2 text-right">
-            <div class="inline-flex items-center gap-2">
+            <div class="inline-flex items-center gap-2 flex-wrap justify-end">
+              ${i.isRecurring ? `<button class="text-brand-600 hover:underline text-sm" data-action="toggle-income-occ" data-id="${i.id}">Upcoming</button>` : ""}
               <button class="text-brand-600 hover:underline text-sm" data-action="edit" data-id="${i.id}">Edit</button>
               <button class="text-rose-600 hover:underline text-sm" data-action="del" data-id="${i.id}">Delete</button>
             </div>
           </td>
         `;
         tbody.appendChild(tr);
+
+        if (i.isRecurring) {
+          const occRow = document.createElement("tr");
+          occRow.id = `income-occ-row-${i.id}`;
+          occRow.className = ui.expandedIncomeIds.has(i.id) ? "" : "hidden";
+          occRow.innerHTML = `<td colspan="6" class="px-3 py-3 bg-slate-50"><div id="income-occ-content-${i.id}" class="text-sm text-slate-500">Loading…</div></td>`;
+          tbody.appendChild(occRow);
+          if (ui.expandedIncomeIds.has(i.id)) renderIncomeOccurrences(i.id);
+        }
       }
 
-      tbody.querySelectorAll("[data-action='del']").forEach(btn => {
-        btn.addEventListener("click", async () => {
-          const id = btn.dataset.id;
-          if (!confirm("Delete this income?")) return;
-          try {
-            await deleteDoc(doc(db, "users", currentUser.uid, "incomes", id));
-          } catch (err) {
-            alert(err?.message || "Failed to delete income");
-          }
-        });
-      });
-
-      tbody.querySelectorAll("[data-action='edit']").forEach(btn => {
+      tbody.querySelectorAll("[data-action='toggle-income-occ']").forEach(btn => {
         btn.addEventListener("click", () => {
           const id = btn.dataset.id;
-          const item = state.incomes.find(x => x.id === id);
-          ui.editing.incomeId = id;
-          // prefill form
-          $("#income-source").value = item?.source ?? "";
-          $("#income-date").value = item?.date ?? toISODate(new Date());
-          $("#income-amount").value = item?.amount ?? "";
+          const row = $(`#income-occ-row-${id}`);
+          const willShow = row.classList.contains("hidden");
+          row.classList.toggle("hidden");
+          if (willShow) { ui.expandedIncomeIds.add(id); renderIncomeOccurrences(id); }
+          else { ui.expandedIncomeIds.delete(id); }
+        });
+      });
+      tbody.querySelectorAll("[data-action='del']").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          if (!confirm("Delete this income?")) return;
+          try { await deleteDoc(doc(db, "users", currentUser.uid, "incomes", btn.dataset.id)); }
+          catch (err) { alert(err?.message || "Failed to delete income"); }
+        });
+      });
+      tbody.querySelectorAll("[data-action='edit']").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const item = state.incomes.find(x => x.id === btn.dataset.id);
+          openIncomeForm(item);
         });
       });
     }
@@ -1748,14 +2169,14 @@ service cloud.firestore {
       const source = $("#income-source").value.trim();
       const date = $("#income-date").value;
       const amount = Number($("#income-amount").value);
-
+      const bankAccountId = $("#income-bank-account").value || null;
+      const isRecurring = $("#income-recurring").checked;
+      const recurrenceType = isRecurring ? ($("#income-recurrence-type").value === "biweekly" ? "biweekly" : "monthly") : null;
       if (!currentUser) return;
 
       const payload = {
-        source,
-        date,
-        amount: Number.isFinite(amount) ? amount : 0,
-        createdAt: serverTimestamp()
+        source, date, amount: Number.isFinite(amount) ? amount : 0,
+        bankAccountId, isRecurring, recurrenceType, createdAt: serverTimestamp()
       };
 
       try {
@@ -1765,153 +2186,225 @@ service cloud.firestore {
         } else {
           await addDoc(userCol("incomes"), payload);
         }
-
         $("#income-source").value = "";
         $("#income-amount").value = "";
+        $("#income-recurring").checked = false;
+        $("#income-recurrence-type").classList.add("hidden");
       } catch (err) {
         alert(err?.message || "Failed to save income");
       }
     });
 
-    // ===== CRUD: Expenses =====
-    function renderExpenses() {
-      const tbody = $("#expenses-table-body");
-      tbody.innerHTML = "";
+    // ===== Recurring Incomes: overrides, occurrence generation (mirrors recurring bills) =====
+    function buildIncomeOverridesMap() {
+      const map = new Map();
+      for (const o of state.incomeOverrides || []) {
+        if (!o.incomeId || !o.occurrenceDate) continue;
+        map.set(`${o.incomeId}__${o.occurrenceDate}`, o);
+      }
+      return map;
+    }
 
-      const items = sortByDateAsc(state.expenses, "date").reverse();
-      if (!items.length) {
-        tbody.innerHTML = `<tr><td colspan="5" class="px-3 py-3 text-center text-slate-500">No expenses yet.</td></tr>`;
+    function pushIncomeOccurrence(income, dateObj, overridesMap, occurrences) {
+      const iso = toISODate(dateObj);
+      const key = `${income.id}__${iso}`;
+      const ov = overridesMap.get(key);
+      if (ov && ov.deleted) return;
+      const amount = (ov && ov.amount != null && ov.amount !== "") ? Number(ov.amount) : Number(income.amount || 0);
+      occurrences.push({
+        incomeId: income.id, source: income.source, bankAccountId: income.bankAccountId || null,
+        date: iso, amount, recurring: true, overridden: !!ov, occurrenceKey: key
+      });
+    }
+
+    function generateIncomeOccurrences(rangeStart, rangeEnd) {
+      const overridesMap = buildIncomeOverridesMap();
+      const occurrences = [];
+
+      for (const income of state.incomes || []) {
+        if (!income.date) continue;
+        const startDate = parseISODateLocal(income.date);
+
+        if (!income.isRecurring) {
+          if (startDate >= rangeStart && startDate <= rangeEnd) {
+            occurrences.push({
+              incomeId: income.id, source: income.source, bankAccountId: income.bankAccountId || null,
+              date: income.date, amount: Number(income.amount || 0),
+              recurring: false, overridden: false, occurrenceKey: null
+            });
+          }
+          continue;
+        }
+
+        if (income.recurrenceType === "biweekly") {
+          let cursor = new Date(startDate);
+          let guard = 0;
+          while (cursor <= rangeEnd && guard < 300) {
+            if (cursor >= rangeStart) pushIncomeOccurrence(income, cursor, overridesMap, occurrences);
+            cursor = addDays(cursor, 14);
+            guard++;
+          }
+        } else {
+          const day = startDate.getDate();
+          let cursor = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+          let guard = 0;
+          while (cursor <= rangeEnd && guard < 300) {
+            const occ = clampedMonthDate(cursor.getFullYear(), cursor.getMonth(), day);
+            if (occ >= startDate && occ >= rangeStart && occ <= rangeEnd) {
+              pushIncomeOccurrence(income, occ, overridesMap, occurrences);
+            }
+            cursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
+            guard++;
+          }
+        }
+      }
+
+      return occurrences.sort((a, b) => parseISODateLocal(a.date) - parseISODateLocal(b.date));
+    }
+
+    function renderIncomeOccurrences(incomeId) {
+      const income = state.incomes.find(i => i.id === incomeId);
+      const container = $(`#income-occ-content-${incomeId}`);
+      if (!income || !container) return;
+
+      const today = parseISODateLocal(toISODate(new Date()));
+      const horizonEnd = addDays(today, ui.planner.horizonDays || 180);
+      const occurrences = generateIncomeOccurrences(today, horizonEnd).filter(o => o.incomeId === incomeId).slice(0, 12);
+
+      if (!occurrences.length) {
+        container.innerHTML = `<div class="text-slate-500">No upcoming occurrences in the current planner horizon.</div>`;
         return;
       }
 
-      for (const x of items) {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td class="px-3 py-2 font-medium text-slate-800">${escapeHtml(x.card)}</td>
-          <td class="px-3 py-2 text-slate-700">${escapeHtml(x.desc)}</td>
-          <td class="px-3 py-2 text-slate-700">${escapeHtml(x.date)}</td>
-          <td class="px-3 py-2 text-right font-semibold text-rose-700">${formatMoney(x.amount)}</td>
-          <td class="px-3 py-2 text-right">
-            <div class="inline-flex items-center gap-2">
-              <button class="text-brand-600 hover:underline text-sm" data-action="edit" data-id="${x.id}">Edit</button>
-              <button class="text-rose-600 hover:underline text-sm" data-action="del" data-id="${x.id}">Delete</button>
+      container.innerHTML = `
+        <div class="text-xs font-semibold text-slate-600 mb-2">Next occurrences — edit an amount or skip a specific date</div>
+        <div class="space-y-2">
+          ${occurrences.map(o => `
+            <div class="flex items-center justify-between gap-3 bg-white border border-slate-200 rounded-lg px-3 py-2" data-occ-row="${o.occurrenceKey}">
+              <div class="text-sm text-slate-700">
+                ${escapeHtml(o.date)} ${o.overridden ? '<span class="text-[11px] text-amber-600 font-medium">(edited)</span>' : ""}
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-sm font-semibold text-emerald-700">${formatMoney(o.amount)}</span>
+                <button class="text-brand-600 hover:underline text-xs" data-occ-action="edit" data-key="${o.occurrenceKey}">Edit</button>
+                <button class="text-rose-600 hover:underline text-xs" data-occ-action="del" data-key="${o.occurrenceKey}" data-date="${o.date}">Skip</button>
+              </div>
             </div>
-          </td>
-        `;
-        tbody.appendChild(tr);
-      }
+          `).join("")}
+        </div>
+      `;
 
-      tbody.querySelectorAll("[data-action='del']").forEach(btn => {
-        btn.addEventListener("click", async () => {
-          const id = btn.dataset.id;
-          if (!confirm("Delete this expense?")) return;
-          try {
-            await deleteDoc(doc(db, "users", currentUser.uid, "expenses", id));
-          } catch (err) {
-            alert(err?.message || "Failed to delete expense");
-          }
+      container.querySelectorAll("[data-occ-action='edit']").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const row = btn.closest("[data-occ-row]");
+          const key = btn.dataset.key;
+          const occ = occurrences.find(o => o.occurrenceKey === key);
+          const inputId = `income-occ-input-${key.replace(/[^a-zA-Z0-9]/g, "_")}`;
+          row.innerHTML = `
+            <div class="flex items-center gap-2 w-full">
+              <span class="text-sm text-slate-600 flex-1">${escapeHtml(occ.date)}</span>
+              <input type="number" step="0.01" value="${occ.amount}" class="border border-slate-300 rounded-lg px-2 py-1 text-sm w-28" id="${inputId}">
+              <button class="text-emerald-600 hover:underline text-xs" data-occ-save="${key}">Save</button>
+              <button class="text-slate-500 hover:underline text-xs" data-occ-cancel>Cancel</button>
+            </div>
+          `;
+          row.querySelector("[data-occ-save]").addEventListener("click", async () => {
+            const val = Number($(`#${inputId}`).value);
+            try {
+              await setDoc(doc(db, "users", currentUser.uid, "incomeOverrides", key), {
+                incomeId, occurrenceDate: occ.date,
+                amount: Number.isFinite(val) ? val : occ.amount,
+                deleted: false, createdAt: serverTimestamp()
+              }, { merge: true });
+            } catch (err) { alert(err?.message || "Failed to save override"); }
+          });
+          row.querySelector("[data-occ-cancel]").addEventListener("click", () => renderIncomeOccurrences(incomeId));
         });
       });
 
-      tbody.querySelectorAll("[data-action='edit']").forEach(btn => {
-        btn.addEventListener("click", () => {
-          const id = btn.dataset.id;
-          const item = state.expenses.find(xx => xx.id === id);
-          ui.editing.expenseId = id;
-          $("#expense-card").value = item?.card ?? "";
-          $("#expense-card-choice").value = item?.cardId || "";
-          $("#expense-desc").value = item?.desc ?? "";
-          $("#expense-date").value = item?.date ?? toISODate(new Date());
-          $("#expense-amount").value = item?.amount ?? "";
+      container.querySelectorAll("[data-occ-action='del']").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          const key = btn.dataset.key;
+          const dateStr = btn.dataset.date;
+          if (!confirm(`Skip the ${dateStr} occurrence of "${income.source}"?`)) return;
+          try {
+            await setDoc(doc(db, "users", currentUser.uid, "incomeOverrides", key), {
+              incomeId, occurrenceDate: dateStr, deleted: true, createdAt: serverTimestamp()
+            }, { merge: true });
+          } catch (err) { alert(err?.message || "Failed to skip occurrence"); }
         });
       });
     }
 
-    $("#expense-form").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const card = $("#expense-card").value.trim();
-      const cardId = $("#expense-card-choice").value || null;
-      const desc = $("#expense-desc").value.trim();
-      const date = $("#expense-date").value;
-      const amount = Number($("#expense-amount").value);
-
-      if (!currentUser) return;
-
-      const payload = {
-        card,
-        cardId,
-        desc,
-        date,
-        amount: Number.isFinite(amount) ? amount : 0,
-        createdAt: serverTimestamp()
-      };
-
-      try {
-        if (ui.editing.expenseId) {
-          await setDoc(doc(db, "users", currentUser.uid, "expenses", ui.editing.expenseId), payload, { merge: true });
-          ui.editing.expenseId = null;
-        } else {
-          await addDoc(userCol("expenses"), payload);
-        }
-        $("#expense-desc").value = "";
-        $("#expense-amount").value = "";
-        $("#expense-card-choice").value = "";
-      } catch (err) {
-        alert(err?.message || "Failed to save expense");
-      }
+    // ===== Recurring Bills: overrides, occurrence generation =====
+    $("#bill-recurring").addEventListener("change", () => {
+      $("#bill-recurrence-type").classList.toggle("hidden", !$("#bill-recurring").checked);
     });
 
-    // ===== CRUD: Bills =====
-    function renderBills() {
-      const tbody = $("#bills-table-body");
-      tbody.innerHTML = "";
-
-      const items = sortByDateAsc(state.bills, "date").reverse();
-      if (!items.length) {
-        tbody.innerHTML = `<tr><td colspan="5" class="px-3 py-3 text-center text-slate-500">No future bills yet.</td></tr>`;
-        return;
+    function buildOverridesMap() {
+      const map = new Map();
+      for (const o of state.billOverrides || []) {
+        if (!o.billId || !o.occurrenceDate) continue;
+        map.set(`${o.billId}__${o.occurrenceDate}`, o);
       }
+      return map;
+    }
 
-      for (const b of items) {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td class="px-3 py-2 font-medium text-slate-800">${escapeHtml(b.name)}</td>
-          <td class="px-3 py-2 text-slate-700">${escapeHtml(b.category || "-")}</td>
-          <td class="px-3 py-2 text-slate-700">${escapeHtml(b.date)}</td>
-          <td class="px-3 py-2 text-right font-semibold text-rose-700">${formatMoney(b.amount)}</td>
-          <td class="px-3 py-2 text-right">
-            <div class="inline-flex items-center gap-2">
-              <button class="text-brand-600 hover:underline text-sm" data-action="edit" data-id="${b.id}">Edit</button>
-              <button class="text-rose-600 hover:underline text-sm" data-action="del" data-id="${b.id}">Delete</button>
-            </div>
-          </td>
-        `;
-        tbody.appendChild(tr);
-      }
+    function pushOccurrence(bill, dateObj, overridesMap, occurrences) {
+      const iso = toISODate(dateObj);
+      const key = `${bill.id}__${iso}`;
+      const ov = overridesMap.get(key);
+      if (ov && ov.deleted) return;
+      const amount = (ov && ov.amount != null && ov.amount !== "") ? Number(ov.amount) : Number(bill.amount || 0);
+      occurrences.push({
+        billId: bill.id, name: bill.name, category: bill.category,
+        date: iso, amount, recurring: true, overridden: !!ov, occurrenceKey: key
+      });
+    }
 
-      tbody.querySelectorAll("[data-action='del']").forEach(btn => {
-        btn.addEventListener("click", async () => {
-          const id = btn.dataset.id;
-          if (!confirm("Delete this bill?")) return;
-          try {
-            await deleteDoc(doc(db, "users", currentUser.uid, "bills", id));
-          } catch (err) {
-            alert(err?.message || "Failed to delete bill");
+    function generateBillOccurrences(rangeStart, rangeEnd) {
+      const overridesMap = buildOverridesMap();
+      const occurrences = [];
+
+      for (const bill of state.bills || []) {
+        if (!bill.date) continue;
+        const startDate = parseISODateLocal(bill.date);
+
+        if (!bill.isRecurring) {
+          if (startDate >= rangeStart && startDate <= rangeEnd) {
+            occurrences.push({
+              billId: bill.id, name: bill.name, category: bill.category,
+              date: bill.date, amount: Number(bill.amount || 0),
+              recurring: false, overridden: false, occurrenceKey: null
+            });
           }
-        });
-      });
+          continue;
+        }
 
-      tbody.querySelectorAll("[data-action='edit']").forEach(btn => {
-        btn.addEventListener("click", () => {
-          const id = btn.dataset.id;
-          const item = state.bills.find(bb => bb.id === id);
-          ui.editing.billId = id;
-          $("#bill-name").value = item?.name ?? "";
-          $("#bill-category").value = item?.category ?? "";
-          $("#bill-date").value = item?.date ?? toISODate(new Date());
-          $("#bill-amount").value = item?.amount ?? "";
-        });
-      });
+        if (bill.recurrenceType === "biweekly") {
+          let cursor = new Date(startDate);
+          let guard = 0;
+          while (cursor <= rangeEnd && guard < 300) {
+            if (cursor >= rangeStart) pushOccurrence(bill, cursor, overridesMap, occurrences);
+            cursor = addDays(cursor, 14);
+            guard++;
+          }
+        } else {
+          const day = startDate.getDate();
+          let cursor = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+          let guard = 0;
+          while (cursor <= rangeEnd && guard < 300) {
+            const occ = clampedMonthDate(cursor.getFullYear(), cursor.getMonth(), day);
+            if (occ >= startDate && occ >= rangeStart && occ <= rangeEnd) {
+              pushOccurrence(bill, occ, overridesMap, occurrences);
+            }
+            cursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
+            guard++;
+          }
+        }
+      }
+
+      return occurrences.sort((a, b) => parseISODateLocal(a.date) - parseISODateLocal(b.date));
     }
 
     $("#bill-form").addEventListener("submit", async (e) => {
@@ -1920,14 +2413,14 @@ service cloud.firestore {
       const category = $("#bill-category").value.trim();
       const date = $("#bill-date").value;
       const amount = Number($("#bill-amount").value);
-
+      const isRecurring = $("#bill-recurring").checked;
+      const recurrenceType = isRecurring ? ($("#bill-recurrence-type").value === "biweekly" ? "biweekly" : "monthly") : null;
       if (!currentUser) return;
 
       const payload = {
-        name,
-        category: category || "",
-        date,
+        name, category: category || "", date,
         amount: Number.isFinite(amount) ? amount : 0,
+        isRecurring, recurrenceType,
         createdAt: serverTimestamp()
       };
 
@@ -1941,14 +2434,167 @@ service cloud.firestore {
         $("#bill-name").value = "";
         $("#bill-category").value = "";
         $("#bill-amount").value = "";
+        $("#bill-recurring").checked = false;
+        $("#bill-recurrence-type").classList.add("hidden");
       } catch (err) {
         alert(err?.message || "Failed to save bill");
       }
     });
 
+    function openBillForm(item) {
+      ui.editing.billId = item.id;
+      $("#bill-name").value = item.name ?? "";
+      $("#bill-category").value = item.category ?? "";
+      $("#bill-date").value = item.date ?? toISODate(new Date());
+      $("#bill-amount").value = item.amount ?? "";
+      $("#bill-recurring").checked = !!item.isRecurring;
+      $("#bill-recurrence-type").classList.toggle("hidden", !item.isRecurring);
+      if (item.isRecurring) $("#bill-recurrence-type").value = item.recurrenceType === "biweekly" ? "biweekly" : "monthly";
+      $("#bill-name")?.scrollIntoView?.({ behavior: "smooth", block: "center" });
+    }
+
+    function renderBills() {
+      const tbody = $("#bills-table-body");
+      tbody.innerHTML = "";
+      const items = sortByDateAsc(state.bills, "date").reverse();
+
+      if (!items.length) {
+        tbody.innerHTML = `<tr><td colspan="6" class="px-3 py-3 text-center text-slate-500">No future bills yet.</td></tr>`;
+        return;
+      }
+
+      for (const b of items) {
+        const recurLabel = !b.isRecurring
+          ? "One-time"
+          : (b.recurrenceType === "biweekly" ? "Bi-Weekly" : `Monthly (day ${parseISODateLocal(b.date).getDate()})`);
+
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td class="px-3 py-2 font-medium text-slate-800">${escapeHtml(b.name)}</td>
+          <td class="px-3 py-2 text-slate-700">${escapeHtml(b.category || "-")}</td>
+          <td class="px-3 py-2 text-slate-700">${escapeHtml(b.date)}</td>
+          <td class="px-3 py-2">
+            <span class="badge ${b.isRecurring ? "badge-brand" : "badge-slate"}">${recurLabel}</span>
+          </td>
+          <td class="px-3 py-2 text-right font-semibold text-rose-700">${formatMoney(b.amount)}</td>
+          <td class="px-3 py-2 text-right">
+            <div class="inline-flex items-center gap-2 flex-wrap justify-end">
+              ${b.isRecurring ? `<button class="text-brand-600 hover:underline text-sm" data-action="toggle-occ" data-id="${b.id}">Upcoming</button>` : ""}
+              <button class="text-brand-600 hover:underline text-sm" data-action="edit" data-id="${b.id}">Edit</button>
+              <button class="text-rose-600 hover:underline text-sm" data-action="del" data-id="${b.id}">Delete</button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+
+        if (b.isRecurring) {
+          const occRow = document.createElement("tr");
+          occRow.id = `bill-occ-row-${b.id}`;
+          occRow.className = ui.expandedBillIds.has(b.id) ? "" : "hidden";
+          occRow.innerHTML = `<td colspan="6" class="px-3 py-3 bg-slate-50"><div id="bill-occ-content-${b.id}" class="text-sm text-slate-500">Loading…</div></td>`;
+          tbody.appendChild(occRow);
+          if (ui.expandedBillIds.has(b.id)) renderBillOccurrences(b.id);
+        }
+      }
+
+      tbody.querySelectorAll("[data-action='toggle-occ']").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const id = btn.dataset.id;
+          const row = $(`#bill-occ-row-${id}`);
+          const willShow = row.classList.contains("hidden");
+          row.classList.toggle("hidden");
+          if (willShow) { ui.expandedBillIds.add(id); renderBillOccurrences(id); }
+          else { ui.expandedBillIds.delete(id); }
+        });
+      });
+      tbody.querySelectorAll("[data-action='edit']").forEach(btn => {
+        btn.addEventListener("click", () => openBillForm(state.bills.find(x => x.id === btn.dataset.id)));
+      });
+      tbody.querySelectorAll("[data-action='del']").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          if (!confirm("Delete this bill? This also stops future recurring occurrences.")) return;
+          try { await deleteDoc(doc(db, "users", currentUser.uid, "bills", btn.dataset.id)); }
+          catch (err) { alert(err?.message || "Failed to delete bill"); }
+        });
+      });
+    }
+
+    function renderBillOccurrences(billId) {
+      const bill = state.bills.find(b => b.id === billId);
+      const container = $(`#bill-occ-content-${billId}`);
+      if (!bill || !container) return;
+
+      const today = parseISODateLocal(toISODate(new Date()));
+      const horizonEnd = addDays(today, ui.planner.horizonDays || 180);
+      const occurrences = generateBillOccurrences(today, horizonEnd).filter(o => o.billId === billId).slice(0, 12);
+
+      if (!occurrences.length) {
+        container.innerHTML = `<div class="text-slate-500">No upcoming occurrences in the current planner horizon.</div>`;
+        return;
+      }
+
+      container.innerHTML = `
+        <div class="text-xs font-semibold text-slate-600 mb-2">Next occurrences — edit an amount or skip a specific date</div>
+        <div class="space-y-2">
+          ${occurrences.map(o => `
+            <div class="flex items-center justify-between gap-3 bg-white border border-slate-200 rounded-lg px-3 py-2" data-occ-row="${o.occurrenceKey}">
+              <div class="text-sm text-slate-700">
+                ${escapeHtml(o.date)} ${o.overridden ? '<span class="text-[11px] text-amber-600 font-medium">(edited)</span>' : ""}
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-sm font-semibold text-rose-700">${formatMoney(o.amount)}</span>
+                <button class="text-brand-600 hover:underline text-xs" data-occ-action="edit" data-key="${o.occurrenceKey}">Edit</button>
+                <button class="text-rose-600 hover:underline text-xs" data-occ-action="del" data-key="${o.occurrenceKey}" data-date="${o.date}">Skip</button>
+              </div>
+            </div>
+          `).join("")}
+        </div>
+      `;
+
+      container.querySelectorAll("[data-occ-action='edit']").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const row = btn.closest("[data-occ-row]");
+          const key = btn.dataset.key;
+          const occ = occurrences.find(o => o.occurrenceKey === key);
+          const inputId = `occ-input-${key.replace(/[^a-zA-Z0-9]/g, "_")}`;
+          row.innerHTML = `
+            <div class="flex items-center gap-2 w-full">
+              <span class="text-sm text-slate-600 flex-1">${escapeHtml(occ.date)}</span>
+              <input type="number" step="0.01" value="${occ.amount}" class="border border-slate-300 rounded-lg px-2 py-1 text-sm w-28" id="${inputId}">
+              <button class="text-emerald-600 hover:underline text-xs" data-occ-save="${key}">Save</button>
+              <button class="text-slate-500 hover:underline text-xs" data-occ-cancel>Cancel</button>
+            </div>
+          `;
+          row.querySelector("[data-occ-save]").addEventListener("click", async () => {
+            const val = Number($(`#${inputId}`).value);
+            try {
+              await setDoc(doc(db, "users", currentUser.uid, "billOverrides", key), {
+                billId, occurrenceDate: occ.date,
+                amount: Number.isFinite(val) ? val : occ.amount,
+                deleted: false, createdAt: serverTimestamp()
+              }, { merge: true });
+            } catch (err) { alert(err?.message || "Failed to save override"); }
+          });
+          row.querySelector("[data-occ-cancel]").addEventListener("click", () => renderBillOccurrences(billId));
+        });
+      });
+
+      container.querySelectorAll("[data-occ-action='del']").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          const key = btn.dataset.key;
+          const dateStr = btn.dataset.date;
+          if (!confirm(`Skip the ${dateStr} occurrence of "${bill.name}"?`)) return;
+          try {
+            await setDoc(doc(db, "users", currentUser.uid, "billOverrides", key), {
+              billId, occurrenceDate: dateStr, deleted: true, createdAt: serverTimestamp()
+            }, { merge: true });
+          } catch (err) { alert(err?.message || "Failed to skip occurrence"); }
+        });
+      });
+    }
+
     // ===== Planner & Dashboard Calculations =====
     function buildPeriods() {
-      // Determine anchor start: earliest income date if exists, else today.
       const incomes = state.incomes || [];
       const today = parseISODateLocal(toISODate(new Date()));
 
@@ -1958,147 +2604,163 @@ service cloud.firestore {
         if (earliest) anchorDate = parseISODateLocal(earliest);
       }
 
-      // Make sure anchorDate aligns to local midnight (already midnight).
       const horizonDays = ui.planner.horizonDays || 180;
       const periods = [];
-
       const start = anchorDate;
       const end = addDays(start, horizonDays);
 
-      // 14-day blocks inclusive.
       let cursor = new Date(start);
       let idx = 1;
       while (cursor <= end) {
         const pStart = cursor;
-        const pEnd = addDays(cursor, 13); // 14 days inclusive
+        const pEnd = addDays(cursor, 13);
         periods.push({
-          key: `p${idx}`,
-          start: pStart,
-          end: pEnd,
-          startISO: toISODate(pStart),
-          endISO: toISODate(pEnd)
+          key: `p${idx}`, start: pStart, end: pEnd,
+          startISO: toISODate(pStart), endISO: toISODate(pEnd)
         });
         cursor = addDays(cursor, 14);
         idx++;
-        if (periods.length > 4000) break; // safety
+        if (periods.length > 4000) break;
       }
-
       return periods;
     }
 
     function assignToPeriod(dateISO, periods) {
       const d = parseISODateLocal(dateISO);
       for (let i = 0; i < periods.length; i++) {
-        const p = periods[i];
-        if (dateBetweenInclusive(d, p.start, p.end)) return i;
+        if (dateBetweenInclusive(d, periods[i].start, periods[i].end)) return i;
       }
       return -1;
     }
 
+    function computePeriodCashFlows(periods) {
+      const periodCashIn = new Array(periods.length).fill(0);
+      const periodCashOut = new Array(periods.length).fill(0);
+      const periodCCSpend = new Array(periods.length).fill(0);
+
+      if (periods.length) {
+        const rangeStart = periods[0].start;
+        const rangeEnd = periods[periods.length - 1].end;
+
+        const incomeOccurrences = generateIncomeOccurrences(rangeStart, rangeEnd);
+        for (const occ of incomeOccurrences) {
+          const idx = assignToPeriod(occ.date, periods);
+          if (idx >= 0) periodCashIn[idx] += Number(occ.amount || 0);
+        }
+
+        const billOccurrences = generateBillOccurrences(rangeStart, rangeEnd);
+        for (const occ of billOccurrences) {
+          const idx = assignToPeriod(occ.date, periods);
+          if (idx >= 0) periodCashOut[idx] += Number(occ.amount || 0);
+        }
+      }
+
+      for (const t of state.transactions || []) {
+        if (!t.date) continue;
+        const idx = assignToPeriod(t.date, periods);
+        if (idx < 0) continue;
+        const amt = Number(t.amount || 0);
+        if (t.cardType === "debit") {
+          if (t.txnType === "expense") periodCashOut[idx] += amt;
+          else if (t.txnType === "credit") periodCashOut[idx] -= amt;
+        } else if (t.cardType === "credit") {
+          if (t.txnType === "payoff") periodCashOut[idx] += amt;
+          else if (t.txnType === "expense") periodCCSpend[idx] += amt;
+          else if (t.txnType === "credit") periodCCSpend[idx] -= amt;
+        }
+      }
+
+      return { periodCashIn, periodCashOut, periodCCSpend };
+    }
+
     function computePlanner() {
       const periods = buildPeriods();
-      const horizonMonths = new Set();
+      const { periodCashIn, periodCashOut, periodCCSpend } = computePeriodCashFlows(periods);
 
-      // Aggregate incomes and expenses per period index
-      const incomes = state.incomes || [];
-      const expenses = state.expenses || [];
-      const bills = state.bills || [];
-
-      const periodIncome = new Array(periods.length).fill(0);
-      const periodExpense = new Array(periods.length).fill(0);
-
-      for (const inc of incomes) {
-        if (!inc.date) continue;
-        const idx = assignToPeriod(inc.date, periods);
-        if (idx >= 0) periodIncome[idx] += Number(inc.amount || 0);
-      }
-
-      const addExpenseDate = (x) => {
-        if (!x?.date) return;
-        const idx = assignToPeriod(x.date, periods);
-        if (idx >= 0) periodExpense[idx] += Number(x.amount || 0);
-      };
-
-      for (const ex of expenses) addExpenseDate(ex);
-      for (const b of bills) addExpenseDate(b);
-
-      // Carry-forward: start at 0, then CF += (Income - Expense) for each period.
       let carry = 0;
       const rows = [];
-
       for (let i = 0; i < periods.length; i++) {
-        const income = periodIncome[i];
-        const exp = periodExpense[i];
+        const income = periodCashIn[i];
+        const exp = periodCashOut[i];
         const net = income - exp;
-        carry = carry + net;
-
-        const startMonth = monthKey(periods[i].startISO);
-        const endMonth = monthKey(periods[i].endISO);
-        horizonMonths.add(startMonth);
-        horizonMonths.add(endMonth);
-
-        rows.push({
-          i,
-          period: periods[i],
-          income,
-          expense: exp,
-          net,
-          carry
-        });
+        carry += net;
+        rows.push({ i, period: periods[i], income, expense: exp, ccSpend: periodCCSpend[i], net, carry });
       }
 
-      // "carry-forward balance rolling into the next month"
-      // We interpret as: carry value at the end of the first period that ends in the next calendar month relative to today.
       const today = parseISODateLocal(toISODate(new Date()));
       const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1);
       const nextMonthKey = `${nextMonth.getFullYear()}-${String(nextMonth.getMonth() + 1).padStart(2, "0")}`;
-
       let carryNextMonth = 0;
       for (const r of rows) {
-        const endKey = monthKey(r.period.endISO);
-        if (endKey === nextMonthKey) {
-          carryNextMonth = r.carry;
-          break;
-        }
+        if (monthKey(r.period.endISO) === nextMonthKey) { carryNextMonth = r.carry; break; }
       }
 
       return { periods, rows, carryNextMonth };
     }
 
+    // Current-period metrics for the Dashboard (feature 3): pulls straight from the planner rows.
+    function computeCurrentPeriodMetrics() {
+      const { periods, rows } = computePlanner();
+      const todayISO = toISODate(new Date());
+      const idx = assignToPeriod(todayISO, periods);
+      if (idx < 0 || !rows[idx]) {
+        return { carryIn: 0, income: 0, expense: 0, carryOut: 0 };
+      }
+      const r = rows[idx];
+      return {
+        carryIn: r.carry - r.net,
+        income: r.income,
+        expense: r.expense,
+        carryOut: r.carry
+      };
+    }
+
+    // Month-to-date net cashflow (feature 2): real income/expense activity so far this month.
+    function computeMonthToDateCashflow() {
+      const today = parseISODateLocal(toISODate(new Date()));
+      const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+      const monthStartISO = toISODate(monthStart);
+      const todayISO = toISODate(today);
+
+      const mtdIncome = (state.incomes || []).reduce((s, i) => {
+        if (!i.date || i.date < monthStartISO || i.date > todayISO) return s;
+        return s + Number(i.amount || 0);
+      }, 0);
+
+      const mtdTxnExpense = (state.transactions || []).reduce((s, t) => {
+        if (!t.date || t.date < monthStartISO || t.date > todayISO) return s;
+        if (t.txnType === "expense") return s + Number(t.amount || 0);
+        if (t.txnType === "credit") return s - Number(t.amount || 0);
+        return s;
+      }, 0);
+
+      const mtdBills = generateBillOccurrences(monthStart, today).reduce((s, o) => s + Number(o.amount || 0), 0);
+
+      return mtdIncome - mtdTxnExpense - mtdBills;
+    }
+
     function computeDailyNetWorth() {
       const todayISO = toISODate(new Date());
+
+      const manualAssetsTotal = (state.assets || []).reduce((s, a) => s + Number(a.value || 0), 0);
+      const manualLiabilitiesTotal = (state.liabilities || []).reduce((s, l) => s + Number(l.value || 0), 0);
+      const { bankTotal, creditTotal } = computeAccountsTotals();
+
+      const assetsTotal = manualAssetsTotal + bankTotal;
+      const liabilitiesTotal = manualLiabilitiesTotal + creditTotal;
+
+      const unroutedIncomeToday = (state.incomes || []).reduce((s, i) => (i.date === todayISO && !i.bankAccountId) ? s + Number(i.amount || 0) : s, 0);
+
       const todayDate = parseISODateLocal(todayISO);
+      const billsToday = generateBillOccurrences(todayDate, todayDate).reduce((s, o) => s + Number(o.amount || 0), 0);
 
-      const assetsTotal = (state.assets || []).reduce((s, a) => s + Number(a.value || 0), 0);
-      const liabilitiesTotal = (state.liabilities || []).reduce((s, l) => s + Number(l.value || 0), 0);
-
-      // Daily incomes/expenses = entries whose date == today
-      const totalIncomesToday = (state.incomes || []).reduce((s, i) => {
-        return (i.date === todayISO) ? s + Number(i.amount || 0) : s;
-      }, 0);
-
-      const totalExpensesToday = (state.expenses || []).reduce((s, e) => {
-        return (e.date === todayISO) ? s + Number(e.amount || 0) : s;
-      }, 0);
-
-      // Also treat bills due today as expenses for the daily net worth signal
-      const billsToday = (state.bills || []).reduce((s, b) => {
-        return (b.date === todayISO) ? s + Number(b.amount || 0) : s;
-      }, 0);
-
-      const totalExpenses = totalExpensesToday + billsToday;
-      const netCashflow = totalIncomesToday - totalExpenses;
-
-      const netWorth = assetsTotal - liabilitiesTotal + netCashflow;
+      const netCashflowAdj = unroutedIncomeToday - billsToday;
+      const netWorth = assetsTotal - liabilitiesTotal + netCashflowAdj;
 
       return {
-        todayISO,
-        assetsTotal,
-        liabilitiesTotal,
-        totalIncomesToday,
-        totalExpenses,
-        netCashflow,
-        netWorth
+        todayISO, manualAssetsTotal, manualLiabilitiesTotal, bankTotal, creditTotal,
+        assetsTotal, liabilitiesTotal, unroutedIncomeToday, billsToday,
+        netCashflowAdj, netWorth
       };
     }
 
@@ -2109,22 +2771,26 @@ service cloud.firestore {
       $("#total-assets").textContent = formatMoney(d.assetsTotal);
       $("#total-liabilities").textContent = formatMoney(d.liabilitiesTotal);
 
-      const nc = d.netCashflow;
-      $("#net-cashflow").textContent = formatMoney(nc);
-      $("#net-cashflow").className = "text-2xl font-bold " + (nc >= 0 ? "text-emerald-700" : "text-rose-700");
+      const mtdCashflow = computeMonthToDateCashflow();
+      $("#net-cashflow").textContent = formatMoney(mtdCashflow);
+      $("#net-cashflow").className = "text-2xl font-bold " + (mtdCashflow >= 0 ? "text-emerald-700" : "text-rose-700");
 
-      $("#total-incomes").textContent = formatMoney(d.totalIncomesToday);
-      $("#total-expenses").textContent = formatMoney(d.totalExpenses);
+      const pm = computeCurrentPeriodMetrics();
+      $("#period-carry-in").textContent = formatMoney(pm.carryIn);
+      $("#period-carry-in").className = "text-sm font-semibold " + (pm.carryIn >= 0 ? "text-emerald-700" : "text-rose-700");
+      $("#period-income").textContent = formatMoney(pm.income);
+      $("#period-expense").textContent = formatMoney(pm.expense);
+      $("#period-carry-out").textContent = formatMoney(pm.carryOut);
+      $("#period-carry-out").className = "text-sm font-semibold " + (pm.carryOut >= 0 ? "text-emerald-700" : "text-rose-700");
 
       $("#net-worth").textContent = formatMoney(d.netWorth);
       $("#net-worth").className = "text-4xl font-extrabold " + (d.netWorth >= 0 ? "text-brand-900" : "text-rose-700");
 
-      renderCardsSummary();
+      renderAccountsSummary();
     }
 
     function renderPlanner() {
       const { rows, carryNextMonth } = computePlanner();
-
       $("#carry-forward-next-month").textContent = formatMoney(carryNextMonth);
 
       const tbody = $("#period-table-body");
@@ -2146,7 +2812,10 @@ service cloud.firestore {
             <div class="text-xs text-slate-500 mt-1">#${r.i + 1}</div>
           </td>
           <td class="px-4 py-3 text-right font-semibold text-emerald-700">${formatMoney(r.income)}</td>
-          <td class="px-4 py-3 text-right font-semibold text-rose-700">${formatMoney(r.expense)}</td>
+          <td class="px-4 py-3 text-right font-semibold text-rose-700">
+            ${formatMoney(r.expense)}
+            ${r.ccSpend ? `<div class="text-[11px] text-slate-400 font-normal mt-0.5">+ ${formatMoney(r.ccSpend)} CC spend (billed later)</div>` : ""}
+          </td>
           <td class="px-4 py-3 text-right font-semibold ${netClass}">${formatMoney(r.net)}</td>
           <td class="px-4 py-3 text-right font-bold ${carryClass}">${formatMoney(r.carry)}</td>
         `;
@@ -2167,22 +2836,25 @@ service cloud.firestore {
         items.push({ type: "Liability", date: l.createdAt?.toDate?.()?.toISOString?.() || new Date().toISOString(), text: `Added/Updated liability: ${l.name} (${formatMoney(l.value)})` });
       }
       for (const i of state.incomes || []) {
-        items.push({ type: "Income", date: i.date || "", text: `Income: ${i.source} on ${i.date} (${formatMoney(i.amount)})` });
-      }
-      for (const e of state.expenses || []) {
-        items.push({ type: "Expense", date: e.date || "", text: `Expense: ${e.card} — ${e.desc} on ${e.date} (${formatMoney(e.amount)})` });
+        items.push({ type: "Income", date: i.date || "", text: `Income: ${i.source} on ${i.date} (${formatMoney(i.amount)})${i.isRecurring ? " — recurring" : ""}` });
       }
       for (const b of state.bills || []) {
-        items.push({ type: "Bill", date: b.date || "", text: `Bill: ${b.name} (${b.category || "—"}) on ${b.date} (${formatMoney(b.amount)})` });
+        items.push({ type: "Bill", date: b.date || "", text: `Bill: ${b.name} (${b.category || "—"}) on ${b.date} (${formatMoney(b.amount)})${b.isRecurring ? " — recurring" : ""}` });
       }
-      for (const c of state.cards || []) {
-        items.push({ type: "Card", date: c.createdAt?.toDate?.()?.toISOString?.() || new Date().toISOString(), text: `Added/Updated card: ${c.name} (${cardTypeLabel(c.type)})` });
+      for (const t of state.transactions || []) {
+        const label = t.txnType === "payoff" ? "Payoff" : (t.txnType === "credit" ? "Credit/Refund" : "Expense");
+        items.push({ type: label, date: t.date || "", text: `${t.cardName} (${t.cardType === "debit" ? "Debit" : "Credit"}) — ${t.description} on ${t.date} (${formatMoney(t.amount)})` });
       }
-      for (const p of state.payments || []) {
-        items.push({ type: "Payoff", date: p.date || "", text: `Payoff: ${p.cardName} on ${p.date} (${formatMoney(p.amount)})${p.note ? " — " + p.note : ""}` });
+      for (const b of state.bankAccounts || []) {
+        items.push({ type: "Bank Account", date: b.createdAt?.toDate?.()?.toISOString?.() || new Date().toISOString(), text: `Added/Updated bank account: ${b.name}` });
+      }
+      for (const c of state.creditCards || []) {
+        items.push({ type: "Credit Card", date: c.createdAt?.toDate?.()?.toISOString?.() || new Date().toISOString(), text: `Added/Updated credit card: ${c.name}` });
+      }
+      for (const d2 of state.debitCards || []) {
+        items.push({ type: "Debit Card", date: d2.createdAt?.toDate?.()?.toISOString?.() || new Date().toISOString(), text: `Added/Updated debit card: ${d2.name}` });
       }
 
-      // Sort by date desc
       items.sort((x, y) => {
         const dx = parseISODateLocal((x.date || "").slice(0,10) || toISODate(new Date())).getTime();
         const dy = parseISODateLocal((y.date || "").slice(0,10) || toISODate(new Date())).getTime();
@@ -2195,7 +2867,6 @@ service cloud.firestore {
         box.innerHTML = `<div class="text-sm text-slate-500">Add your first entry to see activity here.</div>`;
         return;
       }
-
       for (const it of top) {
         const div = document.createElement("div");
         div.className = "flex items-start justify-between gap-3 bg-slate-50 border border-slate-200 rounded-xl p-3";
@@ -2210,24 +2881,21 @@ service cloud.firestore {
     }
 
     function refreshAllViews() {
-      // render tables always (they are part of data route / cards route)
       renderAssets();
       renderLiabilities();
+      renderBankAccounts();
+      renderCreditCards();
+      renderDebitCards();
       renderIncomes();
-      renderExpenses();
       renderBills();
-      renderCards();
-      renderPayments();
+      renderTransactionsLedger();
 
-      // dashboard + planner only when visible to save a bit of work
-      if (!routeDashboard.classList.contains("hidden")) renderDashboard();
+      if (!routeDashboard.classList.contains("hidden")) {
+        renderDashboard();
+        renderRecentActivity();
+      }
       if (!routePeriod.classList.contains("hidden")) renderPlanner();
-
-      // recent activity is on dashboard route
-      if (!routeDashboard.classList.contains("hidden")) renderRecentActivity();
-
-      // Keep dashboard always reasonably fresh even when not visible
-      // (we recalc anyway when route is changed)
+      if (!routeAccounts.classList.contains("hidden")) renderAccountsSummary();
     }
 
     // ===== Planner controls =====
@@ -2242,6 +2910,7 @@ service cloud.firestore {
 
     // ===== Auth state boot =====
     setAuthMode("signin");
+    updateTxnCardOptions();
 
     onAuthStateChanged(auth, (user) => {
       currentUser = user || null;
@@ -2250,34 +2919,35 @@ service cloud.firestore {
         appView.classList.add("hidden");
         authView.classList.remove("hidden");
         clearSubscriptions();
-        // reset UI
-        state = { assets: [], liabilities: [], incomes: [], expenses: [], bills: [], cards: [], payments: [] };
-        setRoute("dashboard");
+        state = {
+          assets: [], liabilities: [], incomes: [], incomeOverrides: [], bills: [], billOverrides: [],
+          bankAccounts: [], creditCards: [], debitCards: [], transactions: []
+        };
+        ui.expandedBillIds = new Set();
+        ui.expandedIncomeIds = new Set();
+        setRoute("data");
         return;
       }
 
-      // Signed in
       authView.classList.add("hidden");
       appView.classList.remove("hidden");
       $("#user-email").textContent = currentUser.email || "(user)";
 
-      setRoute("dashboard");
-      // Set default dates for forms
+      // Default landing page is Data Entry, per workflow priority.
+      setRoute("data");
+
       const todayISO = toISODate(new Date());
       $("#income-date").value = todayISO;
-      $("#expense-date").value = todayISO;
       $("#bill-date").value = todayISO;
-      $("#payment-date").value = todayISO;
+      $("#txn-date").value = todayISO;
 
       ui.planner.horizonDays = Number($("#planner-horizon-days").value || 180);
       subscribeAll();
-      // initial render
       refreshAllViews();
     });
 
     // Initial render preview (before auth)
     $("#planner-horizon-days").value = "180";
-    toggleCardFormForType("credit");
   </script>
 
   <!-- Optional: quick copy helper (not required) -->
