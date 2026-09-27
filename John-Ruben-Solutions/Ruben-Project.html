@@ -37,6 +37,32 @@
     .hide-scrollbar::-webkit-scrollbar { display: none; }
     .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     .modal-overlay { backdrop-filter: blur(4px); }
+
+    /* Sidebar nav states (desktop) */
+    .nav-active {
+      background-color: rgba(14, 165, 233, 0.16);
+      color: #ffffff;
+      box-shadow: inset 0 0 0 1px rgba(14, 165, 233, 0.35);
+    }
+    .nav-inactive {
+      color: #cbd5e1;
+    }
+    .nav-inactive:hover {
+      background-color: rgba(255, 255, 255, 0.06);
+      color: #ffffff;
+    }
+    /* Sidebar nav states (mobile) */
+    .nav-active-mobile {
+      background-color: rgba(14, 165, 233, 0.18);
+      color: #ffffff;
+      box-shadow: inset 0 0 0 1px rgba(14, 165, 233, 0.35);
+    }
+    .nav-inactive-mobile {
+      color: #cbd5e1;
+    }
+
+    .util-bar-track { background-color: #e2e8f0; border-radius: 9999px; height: 6px; overflow: hidden; }
+    .util-bar-fill { height: 100%; border-radius: 9999px; }
   </style>
 </head>
 
@@ -122,6 +148,15 @@
           Period Planner
         </button>
 
+        <button data-route="cards" id="nav-cards"
+                class="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all nav-inactive">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M3 10h18M4 6h16a1 1 0 011 1v10a1 1 0 01-1 1H4a1 1 0 01-1-1V7a1 1 0 011-1zM6 15h4"></path>
+          </svg>
+          Cards &amp; Payoffs
+        </button>
+
         <button data-route="data" id="nav-data"
                 class="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all nav-inactive">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -174,6 +209,9 @@
           </button>
           <button data-route="period" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all nav-inactive-mobile">
             Period Planner
+          </button>
+          <button data-route="cards" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all nav-inactive-mobile">
+            Cards &amp; Payoffs
           </button>
           <button data-route="data" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all nav-inactive-mobile">
             Data Entry
@@ -271,6 +309,25 @@
               </div>
             </div>
           </div>
+
+          <!-- Card Balances summary widget (new, non-destructive addition) -->
+          <div class="mt-4 bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+            <div class="flex items-center justify-between gap-3 flex-wrap">
+              <div>
+                <h3 class="text-lg font-semibold text-slate-900">Card Balances</h3>
+                <p class="text-sm text-slate-500 mt-1">Live balances from card starting balances, linked expenses, and recorded payoffs.</p>
+              </div>
+              <button id="dashboard-view-cards-btn" type="button"
+                      class="text-brand-600 font-semibold hover:underline text-sm whitespace-nowrap">
+                Manage Cards &amp; Payoffs →
+              </button>
+            </div>
+            <div class="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3" id="dashboard-card-summary"></div>
+            <div class="mt-4" id="dashboard-card-list"></div>
+            <div class="mt-3 text-xs text-slate-500">
+              Card balances are shown for reference and are not currently added into the Net Worth formula above (which uses your manually entered Liabilities).
+            </div>
+          </div>
         </section>
 
         <!-- ROUTE: PERIOD PLANNER -->
@@ -342,6 +399,166 @@
 
               <div class="mt-4 text-xs text-slate-500">
                 Bills and future expenses are treated as expenses on their selected dates.
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ROUTE: CARDS & PAYOFFS (new) -->
+        <section id="route-cards" class="hidden">
+          <div class="flex items-start justify-between gap-4 flex-wrap">
+            <div>
+              <h2 class="text-2xl font-bold text-slate-900">Cards &amp; Payoffs</h2>
+              <p class="text-slate-500 mt-1">
+                Track a running balance per debit/credit card. Balance = Starting Balance + linked Expenses − recorded Payoffs.
+              </p>
+            </div>
+          </div>
+
+          <!-- Summary strip -->
+          <div class="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
+              <div class="text-xs text-slate-500">Total Credit Card Debt</div>
+              <div class="text-xl font-bold text-rose-700" id="cards-total-credit-debt">$0.00</div>
+            </div>
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
+              <div class="text-xs text-slate-500">Total Debit Card Balance</div>
+              <div class="text-xl font-bold text-slate-900" id="cards-total-debit-balance">$0.00</div>
+            </div>
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
+              <div class="text-xs text-slate-500">Total Available Credit</div>
+              <div class="text-xl font-bold text-emerald-700" id="cards-total-available-credit">$0.00</div>
+            </div>
+          </div>
+
+          <div class="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <!-- CARDS LIST + FORM -->
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+              <div class="flex items-center justify-between gap-3">
+                <div>
+                  <h3 class="text-lg font-semibold text-slate-900">Your Cards</h3>
+                  <p class="text-sm text-slate-500 mt-1">Debit &amp; credit cards you want tracked.</p>
+                </div>
+                <button class="text-brand-600 font-semibold hover:underline" id="add-card-btn">+ Add</button>
+              </div>
+
+              <form id="card-form" class="mt-4 hidden">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Card Name</label>
+                    <input type="text" id="card-name" required placeholder="Chase Sapphire / BofA Debit"
+                           class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Type</label>
+                    <select id="card-type" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                      <option value="credit">Credit Card</option>
+                      <option value="debit">Debit Card</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+                  <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1" id="card-starting-balance-label">
+                      Starting Balance Owed
+                    </label>
+                    <input type="number" id="card-starting-balance" step="0.01" value="0"
+                           class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                  </div>
+                  <div id="card-credit-limit-wrap">
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Credit Limit (optional)</label>
+                    <input type="number" id="card-credit-limit" step="0.01"
+                           class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                  </div>
+                </div>
+
+                <div class="mt-3">
+                  <label class="block text-sm font-medium text-slate-700 mb-1">Notes (optional)</label>
+                  <input type="text" id="card-notes" placeholder="Last 4 digits, issuer, etc."
+                         class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                </div>
+
+                <div class="flex items-center gap-2 mt-4">
+                  <button type="submit" class="bg-brand-600 hover:bg-brand-700 text-white font-medium py-2.5 rounded-lg transition-colors shadow-md w-full">
+                    Save Card
+                  </button>
+                  <button type="button" id="card-cancel-btn"
+                          class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium py-2.5 rounded-lg transition-colors">
+                    Cancel
+                  </button>
+                </div>
+              </form>
+
+              <div class="mt-4 overflow-x-auto">
+                <table class="w-full text-sm">
+                  <thead>
+                    <tr class="bg-slate-50">
+                      <th class="text-left px-3 py-2 font-semibold text-slate-600">Card</th>
+                      <th class="text-left px-3 py-2 font-semibold text-slate-600">Type</th>
+                      <th class="text-right px-3 py-2 font-semibold text-slate-600">Balance</th>
+                      <th class="text-right px-3 py-2 font-semibold text-slate-600">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="cards-table-body"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- PAYOFFS -->
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+              <div>
+                <h3 class="text-lg font-semibold text-slate-900">Record a Payoff / Payment</h3>
+                <p class="text-sm text-slate-500 mt-1">Payments reduce the balance of the selected card.</p>
+              </div>
+
+              <form id="payment-form" class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div class="sm:col-span-2">
+                  <label class="block text-sm font-medium text-slate-700 mb-1">Card</label>
+                  <select id="payment-card-select" required
+                          class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                    <option value="">Select a card…</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 mb-1">Date</label>
+                  <input type="date" id="payment-date" required
+                         class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 mb-1">Amount</label>
+                  <input type="number" id="payment-amount" required step="0.01"
+                         class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                </div>
+                <div class="sm:col-span-2">
+                  <label class="block text-sm font-medium text-slate-700 mb-1">Note (optional)</label>
+                  <input type="text" id="payment-note" placeholder="Autopay / manual transfer / etc."
+                         class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                </div>
+                <div class="sm:col-span-2">
+                  <button type="submit"
+                          class="w-full bg-brand-600 hover:bg-brand-700 text-white font-medium py-2.5 rounded-lg transition-colors shadow-md">
+                    Save Payoff
+                  </button>
+                </div>
+              </form>
+
+              <div class="mt-5">
+                <h4 class="text-sm font-semibold text-slate-700">Payoff History</h4>
+                <div class="mt-2 overflow-x-auto">
+                  <table class="w-full text-sm">
+                    <thead>
+                      <tr class="bg-slate-50">
+                        <th class="text-left px-3 py-2 font-semibold text-slate-600">Card</th>
+                        <th class="text-left px-3 py-2 font-semibold text-slate-600">Date</th>
+                        <th class="text-right px-3 py-2 font-semibold text-slate-600">Amount</th>
+                        <th class="text-left px-3 py-2 font-semibold text-slate-600">Note</th>
+                        <th class="text-right px-3 py-2 font-semibold text-slate-600">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody id="payments-table-body"></tbody>
+                  </table>
+                </div>
               </div>
             </div>
           </div>
@@ -511,14 +728,21 @@
             <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 lg:col-span-2">
               <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                 <div>
-                  <h3 class="text-lg font-semibold text-slate-900">Credit Cards & Daily Expenses</h3>
+                  <h3 class="text-lg font-semibold text-slate-900">Credit Cards &amp; Daily Expenses</h3>
                   <p class="text-sm text-slate-500 mt-1">
-                    Add expenses with the credit card used, description, date, and amount. They automatically deduct from the matching bi-weekly period.
+                    Add expenses with the credit card used, description, date, and amount. They automatically deduct from the matching bi-weekly period, and — if you link a saved card below — from that card's running balance too.
                   </p>
                 </div>
               </div>
 
-              <form id="expense-form" class="mt-4 grid grid-cols-1 md:grid-cols-5 gap-3">
+              <form id="expense-form" class="mt-4 grid grid-cols-1 md:grid-cols-6 gap-3">
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 mb-1">Link Saved Card (optional)</label>
+                  <select id="expense-card-choice"
+                          class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                    <option value="">— none / type below —</option>
+                  </select>
+                </div>
                 <div>
                   <label class="block text-sm font-medium text-slate-700 mb-1">Credit Card</label>
                   <input type="text" id="expense-card" required placeholder="Visa / Amex / Mastercard"
@@ -641,6 +865,8 @@ service cloud.firestore {
     // /users/{uid}/incomes/{docId}
     // /users/{uid}/expenses/{docId}
     // /users/{uid}/bills/{docId}
+    // /users/{uid}/cards/{docId}
+    // /users/{uid}/payments/{docId}   (card payoffs)
 
     match /users/{uid}/{collection}/{docId} {
       allow read, write: if isOwner(uid);
@@ -703,6 +929,8 @@ service cloud.firestore {
       incomes: [],
       expenses: [],
       bills: [],
+      cards: [],
+      payments: [],
     };
 
     let ui = {
@@ -717,7 +945,9 @@ service cloud.firestore {
         liabilityId: null,
         incomeId: null,
         expenseId: null,
-        billId: null
+        billId: null,
+        cardId: null,
+        paymentId: null
       }
     };
 
@@ -824,26 +1054,27 @@ service cloud.firestore {
     // ===== DOM: Navigation =====
     const routeDashboard = $("#route-dashboard");
     const routePeriod = $("#route-period");
+    const routeCards = $("#route-cards");
     const routeData = $("#route-data");
 
     function setRoute(route) {
       ui.activeRoute = route;
       routeDashboard.classList.toggle("hidden", route !== "dashboard");
       routePeriod.classList.toggle("hidden", route !== "period");
+      routeCards.classList.toggle("hidden", route !== "cards");
       routeData.classList.toggle("hidden", route !== "data");
 
-      // Desktop nav highlight
-      $$(".nav-active").forEach(x => x.classList.remove("nav-active"));
-      $$(".nav-active-mobile").forEach(x => x.classList.remove("nav-active-mobile"));
+      // Highlight nav buttons (desktop + mobile) based on data-route
+      $$("[data-route]").forEach((btn) => {
+        const active = btn.dataset.route === route;
+        const inMobile = !!btn.closest("#mobile-nav");
+        btn.className = "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all " +
+          (inMobile
+            ? (active ? "nav-active-mobile" : "nav-inactive-mobile")
+            : (active ? "nav-active" : "nav-inactive"));
+      });
 
-      // Reset
-      $("#nav-dashboard").className = "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all nav-inactive";
-      $("#nav-period").className = "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all nav-inactive";
-      $("#nav-data").className = "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all nav-inactive";
-
-      const navId = route === "dashboard" ? "#nav-dashboard" : route === "period" ? "#nav-period" : "#nav-data";
-      $(navId).classList.remove("nav-inactive");
-      $(navId).classList.add("nav-active");
+      if (currentUser) refreshAllViews();
     }
 
     $$("[data-route]").forEach(btn => {
@@ -856,6 +1087,11 @@ service cloud.firestore {
     // Mobile menu button
     $("#mobile-nav-btn").addEventListener("click", () => {
       $("#mobile-nav").classList.toggle("hidden");
+    });
+
+    // Dashboard -> Cards shortcut
+    $("#dashboard-view-cards-btn").addEventListener("click", () => {
+      setRoute("cards");
     });
 
     // Logout
@@ -885,6 +1121,8 @@ service cloud.firestore {
       const incomeQ = query(userCol("incomes"), orderBy("date", "desc"));
       const expenseQ = query(userCol("expenses"), orderBy("date", "desc"));
       const billsQ = query(userCol("bills"), orderBy("date", "desc"));
+      const cardsQ = query(userCol("cards"), orderBy("createdAt", "desc"));
+      const paymentsQ = query(userCol("payments"), orderBy("date", "desc"));
 
       unsubscribers.push(onSnapshot(assetQ, (snap) => {
         state.assets = snap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -904,6 +1142,14 @@ service cloud.firestore {
       }));
       unsubscribers.push(onSnapshot(billsQ, (snap) => {
         state.bills = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        refreshAllViews();
+      }));
+      unsubscribers.push(onSnapshot(cardsQ, (snap) => {
+        state.cards = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        refreshAllViews();
+      }));
+      unsubscribers.push(onSnapshot(paymentsQ, (snap) => {
+        state.payments = snap.docs.map(d => ({ id: d.id, ...d.data() }));
         refreshAllViews();
       }));
     }
@@ -1105,6 +1351,346 @@ service cloud.firestore {
       });
     }
 
+    // ===== CRUD: Cards (new) =====
+    function cardTypeLabel(type) {
+      return type === "debit" ? "Debit" : "Credit";
+    }
+
+    function toggleCardFormForType(type) {
+      const isCredit = type !== "debit";
+      $("#card-starting-balance-label").textContent = isCredit ? "Starting Balance Owed" : "Starting Balance / Amount Tracked";
+      $("#card-credit-limit-wrap").classList.toggle("hidden", !isCredit);
+    }
+
+    $("#card-type").addEventListener("change", () => {
+      toggleCardFormForType($("#card-type").value);
+    });
+
+    function openCardForm(editing) {
+      $("#card-form").classList.remove("hidden");
+      if (editing) {
+        $("#card-name").value = editing.name ?? "";
+        $("#card-type").value = editing.type ?? "credit";
+        $("#card-starting-balance").value = editing.startingBalance ?? 0;
+        $("#card-credit-limit").value = editing.creditLimit ?? "";
+        $("#card-notes").value = editing.notes ?? "";
+        ui.editing.cardId = editing.id;
+      } else {
+        $("#card-form").reset?.();
+        $("#card-name").value = "";
+        $("#card-type").value = "credit";
+        $("#card-starting-balance").value = 0;
+        $("#card-credit-limit").value = "";
+        $("#card-notes").value = "";
+        ui.editing.cardId = null;
+      }
+      toggleCardFormForType($("#card-type").value);
+    }
+
+    $("#add-card-btn").addEventListener("click", () => openCardForm(null));
+    $("#card-cancel-btn").addEventListener("click", () => {
+      $("#card-form").classList.add("hidden");
+      ui.editing.cardId = null;
+    });
+
+    $("#card-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const name = $("#card-name").value.trim();
+      const type = $("#card-type").value === "debit" ? "debit" : "credit";
+      const startingBalance = Number($("#card-starting-balance").value);
+      const creditLimitRaw = $("#card-credit-limit").value;
+      const creditLimit = (type === "credit" && creditLimitRaw !== "") ? Number(creditLimitRaw) : null;
+      const notes = $("#card-notes").value.trim();
+
+      if (!currentUser) return;
+
+      const payload = {
+        name,
+        type,
+        startingBalance: Number.isFinite(startingBalance) ? startingBalance : 0,
+        creditLimit: (creditLimit !== null && Number.isFinite(creditLimit)) ? creditLimit : null,
+        notes: notes || "",
+        createdAt: serverTimestamp()
+      };
+
+      try {
+        if (ui.editing.cardId) {
+          await setDoc(doc(db, "users", currentUser.uid, "cards", ui.editing.cardId), payload, { merge: true });
+        } else {
+          await addDoc(userCol("cards"), payload);
+        }
+        $("#card-form").classList.add("hidden");
+        ui.editing.cardId = null;
+      } catch (err) {
+        alert(err?.message || "Failed to save card");
+      }
+    });
+
+    // Balance = starting balance + linked expenses (by cardId, or by matching name for
+    // legacy expenses that predate the Cards feature) - recorded payoffs.
+    function computeCardBalance(card) {
+      const expenseTotal = (state.expenses || []).reduce((s, e) => {
+        const matches = e.cardId
+          ? e.cardId === card.id
+          : (e.card && card.name && e.card.trim().toLowerCase() === card.name.trim().toLowerCase());
+        return matches ? s + Number(e.amount || 0) : s;
+      }, 0);
+
+      const paymentTotal = (state.payments || []).reduce((s, p) => {
+        return p.cardId === card.id ? s + Number(p.amount || 0) : s;
+      }, 0);
+
+      const balance = Number(card.startingBalance || 0) + expenseTotal - paymentTotal;
+      return { balance, expenseTotal, paymentTotal };
+    }
+
+    function populateCardSelects() {
+      const cards = state.cards.slice().sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+
+      const expenseSelect = $("#expense-card-choice");
+      const paymentSelect = $("#payment-card-select");
+      if (!expenseSelect || !paymentSelect) return;
+
+      const prevExpenseVal = expenseSelect.value;
+      const prevPaymentVal = paymentSelect.value;
+
+      expenseSelect.innerHTML = `<option value="">— none / type below —</option>` +
+        cards.map(c => `<option value="${c.id}">${escapeHtml(c.name)} (${cardTypeLabel(c.type)})</option>`).join("");
+
+      paymentSelect.innerHTML = `<option value="">Select a card…</option>` +
+        cards.map(c => `<option value="${c.id}">${escapeHtml(c.name)} (${cardTypeLabel(c.type)})</option>`).join("");
+
+      if (cards.some(c => c.id === prevExpenseVal)) expenseSelect.value = prevExpenseVal;
+      if (cards.some(c => c.id === prevPaymentVal)) paymentSelect.value = prevPaymentVal;
+    }
+
+    $("#expense-card-choice").addEventListener("change", () => {
+      const id = $("#expense-card-choice").value;
+      if (!id) return;
+      const c = state.cards.find(x => x.id === id);
+      if (c) $("#expense-card").value = c.name;
+    });
+
+    function renderCards() {
+      const tbody = $("#cards-table-body");
+      const items = state.cards.slice().sort((a,b) => (b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
+
+      if (!items.length) {
+        tbody.innerHTML = `<tr><td colspan="4" class="px-3 py-3 text-center text-slate-500">No cards yet — add one to start tracking balances.</td></tr>`;
+      } else {
+        tbody.innerHTML = "";
+        for (const c of items) {
+          const { balance } = computeCardBalance(c);
+          const balanceClass = balance > 0 ? "text-rose-700" : (balance < 0 ? "text-emerald-700" : "text-slate-700");
+
+          let utilHtml = "";
+          if (c.type === "credit" && c.creditLimit) {
+            const pct = Math.max(0, Math.min(100, (balance / c.creditLimit) * 100));
+            const barColor = pct >= 70 ? "#e11d48" : (pct >= 30 ? "#f59e0b" : "#10b981");
+            utilHtml = `
+              <div class="mt-1 util-bar-track"><div class="util-bar-fill" style="width:${pct.toFixed(0)}%;background-color:${barColor};"></div></div>
+              <div class="text-[11px] text-slate-500 mt-0.5">${pct.toFixed(0)}% of ${formatMoney(c.creditLimit)} limit</div>
+            `;
+          }
+
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td class="px-3 py-2 font-medium text-slate-800">
+              ${escapeHtml(c.name)}
+              ${c.notes ? `<div class="text-xs text-slate-500">${escapeHtml(c.notes)}</div>` : ""}
+            </td>
+            <td class="px-3 py-2 text-slate-700">${cardTypeLabel(c.type)}</td>
+            <td class="px-3 py-2 text-right font-semibold ${balanceClass}">
+              ${formatMoney(balance)}
+              ${utilHtml}
+            </td>
+            <td class="px-3 py-2 text-right align-top">
+              <div class="inline-flex items-center gap-2">
+                <button class="text-brand-600 hover:underline text-sm" data-action="edit" data-id="${c.id}">Edit</button>
+                <button class="text-rose-600 hover:underline text-sm" data-action="del" data-id="${c.id}">Delete</button>
+              </div>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        }
+
+        tbody.querySelectorAll("[data-action='edit']").forEach(btn => {
+          btn.addEventListener("click", () => {
+            const id = btn.dataset.id;
+            const item = state.cards.find(x => x.id === id);
+            openCardForm(item);
+          });
+        });
+
+        tbody.querySelectorAll("[data-action='del']").forEach(btn => {
+          btn.addEventListener("click", async () => {
+            const id = btn.dataset.id;
+            if (!confirm("Delete this card? Linked expenses/payoffs will remain but stop being matched.")) return;
+            try {
+              await deleteDoc(doc(db, "users", currentUser.uid, "cards", id));
+            } catch (err) {
+              alert(err?.message || "Failed to delete card");
+            }
+          });
+        });
+      }
+
+      populateCardSelects();
+      renderCardsSummary();
+    }
+
+    function renderCardsSummary() {
+      const creditCards = state.cards.filter(c => c.type === "credit");
+      const debitCards = state.cards.filter(c => c.type === "debit");
+
+      const totalCreditDebt = creditCards.reduce((s, c) => s + computeCardBalance(c).balance, 0);
+      const totalDebitBalance = debitCards.reduce((s, c) => s + computeCardBalance(c).balance, 0);
+      const totalAvailableCredit = creditCards.reduce((s, c) => {
+        if (!c.creditLimit) return s;
+        return s + Math.max(0, c.creditLimit - computeCardBalance(c).balance);
+      }, 0);
+
+      const elCredit = $("#cards-total-credit-debt");
+      const elDebit = $("#cards-total-debit-balance");
+      const elAvail = $("#cards-total-available-credit");
+      if (elCredit) elCredit.textContent = formatMoney(totalCreditDebt);
+      if (elDebit) elDebit.textContent = formatMoney(totalDebitBalance);
+      if (elAvail) elAvail.textContent = formatMoney(totalAvailableCredit);
+
+      // Dashboard mirror widgets
+      const dashSummary = $("#dashboard-card-summary");
+      if (dashSummary) {
+        dashSummary.innerHTML = `
+          <div class="bg-slate-50 rounded-xl border border-slate-200 p-4">
+            <div class="text-xs text-slate-500">Total Credit Card Debt</div>
+            <div class="text-lg font-bold text-rose-700">${formatMoney(totalCreditDebt)}</div>
+          </div>
+          <div class="bg-slate-50 rounded-xl border border-slate-200 p-4">
+            <div class="text-xs text-slate-500">Total Debit Card Balance</div>
+            <div class="text-lg font-bold text-slate-900">${formatMoney(totalDebitBalance)}</div>
+          </div>
+          <div class="bg-slate-50 rounded-xl border border-slate-200 p-4">
+            <div class="text-xs text-slate-500">Total Available Credit</div>
+            <div class="text-lg font-bold text-emerald-700">${formatMoney(totalAvailableCredit)}</div>
+          </div>
+        `;
+      }
+
+      const dashList = $("#dashboard-card-list");
+      if (dashList) {
+        const items = state.cards.slice()
+          .map(c => ({ c, balance: computeCardBalance(c).balance }))
+          .sort((a, b) => b.balance - a.balance)
+          .slice(0, 4);
+
+        if (!items.length) {
+          dashList.innerHTML = `<div class="text-sm text-slate-500">No cards added yet.</div>`;
+        } else {
+          dashList.innerHTML = items.map(({ c, balance }) => `
+            <div class="flex items-center justify-between py-2 border-b border-slate-100 last:border-b-0">
+              <div class="text-sm font-medium text-slate-800">${escapeHtml(c.name)} <span class="text-xs text-slate-500">(${cardTypeLabel(c.type)})</span></div>
+              <div class="text-sm font-semibold ${balance > 0 ? 'text-rose-700' : 'text-emerald-700'}">${formatMoney(balance)}</div>
+            </div>
+          `).join("");
+        }
+      }
+    }
+
+    // ===== CRUD: Payments / Payoffs (new) =====
+    function openPaymentEdit(editing) {
+      if (!editing) return;
+      ui.editing.paymentId = editing.id;
+      $("#payment-card-select").value = editing.cardId || "";
+      $("#payment-date").value = editing.date || toISODate(new Date());
+      $("#payment-amount").value = editing.amount ?? "";
+      $("#payment-note").value = editing.note || "";
+    }
+
+    $("#payment-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const cardId = $("#payment-card-select").value;
+      const date = $("#payment-date").value;
+      const amount = Number($("#payment-amount").value);
+      const note = $("#payment-note").value.trim();
+
+      if (!currentUser) return;
+      const card = state.cards.find(c => c.id === cardId);
+      if (!card) {
+        alert("Please select a valid card.");
+        return;
+      }
+
+      const payload = {
+        cardId,
+        cardName: card.name,
+        date,
+        amount: Number.isFinite(amount) ? amount : 0,
+        note: note || "",
+        createdAt: serverTimestamp()
+      };
+
+      try {
+        if (ui.editing.paymentId) {
+          await setDoc(doc(db, "users", currentUser.uid, "payments", ui.editing.paymentId), payload, { merge: true });
+          ui.editing.paymentId = null;
+        } else {
+          await addDoc(userCol("payments"), payload);
+        }
+        $("#payment-amount").value = "";
+        $("#payment-note").value = "";
+      } catch (err) {
+        alert(err?.message || "Failed to save payoff");
+      }
+    });
+
+    function renderPayments() {
+      const tbody = $("#payments-table-body");
+      const items = sortByDateAsc(state.payments, "date").reverse();
+
+      if (!items.length) {
+        tbody.innerHTML = `<tr><td colspan="5" class="px-3 py-3 text-center text-slate-500">No payoffs recorded yet.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = "";
+      for (const p of items) {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td class="px-3 py-2 font-medium text-slate-800">${escapeHtml(p.cardName)}</td>
+          <td class="px-3 py-2 text-slate-700">${escapeHtml(p.date)}</td>
+          <td class="px-3 py-2 text-right font-semibold text-emerald-700">${formatMoney(p.amount)}</td>
+          <td class="px-3 py-2 text-slate-700">${escapeHtml(p.note || "-")}</td>
+          <td class="px-3 py-2 text-right">
+            <div class="inline-flex items-center gap-2">
+              <button class="text-brand-600 hover:underline text-sm" data-action="edit" data-id="${p.id}">Edit</button>
+              <button class="text-rose-600 hover:underline text-sm" data-action="del" data-id="${p.id}">Delete</button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      }
+
+      tbody.querySelectorAll("[data-action='del']").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          const id = btn.dataset.id;
+          if (!confirm("Delete this payoff record?")) return;
+          try {
+            await deleteDoc(doc(db, "users", currentUser.uid, "payments", id));
+          } catch (err) {
+            alert(err?.message || "Failed to delete payoff");
+          }
+        });
+      });
+
+      tbody.querySelectorAll("[data-action='edit']").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const id = btn.dataset.id;
+          const item = state.payments.find(x => x.id === id);
+          openPaymentEdit(item);
+        });
+      });
+    }
+
     // ===== CRUD: Income =====
     function renderIncomes() {
       const tbody = $("#income-table-body");
@@ -1233,6 +1819,7 @@ service cloud.firestore {
           const item = state.expenses.find(xx => xx.id === id);
           ui.editing.expenseId = id;
           $("#expense-card").value = item?.card ?? "";
+          $("#expense-card-choice").value = item?.cardId || "";
           $("#expense-desc").value = item?.desc ?? "";
           $("#expense-date").value = item?.date ?? toISODate(new Date());
           $("#expense-amount").value = item?.amount ?? "";
@@ -1243,6 +1830,7 @@ service cloud.firestore {
     $("#expense-form").addEventListener("submit", async (e) => {
       e.preventDefault();
       const card = $("#expense-card").value.trim();
+      const cardId = $("#expense-card-choice").value || null;
       const desc = $("#expense-desc").value.trim();
       const date = $("#expense-date").value;
       const amount = Number($("#expense-amount").value);
@@ -1251,6 +1839,7 @@ service cloud.firestore {
 
       const payload = {
         card,
+        cardId,
         desc,
         date,
         amount: Number.isFinite(amount) ? amount : 0,
@@ -1266,6 +1855,7 @@ service cloud.firestore {
         }
         $("#expense-desc").value = "";
         $("#expense-amount").value = "";
+        $("#expense-card-choice").value = "";
       } catch (err) {
         alert(err?.message || "Failed to save expense");
       }
@@ -1528,6 +2118,8 @@ service cloud.firestore {
 
       $("#net-worth").textContent = formatMoney(d.netWorth);
       $("#net-worth").className = "text-4xl font-extrabold " + (d.netWorth >= 0 ? "text-brand-900" : "text-rose-700");
+
+      renderCardsSummary();
     }
 
     function renderPlanner() {
@@ -1583,6 +2175,12 @@ service cloud.firestore {
       for (const b of state.bills || []) {
         items.push({ type: "Bill", date: b.date || "", text: `Bill: ${b.name} (${b.category || "—"}) on ${b.date} (${formatMoney(b.amount)})` });
       }
+      for (const c of state.cards || []) {
+        items.push({ type: "Card", date: c.createdAt?.toDate?.()?.toISOString?.() || new Date().toISOString(), text: `Added/Updated card: ${c.name} (${cardTypeLabel(c.type)})` });
+      }
+      for (const p of state.payments || []) {
+        items.push({ type: "Payoff", date: p.date || "", text: `Payoff: ${p.cardName} on ${p.date} (${formatMoney(p.amount)})${p.note ? " — " + p.note : ""}` });
+      }
 
       // Sort by date desc
       items.sort((x, y) => {
@@ -1612,12 +2210,14 @@ service cloud.firestore {
     }
 
     function refreshAllViews() {
-      // render tables always (they are part of data route)
+      // render tables always (they are part of data route / cards route)
       renderAssets();
       renderLiabilities();
       renderIncomes();
       renderExpenses();
       renderBills();
+      renderCards();
+      renderPayments();
 
       // dashboard + planner only when visible to save a bit of work
       if (!routeDashboard.classList.contains("hidden")) renderDashboard();
@@ -1651,7 +2251,7 @@ service cloud.firestore {
         authView.classList.remove("hidden");
         clearSubscriptions();
         // reset UI
-        state = { assets: [], liabilities: [], incomes: [], expenses: [], bills: [] };
+        state = { assets: [], liabilities: [], incomes: [], expenses: [], bills: [], cards: [], payments: [] };
         setRoute("dashboard");
         return;
       }
@@ -1667,6 +2267,7 @@ service cloud.firestore {
       $("#income-date").value = todayISO;
       $("#expense-date").value = todayISO;
       $("#bill-date").value = todayISO;
+      $("#payment-date").value = todayISO;
 
       ui.planner.horizonDays = Number($("#planner-horizon-days").value || 180);
       subscribeAll();
@@ -1676,6 +2277,7 @@ service cloud.firestore {
 
     // Initial render preview (before auth)
     $("#planner-horizon-days").value = "180";
+    toggleCardFormForType("credit");
   </script>
 
   <!-- Optional: quick copy helper (not required) -->
