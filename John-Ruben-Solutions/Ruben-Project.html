@@ -726,11 +726,11 @@
               <table class="min-w-[760px] w-full text-sm">
                 <thead>
                   <tr class="bg-slate-50">
-                    <th class="text-left px-3 py-2 font-semibold text-slate-600">Date</th>
-                    <th class="text-left px-3 py-2 font-semibold text-slate-600">Card</th>
-                    <th class="text-left px-3 py-2 font-semibold text-slate-600">Type</th>
-                    <th class="text-left px-3 py-2 font-semibold text-slate-600">Description</th>
-                    <th class="text-right px-3 py-2 font-semibold text-slate-600">Amount</th>
+                    <th class="text-left px-3 py-2 font-semibold text-slate-600"><button type="button" data-ledger-sort="date" class="inline-flex items-center gap-1 hover:text-slate-900">Date <span data-sort-ind class="text-xs text-slate-400">↕</span></button></th>
+                    <th class="text-left px-3 py-2 font-semibold text-slate-600"><button type="button" data-ledger-sort="card" class="inline-flex items-center gap-1 hover:text-slate-900">Card <span data-sort-ind class="text-xs text-slate-400">↕</span></button></th>
+                    <th class="text-left px-3 py-2 font-semibold text-slate-600"><button type="button" data-ledger-sort="type" class="inline-flex items-center gap-1 hover:text-slate-900">Type <span data-sort-ind class="text-xs text-slate-400">↕</span></button></th>
+                    <th class="text-left px-3 py-2 font-semibold text-slate-600"><button type="button" data-ledger-sort="desc" class="inline-flex items-center gap-1 hover:text-slate-900">Description <span data-sort-ind class="text-xs text-slate-400">↕</span></button></th>
+                    <th class="text-right px-3 py-2 font-semibold text-slate-600"><button type="button" data-ledger-sort="amount" class="inline-flex items-center gap-1 hover:text-slate-900">Amount <span data-sort-ind class="text-xs text-slate-400">↕</span></button></th>
                     <th class="text-right px-3 py-2 font-semibold text-slate-600">Actions</th>
                   </tr>
                 </thead>
@@ -1088,6 +1088,7 @@ service cloud.firestore {
       expandedBillIds: new Set(),
       expandedIncomeIds: new Set(),
       expandedPeriodKeys: new Set(),
+      ledgerSort: { key: "date", dir: "desc" },
       editing: {
         assetId: null,
         liabilityId: null,
@@ -2074,8 +2075,34 @@ service cloud.firestore {
         billRows = generateBillOccurrences(parseISODateLocal(billDates[0]), parseISODateLocal(todayISO))
           .map(o => ({ kind: "bill", occ: o, date: o.date }));
       }
-      const rows = [...items.map(t => ({ kind: "txn", t, date: t.date })), ...billRows]
-        .sort((a, b) => parseISODateLocal(b.date) - parseISODateLocal(a.date));
+      const rows = [...items.map(t => ({ kind: "txn", t, date: t.date })), ...billRows];
+
+      // Sorting (click any column header; click again to reverse)
+      const typeLabel = (r) => r.kind === "bill" ? "Bill"
+        : (r.t.txnType === "credit" ? "Credit/Refund" : (r.t.txnType === "payoff" ? "Payoff" : "Expense"));
+      const sortVal = {
+        date: (r) => parseISODateLocal(r.date).getTime() || 0,
+        card: (r) => (r.kind === "bill" ? billPayLabel(r.occ) : `${r.t.cardName || ""} ${r.t.cardType || ""}`).toLowerCase(),
+        type: (r) => typeLabel(r).toLowerCase(),
+        desc: (r) => (r.kind === "bill" ? r.occ.name : r.t.description || "").toLowerCase(),
+        amount: (r) => Number(r.kind === "bill" ? r.occ.amount : r.t.amount) || 0
+      };
+      const { key: sortKey, dir: sortDir } = ui.ledgerSort;
+      const getV = sortVal[sortKey] || sortVal.date;
+      const mult = sortDir === "asc" ? 1 : -1;
+      rows.sort((a, b) => {
+        const va = getV(a), vb = getV(b);
+        const c = (typeof va === "string") ? va.localeCompare(vb) : va - vb;
+        return c !== 0 ? c * mult : sortVal.date(b) - sortVal.date(a);
+      });
+      $$("[data-ledger-sort]").forEach(btn => {
+        const ind = btn.querySelector("[data-sort-ind]");
+        const active = btn.dataset.ledgerSort === sortKey;
+        if (ind) {
+          ind.textContent = active ? (sortDir === "asc" ? "▲" : "▼") : "↕";
+          ind.className = "text-xs " + (active ? "text-brand-600" : "text-slate-400");
+        }
+      });
 
       if (!rows.length) {
         tbody.innerHTML = `<tr><td colspan="6" class="px-3 py-3 text-center text-slate-500">No transactions logged yet.</td></tr>`;
@@ -2160,6 +2187,19 @@ service cloud.firestore {
       const summaryEl = $("#txn-ledger-summary");
       if (summaryEl) summaryEl.textContent = `${items.length} transaction${items.length === 1 ? "" : "s"} logged · ${billRows.length} bill payment${billRows.length === 1 ? "" : "s"} to date.`;
     }
+
+    $$("[data-ledger-sort]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const key = btn.dataset.ledgerSort;
+        if (ui.ledgerSort.key === key) {
+          ui.ledgerSort.dir = ui.ledgerSort.dir === "asc" ? "desc" : "asc";
+        } else {
+          // text columns start A→Z; date and amount start high→low
+          ui.ledgerSort = { key, dir: (key === "date" || key === "amount") ? "desc" : "asc" };
+        }
+        renderTransactionsLedger();
+      });
+    });
 
     // ===== CRUD: Income =====
     function openIncomeForm(item) {
