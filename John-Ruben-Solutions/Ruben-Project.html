@@ -1530,6 +1530,13 @@ service cloud.firestore {
       }
     });
 
+    // A debit transaction belongs to whichever bank its debit card is linked to NOW.
+    // Falls back to the bank id saved on the transaction (e.g. if the card was deleted).
+    function resolveDebitTxnBankId(t) {
+      const card = (state.debitCards || []).find(c => c.id === t.cardId);
+      return (card && card.bankAccountId) || t.bankAccountId || null;
+    }
+
     // "As of today" — future-dated incomes/transactions do not inflate the current balance.
     function computeBankAccountBalance(bank) {
       const todayISO = toISODate(new Date());
@@ -1541,7 +1548,7 @@ service cloud.firestore {
       }
       for (const t of state.transactions || []) {
         if (!t.date || t.date > todayISO) continue;
-        if (t.cardType === "debit" && t.bankAccountId === bank.id) {
+        if (t.cardType === "debit" && resolveDebitTxnBankId(t) === bank.id) {
           const amt = Number(t.amount || 0);
           if (t.txnType === "expense") balance -= amt;
           else if (t.txnType === "credit") balance += amt;
