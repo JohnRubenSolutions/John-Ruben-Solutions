@@ -843,7 +843,7 @@
                   <label class="block text-sm font-medium text-slate-700 mb-1">Pay With</label>
                   <select id="bill-pay-with"
                           class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
-                    <option value="">Bank / not specified</option>
+                    <option value="">Not specified (not deducted from a bank)</option>
                   </select>
                 </div>
                 <div>
@@ -1537,13 +1537,36 @@ service cloud.firestore {
       return (card && card.bankAccountId) || t.bankAccountId || null;
     }
 
+    // Which bank account does a bill occurrence come out of? (null = unknown / credit card / unassigned)
+    // payMethod "bank" stores the bank account id in payCardId; "debit" resolves via the card's linked bank.
+    function resolveBillBankId(occ) {
+      if (!occ || !occ.payMethod || !occ.payCardId) return null;
+      if (occ.payMethod === "bank") {
+        return (state.bankAccounts || []).some(b => b.id === occ.payCardId) ? occ.payCardId : null;
+      }
+      if (occ.payMethod === "debit") {
+        const card = (state.debitCards || []).find(c => c.id === occ.payCardId);
+        return (card && card.bankAccountId) || null;
+      }
+      return null;
+    }
+
     // "As of today" — future-dated incomes/transactions do not inflate the current balance.
     function computeBankAccountBalance(bank) {
       const todayISO = toISODate(new Date());
       let balance = Number(bank.startingBalance || 0);
-      for (const inc of state.incomes || []) {
-        if (inc.bankAccountId === bank.id && inc.date && inc.date <= todayISO) {
-          balance += Number(inc.amount || 0);
+
+      // Incomes (one-time + every recurring occurrence dated today or earlier) routed to this bank.
+      // Bills paid from this bank, or from a debit card linked to it, are deducted the same way.
+      const dates = [...(state.incomes || []), ...(state.bills || [])].map(x => x.date).filter(Boolean).sort();
+      if (dates.length) {
+        const from = parseISODateLocal(dates[0]);
+        const to = parseISODateLocal(todayISO);
+        for (const occ of generateIncomeOccurrences(from, to)) {
+          if (occ.bankAccountId === bank.id) balance += Number(occ.amount || 0);
+        }
+        for (const occ of generateBillOccurrences(from, to)) {
+          if (resolveBillBankId(occ) === bank.id) balance -= Number(occ.amount || 0);
         }
       }
       for (const t of state.transactions || []) {
@@ -1598,6 +1621,7 @@ service cloud.firestore {
       }
 
       populateBankAccountSelects();
+      populateBillPayWithOptions();
       renderAccountsSummary();
     }
 
@@ -2042,11 +2066,44 @@ service cloud.firestore {
       const tbody = $("#transactions-table-body");
       const items = sortByDateAsc(state.transactions, "date").reverse();
 
-      if (!items.length) {
+      // Bills (one-time and every recurring occurrence dated today or earlier) also appear in the ledger.
+      const todayISO = toISODate(new Date());
+      let billRows = [];
+      const billDates = (state.bills || []).map(b => b.date).filter(Boolean).sort();
+      if (billDates.length) {
+        billRows = generateBillOccurrences(parseISODateLocal(billDates[0]), parseISODateLocal(todayISO))
+          .map(o => ({ kind: "bill", occ: o, date: o.date }));
+      }
+      const rows = [...items.map(t => ({ kind: "txn", t, date: t.date })), ...billRows]
+        .sort((a, b) => parseISODateLocal(b.date) - parseISODateLocal(a.date));
+
+      if (!rows.length) {
         tbody.innerHTML = `<tr><td colspan="6" class="px-3 py-3 text-center text-slate-500">No transactions logged yet.</td></tr>`;
       } else {
         tbody.innerHTML = "";
-        for (const t of items) {
+        for (const row of rows) {
+          if (row.kind === "bill") {
+            const o = row.occ;
+            const payLabel = billPayLabel(o);
+            const payBadge = o.payMethod === "credit" ? `<span class="badge badge-brand">Credit</span>`
+              : (o.payMethod === "debit" ? `<span class="badge badge-slate">Debit</span>`
+              : (o.payMethod === "bank" ? `<span class="badge badge-slate">Bank</span>` : `<span class="badge badge-amber">No payer set</span>`));
+            const billTr = document.createElement("tr");
+            billTr.className = "bg-amber-50/40";
+            billTr.innerHTML = `
+              <td class="px-3 py-2 text-slate-700">${escapeHtml(o.date)}</td>
+              <td class="px-3 py-2 font-medium text-slate-800">${payLabel ? escapeHtml(payLabel.replace(/ \((Credit|Debit|Bank)\)$/, "")) + " " : ""}${payBadge}</td>
+              <td class="px-3 py-2"><span class="badge badge-amber">Bill</span></td>
+              <td class="px-3 py-2 text-slate-700">${escapeHtml(o.name)}${o.category ? ` <span class="text-xs text-slate-400">· ${escapeHtml(o.category)}</span>` : ""}${o.recurring ? ` <span class="text-xs text-slate-400">· recurring</span>` : ""}${o.moved ? ` <span class="text-[11px] text-amber-600">(moved from ${escapeHtml(o.originalDate)})</span>` : ""}</td>
+              <td class="px-3 py-2 text-right font-semibold text-rose-700">${formatMoney(o.amount)}</td>
+              <td class="px-3 py-2 text-right">
+                <button class="text-brand-600 hover:underline text-sm" data-action="edit-bill" data-id="${o.billId}">Edit bill</button>
+              </td>
+            `;
+            tbody.appendChild(billTr);
+            continue;
+          }
+          const t = row.t;
           const amtClass = t.txnType === "credit" ? "text-emerald-700" : (t.txnType === "payoff" ? "text-amber-700" : "text-rose-700");
           const tr = document.createElement("tr");
           tr.innerHTML = `
@@ -2064,6 +2121,13 @@ service cloud.firestore {
           `;
           tbody.appendChild(tr);
         }
+
+        tbody.querySelectorAll("[data-action='edit-bill']").forEach(btn => {
+          btn.addEventListener("click", () => {
+            const b = state.bills.find(x => x.id === btn.dataset.id);
+            if (b) openBillForm(b);
+          });
+        });
 
         tbody.querySelectorAll("[data-action='del']").forEach(btn => {
           btn.addEventListener("click", async () => {
@@ -2094,7 +2158,7 @@ service cloud.firestore {
       }
 
       const summaryEl = $("#txn-ledger-summary");
-      if (summaryEl) summaryEl.textContent = `${items.length} transaction${items.length === 1 ? "" : "s"} logged.`;
+      if (summaryEl) summaryEl.textContent = `${items.length} transaction${items.length === 1 ? "" : "s"} logged · ${billRows.length} bill payment${billRows.length === 1 ? "" : "s"} to date.`;
     }
 
     // ===== CRUD: Income =====
@@ -2397,9 +2461,9 @@ service cloud.firestore {
 
     function billPayLabel(obj) {
       if (!obj || !obj.payMethod || !obj.payCardId) return "";
-      const list = obj.payMethod === "credit" ? state.creditCards : state.debitCards;
+      const list = obj.payMethod === "credit" ? state.creditCards : (obj.payMethod === "bank" ? state.bankAccounts : state.debitCards);
       const card = (list || []).find(c => c.id === obj.payCardId);
-      const kind = obj.payMethod === "credit" ? "Credit" : "Debit";
+      const kind = obj.payMethod === "credit" ? "Credit" : (obj.payMethod === "bank" ? "Bank" : "Debit");
       return card ? `${card.name} (${kind})` : `Deleted ${kind.toLowerCase()} card`;
     }
 
@@ -2410,7 +2474,9 @@ service cloud.firestore {
       const byName = (a, b) => (a.name || "").localeCompare(b.name || "");
       const credit = state.creditCards.slice().sort(byName);
       const debit = state.debitCards.slice().sort(byName);
-      let html = `<option value="">Bank / not specified</option>`;
+      const banks = state.bankAccounts.slice().sort(byName);
+      let html = `<option value="">Not specified (not deducted from a bank)</option>`;
+      if (banks.length) html += `<optgroup label="Bank Accounts (paid directly)">` + banks.map(c => `<option value="bank:${c.id}">${escapeHtml(c.name)}</option>`).join("") + `</optgroup>`;
       if (credit.length) html += `<optgroup label="Credit Cards">` + credit.map(c => `<option value="credit:${c.id}">${escapeHtml(c.name)}</option>`).join("") + `</optgroup>`;
       if (debit.length) html += `<optgroup label="Debit Cards">` + debit.map(c => `<option value="debit:${c.id}">${escapeHtml(c.name)}</option>`).join("") + `</optgroup>`;
       sel.innerHTML = html;
@@ -2475,7 +2541,7 @@ service cloud.firestore {
       const recurrenceType = isRecurring ? ($("#bill-recurrence-type").value === "biweekly" ? "biweekly" : "monthly") : null;
       const payWith = $("#bill-pay-with").value;
       const [pmRaw, pidRaw] = payWith ? payWith.split(":") : ["", ""];
-      const payMethod = ((pmRaw === "credit" || pmRaw === "debit") && pidRaw) ? pmRaw : null;
+      const payMethod = ((pmRaw === "credit" || pmRaw === "debit" || pmRaw === "bank") && pidRaw) ? pmRaw : null;
       const payCardId = payMethod ? pidRaw : null;
       if (!currentUser) return;
 
@@ -2855,10 +2921,12 @@ service cloud.firestore {
       const assetsTotal = manualAssetsTotal + bankTotal;
       const liabilitiesTotal = manualLiabilitiesTotal + creditTotal;
 
-      const unroutedIncomeToday = (state.incomes || []).reduce((s, i) => (i.date === todayISO && !i.bankAccountId) ? s + Number(i.amount || 0) : s, 0);
-
       const todayDate = parseISODateLocal(todayISO);
-      const billsToday = generateBillOccurrences(todayDate, todayDate).reduce((s, o) => s + Number(o.amount || 0), 0);
+      const unroutedIncomeToday = generateIncomeOccurrences(todayDate, todayDate)
+        .reduce((s, o) => !o.bankAccountId ? s + Number(o.amount || 0) : s, 0);
+      // Bills already deducted from a bank balance must not be subtracted a second time here.
+      const billsToday = generateBillOccurrences(todayDate, todayDate)
+        .reduce((s, o) => resolveBillBankId(o) ? s : s + Number(o.amount || 0), 0);
 
       const netCashflowAdj = unroutedIncomeToday - billsToday;
       const netWorth = assetsTotal - liabilitiesTotal + netCashflowAdj;
