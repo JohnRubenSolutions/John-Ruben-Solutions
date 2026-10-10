@@ -260,8 +260,9 @@
                   <p class="text-sm text-slate-500 mt-1">(Assets + Banks) − (Liabilities + Credit Cards) + Unbanked activity today</p>
                 </div>
                 <div class="text-right">
-                  <div class="text-xs text-slate-500">Net Cashflow (MTD)</div>
-                  <div class="text-2xl font-bold" id="net-cashflow"></div>
+                  <div class="text-xs text-slate-500">Cash in Bank Right Now</div>
+                  <div class="text-2xl font-bold" id="bank-cash-now"></div>
+                  <div class="text-[11px] text-slate-400 mt-0.5" id="bank-cash-sub"></div>
                 </div>
               </div>
 
@@ -408,7 +409,8 @@
               </div>
 
               <div class="mt-4 text-xs text-slate-500">
-                Credit card purchases add to that card's liability but don't leave your bank until you log a Payoff.
+                Credit card purchases (and bills assigned to a credit card) add to that card's liability but don't leave your bank until you log a Payoff.
+                Use "Details" on any period to see its individual transactions and change their dates — changes sync to Data Entry instantly.
               </div>
             </div>
           </div>
@@ -811,12 +813,12 @@
                 <div>
                   <h3 class="text-lg font-semibold text-slate-900">Future Expense &amp; Bills Planning</h3>
                   <p class="text-sm text-slate-500 mt-1">
-                    One-time or recurring bills. Recurring bills auto-project into the Period Planner across its horizon.
+                    One-time or recurring bills. Recurring bills auto-project into the Period Planner across its horizon. Choose a Credit Card under "Pay With" and the bill shows as card spend (billed later) instead of cash out.
                   </p>
                 </div>
               </div>
 
-              <form id="bill-form" class="mt-4 grid grid-cols-1 md:grid-cols-6 gap-3 items-end">
+              <form id="bill-form" class="mt-4 grid grid-cols-1 md:grid-cols-4 xl:grid-cols-7 gap-3 items-end">
                 <div>
                   <label class="block text-sm font-medium text-slate-700 mb-1">Name</label>
                   <input type="text" id="bill-name" required placeholder="Rent / Utilities / Insurance"
@@ -836,6 +838,13 @@
                   <label class="block text-sm font-medium text-slate-700 mb-1">Amount</label>
                   <input type="number" id="bill-amount" required step="0.01"
                          class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 mb-1">Pay With</label>
+                  <select id="bill-pay-with"
+                          class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                    <option value="">Bank / not specified</option>
+                  </select>
                 </div>
                 <div>
                   <label class="flex items-center gap-2 text-sm font-medium text-slate-700 mb-1">
@@ -1078,6 +1087,7 @@ service cloud.firestore {
       },
       expandedBillIds: new Set(),
       expandedIncomeIds: new Set(),
+      expandedPeriodKeys: new Set(),
       editing: {
         assetId: null,
         liabilityId: null,
@@ -1729,6 +1739,7 @@ service cloud.firestore {
       }
 
       updateTxnCardOptions();
+      populateBillPayWithOptions();
       renderAccountsSummary();
     }
 
@@ -1818,6 +1829,7 @@ service cloud.firestore {
       }
 
       updateTxnCardOptions();
+      populateBillPayWithOptions();
     }
 
     // ===== Accounts Summary (Accounts route + Dashboard mirror) =====
@@ -2205,21 +2217,58 @@ service cloud.firestore {
       return map;
     }
 
-    function pushIncomeOccurrence(income, dateObj, overridesMap, occurrences) {
-      const iso = toISODate(dateObj);
-      const key = `${income.id}__${iso}`;
+    // Shared recurrence scanner (used by recurring incomes and recurring bills).
+    // Scans a padded window so an occurrence moved (via newDate) into/out of the visible range is still found.
+    const OCC_SCAN_PAD_DAYS = 120;
+
+    function forEachRecurringDate(startDate, recurrenceType, scanStart, scanEnd, cb) {
+      if (recurrenceType === "biweekly") {
+        let cursor = new Date(startDate);
+        if (cursor < scanStart) {
+          const diffDays = Math.floor((scanStart - cursor) / 86400000);
+          cursor = addDays(startDate, Math.floor(diffDays / 14) * 14);
+        }
+        let guard = 0;
+        while (cursor <= scanEnd && guard < 600) {
+          if (cursor >= scanStart) cb(new Date(cursor));
+          cursor = addDays(cursor, 14);
+          guard++;
+        }
+      } else {
+        const day = startDate.getDate();
+        const first = startDate > scanStart ? startDate : scanStart;
+        let cursor = new Date(first.getFullYear(), first.getMonth(), 1);
+        let guard = 0;
+        while (cursor <= scanEnd && guard < 600) {
+          const occ = clampedMonthDate(cursor.getFullYear(), cursor.getMonth(), day);
+          if (occ >= startDate && occ >= scanStart && occ <= scanEnd) cb(occ);
+          cursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
+          guard++;
+        }
+      }
+    }
+
+    function pushIncomeOccurrence(income, dateObj, overridesMap, occurrences, rangeStart, rangeEnd) {
+      const originalDate = toISODate(dateObj);
+      const key = `${income.id}__${originalDate}`;
       const ov = overridesMap.get(key);
       if (ov && ov.deleted) return;
+      const effISO = (ov && ov.newDate) ? ov.newDate : originalDate;
+      const eff = parseISODateLocal(effISO);
+      if (eff < rangeStart || eff > rangeEnd) return;
       const amount = (ov && ov.amount != null && ov.amount !== "") ? Number(ov.amount) : Number(income.amount || 0);
       occurrences.push({
         incomeId: income.id, source: income.source, bankAccountId: income.bankAccountId || null,
-        date: iso, amount, recurring: true, overridden: !!ov, occurrenceKey: key
+        date: effISO, originalDate, moved: effISO !== originalDate,
+        amount, recurring: true, overridden: !!ov, occurrenceKey: key
       });
     }
 
     function generateIncomeOccurrences(rangeStart, rangeEnd) {
       const overridesMap = buildIncomeOverridesMap();
       const occurrences = [];
+      const scanStart = addDays(rangeStart, -OCC_SCAN_PAD_DAYS);
+      const scanEnd = addDays(rangeEnd, OCC_SCAN_PAD_DAYS);
 
       for (const income of state.incomes || []) {
         if (!income.date) continue;
@@ -2229,34 +2278,17 @@ service cloud.firestore {
           if (startDate >= rangeStart && startDate <= rangeEnd) {
             occurrences.push({
               incomeId: income.id, source: income.source, bankAccountId: income.bankAccountId || null,
-              date: income.date, amount: Number(income.amount || 0),
+              date: income.date, originalDate: income.date, moved: false,
+              amount: Number(income.amount || 0),
               recurring: false, overridden: false, occurrenceKey: null
             });
           }
           continue;
         }
 
-        if (income.recurrenceType === "biweekly") {
-          let cursor = new Date(startDate);
-          let guard = 0;
-          while (cursor <= rangeEnd && guard < 300) {
-            if (cursor >= rangeStart) pushIncomeOccurrence(income, cursor, overridesMap, occurrences);
-            cursor = addDays(cursor, 14);
-            guard++;
-          }
-        } else {
-          const day = startDate.getDate();
-          let cursor = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
-          let guard = 0;
-          while (cursor <= rangeEnd && guard < 300) {
-            const occ = clampedMonthDate(cursor.getFullYear(), cursor.getMonth(), day);
-            if (occ >= startDate && occ >= rangeStart && occ <= rangeEnd) {
-              pushIncomeOccurrence(income, occ, overridesMap, occurrences);
-            }
-            cursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
-            guard++;
-          }
-        }
+        forEachRecurringDate(startDate, income.recurrenceType, scanStart, scanEnd, (d) => {
+          pushIncomeOccurrence(income, d, overridesMap, occurrences, rangeStart, rangeEnd);
+        });
       }
 
       return occurrences.sort((a, b) => parseISODateLocal(a.date) - parseISODateLocal(b.date));
@@ -2277,17 +2309,18 @@ service cloud.firestore {
       }
 
       container.innerHTML = `
-        <div class="text-xs font-semibold text-slate-600 mb-2">Next occurrences — edit an amount or skip a specific date</div>
+        <div class="text-xs font-semibold text-slate-600 mb-2">Next occurrences — edit the amount or date, or skip a specific date</div>
         <div class="space-y-2">
           ${occurrences.map(o => `
             <div class="flex items-center justify-between gap-3 bg-white border border-slate-200 rounded-lg px-3 py-2" data-occ-row="${o.occurrenceKey}">
               <div class="text-sm text-slate-700">
-                ${escapeHtml(o.date)} ${o.overridden ? '<span class="text-[11px] text-amber-600 font-medium">(edited)</span>' : ""}
+                ${escapeHtml(o.date)}
+                ${o.moved ? `<span class="text-[11px] text-amber-600 font-medium">(moved from ${escapeHtml(o.originalDate)})</span>` : (o.overridden ? '<span class="text-[11px] text-amber-600 font-medium">(edited)</span>' : "")}
               </div>
               <div class="flex items-center gap-2">
                 <span class="text-sm font-semibold text-emerald-700">${formatMoney(o.amount)}</span>
                 <button class="text-brand-600 hover:underline text-xs" data-occ-action="edit" data-key="${o.occurrenceKey}">Edit</button>
-                <button class="text-rose-600 hover:underline text-xs" data-occ-action="del" data-key="${o.occurrenceKey}" data-date="${o.date}">Skip</button>
+                <button class="text-rose-600 hover:underline text-xs" data-occ-action="del" data-key="${o.occurrenceKey}" data-date="${o.originalDate}">Skip</button>
               </div>
             </div>
           `).join("")}
@@ -2299,10 +2332,13 @@ service cloud.firestore {
           const row = btn.closest("[data-occ-row]");
           const key = btn.dataset.key;
           const occ = occurrences.find(o => o.occurrenceKey === key);
-          const inputId = `income-occ-input-${key.replace(/[^a-zA-Z0-9]/g, "_")}`;
+          const safeKey = key.replace(/[^a-zA-Z0-9]/g, "_");
+          const inputId = `income-occ-input-${safeKey}`;
+          const dateId = `income-occ-date-${safeKey}`;
           row.innerHTML = `
-            <div class="flex items-center gap-2 w-full">
-              <span class="text-sm text-slate-600 flex-1">${escapeHtml(occ.date)}</span>
+            <div class="flex flex-wrap items-center gap-2 w-full">
+              <input type="date" value="${occ.date}" class="border border-slate-300 rounded-lg px-2 py-1 text-sm" id="${dateId}">
+              <span class="flex-1"></span>
               <input type="number" step="0.01" value="${occ.amount}" class="border border-slate-300 rounded-lg px-2 py-1 text-sm w-28" id="${inputId}">
               <button class="text-emerald-600 hover:underline text-xs" data-occ-save="${key}">Save</button>
               <button class="text-slate-500 hover:underline text-xs" data-occ-cancel>Cancel</button>
@@ -2310,10 +2346,12 @@ service cloud.firestore {
           `;
           row.querySelector("[data-occ-save]").addEventListener("click", async () => {
             const val = Number($(`#${inputId}`).value);
+            const newDate = $(`#${dateId}`).value;
             try {
               await setDoc(doc(db, "users", currentUser.uid, "incomeOverrides", key), {
-                incomeId, occurrenceDate: occ.date,
+                incomeId: incomeId, occurrenceDate: occ.originalDate,
                 amount: Number.isFinite(val) ? val : occ.amount,
+                newDate: (newDate && newDate !== occ.originalDate) ? newDate : null,
                 deleted: false, createdAt: serverTimestamp()
               }, { merge: true });
             } catch (err) { alert(err?.message || "Failed to save override"); }
@@ -2329,7 +2367,7 @@ service cloud.firestore {
           if (!confirm(`Skip the ${dateStr} occurrence of "${income.source}"?`)) return;
           try {
             await setDoc(doc(db, "users", currentUser.uid, "incomeOverrides", key), {
-              incomeId, occurrenceDate: dateStr, deleted: true, createdAt: serverTimestamp()
+              incomeId: incomeId, occurrenceDate: dateStr, deleted: true, createdAt: serverTimestamp()
             }, { merge: true });
           } catch (err) { alert(err?.message || "Failed to skip occurrence"); }
         });
@@ -2350,21 +2388,50 @@ service cloud.firestore {
       return map;
     }
 
-    function pushOccurrence(bill, dateObj, overridesMap, occurrences) {
-      const iso = toISODate(dateObj);
-      const key = `${bill.id}__${iso}`;
+    function billPayLabel(obj) {
+      if (!obj || !obj.payMethod || !obj.payCardId) return "";
+      const list = obj.payMethod === "credit" ? state.creditCards : state.debitCards;
+      const card = (list || []).find(c => c.id === obj.payCardId);
+      const kind = obj.payMethod === "credit" ? "Credit" : "Debit";
+      return card ? `${card.name} (${kind})` : `Deleted ${kind.toLowerCase()} card`;
+    }
+
+    function populateBillPayWithOptions() {
+      const sel = $("#bill-pay-with");
+      if (!sel) return;
+      const prev = sel.value;
+      const byName = (a, b) => (a.name || "").localeCompare(b.name || "");
+      const credit = state.creditCards.slice().sort(byName);
+      const debit = state.debitCards.slice().sort(byName);
+      let html = `<option value="">Bank / not specified</option>`;
+      if (credit.length) html += `<optgroup label="Credit Cards">` + credit.map(c => `<option value="credit:${c.id}">${escapeHtml(c.name)}</option>`).join("") + `</optgroup>`;
+      if (debit.length) html += `<optgroup label="Debit Cards">` + debit.map(c => `<option value="debit:${c.id}">${escapeHtml(c.name)}</option>`).join("") + `</optgroup>`;
+      sel.innerHTML = html;
+      if (Array.from(sel.options).some(o => o.value === prev)) sel.value = prev;
+    }
+
+    function pushOccurrence(bill, dateObj, overridesMap, occurrences, rangeStart, rangeEnd) {
+      const originalDate = toISODate(dateObj);
+      const key = `${bill.id}__${originalDate}`;
       const ov = overridesMap.get(key);
       if (ov && ov.deleted) return;
+      const effISO = (ov && ov.newDate) ? ov.newDate : originalDate;
+      const eff = parseISODateLocal(effISO);
+      if (eff < rangeStart || eff > rangeEnd) return;
       const amount = (ov && ov.amount != null && ov.amount !== "") ? Number(ov.amount) : Number(bill.amount || 0);
       occurrences.push({
         billId: bill.id, name: bill.name, category: bill.category,
-        date: iso, amount, recurring: true, overridden: !!ov, occurrenceKey: key
+        payMethod: bill.payMethod || null, payCardId: bill.payCardId || null,
+        date: effISO, originalDate, moved: effISO !== originalDate,
+        amount, recurring: true, overridden: !!ov, occurrenceKey: key
       });
     }
 
     function generateBillOccurrences(rangeStart, rangeEnd) {
       const overridesMap = buildOverridesMap();
       const occurrences = [];
+      const scanStart = addDays(rangeStart, -OCC_SCAN_PAD_DAYS);
+      const scanEnd = addDays(rangeEnd, OCC_SCAN_PAD_DAYS);
 
       for (const bill of state.bills || []) {
         if (!bill.date) continue;
@@ -2374,34 +2441,18 @@ service cloud.firestore {
           if (startDate >= rangeStart && startDate <= rangeEnd) {
             occurrences.push({
               billId: bill.id, name: bill.name, category: bill.category,
-              date: bill.date, amount: Number(bill.amount || 0),
+              payMethod: bill.payMethod || null, payCardId: bill.payCardId || null,
+              date: bill.date, originalDate: bill.date, moved: false,
+              amount: Number(bill.amount || 0),
               recurring: false, overridden: false, occurrenceKey: null
             });
           }
           continue;
         }
 
-        if (bill.recurrenceType === "biweekly") {
-          let cursor = new Date(startDate);
-          let guard = 0;
-          while (cursor <= rangeEnd && guard < 300) {
-            if (cursor >= rangeStart) pushOccurrence(bill, cursor, overridesMap, occurrences);
-            cursor = addDays(cursor, 14);
-            guard++;
-          }
-        } else {
-          const day = startDate.getDate();
-          let cursor = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
-          let guard = 0;
-          while (cursor <= rangeEnd && guard < 300) {
-            const occ = clampedMonthDate(cursor.getFullYear(), cursor.getMonth(), day);
-            if (occ >= startDate && occ >= rangeStart && occ <= rangeEnd) {
-              pushOccurrence(bill, occ, overridesMap, occurrences);
-            }
-            cursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
-            guard++;
-          }
-        }
+        forEachRecurringDate(startDate, bill.recurrenceType, scanStart, scanEnd, (d) => {
+          pushOccurrence(bill, d, overridesMap, occurrences, rangeStart, rangeEnd);
+        });
       }
 
       return occurrences.sort((a, b) => parseISODateLocal(a.date) - parseISODateLocal(b.date));
@@ -2415,12 +2466,17 @@ service cloud.firestore {
       const amount = Number($("#bill-amount").value);
       const isRecurring = $("#bill-recurring").checked;
       const recurrenceType = isRecurring ? ($("#bill-recurrence-type").value === "biweekly" ? "biweekly" : "monthly") : null;
+      const payWith = $("#bill-pay-with").value;
+      const [pmRaw, pidRaw] = payWith ? payWith.split(":") : ["", ""];
+      const payMethod = ((pmRaw === "credit" || pmRaw === "debit") && pidRaw) ? pmRaw : null;
+      const payCardId = payMethod ? pidRaw : null;
       if (!currentUser) return;
 
       const payload = {
         name, category: category || "", date,
         amount: Number.isFinite(amount) ? amount : 0,
         isRecurring, recurrenceType,
+        payMethod, payCardId,
         createdAt: serverTimestamp()
       };
 
@@ -2434,6 +2490,7 @@ service cloud.firestore {
         $("#bill-name").value = "";
         $("#bill-category").value = "";
         $("#bill-amount").value = "";
+        $("#bill-pay-with").value = "";
         $("#bill-recurring").checked = false;
         $("#bill-recurrence-type").classList.add("hidden");
       } catch (err) {
@@ -2447,6 +2504,8 @@ service cloud.firestore {
       $("#bill-category").value = item.category ?? "";
       $("#bill-date").value = item.date ?? toISODate(new Date());
       $("#bill-amount").value = item.amount ?? "";
+      populateBillPayWithOptions();
+      $("#bill-pay-with").value = (item.payMethod && item.payCardId) ? `${item.payMethod}:${item.payCardId}` : "";
       $("#bill-recurring").checked = !!item.isRecurring;
       $("#bill-recurrence-type").classList.toggle("hidden", !item.isRecurring);
       if (item.isRecurring) $("#bill-recurrence-type").value = item.recurrenceType === "biweekly" ? "biweekly" : "monthly";
@@ -2470,7 +2529,10 @@ service cloud.firestore {
 
         const tr = document.createElement("tr");
         tr.innerHTML = `
-          <td class="px-3 py-2 font-medium text-slate-800">${escapeHtml(b.name)}</td>
+          <td class="px-3 py-2 font-medium text-slate-800">
+            ${escapeHtml(b.name)}
+            ${billPayLabel(b) ? `<div class="text-xs text-slate-500">Pays via ${escapeHtml(billPayLabel(b))}</div>` : ""}
+          </td>
           <td class="px-3 py-2 text-slate-700">${escapeHtml(b.category || "-")}</td>
           <td class="px-3 py-2 text-slate-700">${escapeHtml(b.date)}</td>
           <td class="px-3 py-2">
@@ -2534,17 +2596,18 @@ service cloud.firestore {
       }
 
       container.innerHTML = `
-        <div class="text-xs font-semibold text-slate-600 mb-2">Next occurrences — edit an amount or skip a specific date</div>
+        <div class="text-xs font-semibold text-slate-600 mb-2">Next occurrences — edit the amount or date, or skip a specific date</div>
         <div class="space-y-2">
           ${occurrences.map(o => `
             <div class="flex items-center justify-between gap-3 bg-white border border-slate-200 rounded-lg px-3 py-2" data-occ-row="${o.occurrenceKey}">
               <div class="text-sm text-slate-700">
-                ${escapeHtml(o.date)} ${o.overridden ? '<span class="text-[11px] text-amber-600 font-medium">(edited)</span>' : ""}
+                ${escapeHtml(o.date)}
+                ${o.moved ? `<span class="text-[11px] text-amber-600 font-medium">(moved from ${escapeHtml(o.originalDate)})</span>` : (o.overridden ? '<span class="text-[11px] text-amber-600 font-medium">(edited)</span>' : "")}
               </div>
               <div class="flex items-center gap-2">
                 <span class="text-sm font-semibold text-rose-700">${formatMoney(o.amount)}</span>
                 <button class="text-brand-600 hover:underline text-xs" data-occ-action="edit" data-key="${o.occurrenceKey}">Edit</button>
-                <button class="text-rose-600 hover:underline text-xs" data-occ-action="del" data-key="${o.occurrenceKey}" data-date="${o.date}">Skip</button>
+                <button class="text-rose-600 hover:underline text-xs" data-occ-action="del" data-key="${o.occurrenceKey}" data-date="${o.originalDate}">Skip</button>
               </div>
             </div>
           `).join("")}
@@ -2556,10 +2619,13 @@ service cloud.firestore {
           const row = btn.closest("[data-occ-row]");
           const key = btn.dataset.key;
           const occ = occurrences.find(o => o.occurrenceKey === key);
-          const inputId = `occ-input-${key.replace(/[^a-zA-Z0-9]/g, "_")}`;
+          const safeKey = key.replace(/[^a-zA-Z0-9]/g, "_");
+          const inputId = `occ-input-${safeKey}`;
+          const dateId = `occ-date-${safeKey}`;
           row.innerHTML = `
-            <div class="flex items-center gap-2 w-full">
-              <span class="text-sm text-slate-600 flex-1">${escapeHtml(occ.date)}</span>
+            <div class="flex flex-wrap items-center gap-2 w-full">
+              <input type="date" value="${occ.date}" class="border border-slate-300 rounded-lg px-2 py-1 text-sm" id="${dateId}">
+              <span class="flex-1"></span>
               <input type="number" step="0.01" value="${occ.amount}" class="border border-slate-300 rounded-lg px-2 py-1 text-sm w-28" id="${inputId}">
               <button class="text-emerald-600 hover:underline text-xs" data-occ-save="${key}">Save</button>
               <button class="text-slate-500 hover:underline text-xs" data-occ-cancel>Cancel</button>
@@ -2567,10 +2633,12 @@ service cloud.firestore {
           `;
           row.querySelector("[data-occ-save]").addEventListener("click", async () => {
             const val = Number($(`#${inputId}`).value);
+            const newDate = $(`#${dateId}`).value;
             try {
               await setDoc(doc(db, "users", currentUser.uid, "billOverrides", key), {
-                billId, occurrenceDate: occ.date,
+                billId: billId, occurrenceDate: occ.originalDate,
                 amount: Number.isFinite(val) ? val : occ.amount,
+                newDate: (newDate && newDate !== occ.originalDate) ? newDate : null,
                 deleted: false, createdAt: serverTimestamp()
               }, { merge: true });
             } catch (err) { alert(err?.message || "Failed to save override"); }
@@ -2586,7 +2654,7 @@ service cloud.firestore {
           if (!confirm(`Skip the ${dateStr} occurrence of "${bill.name}"?`)) return;
           try {
             await setDoc(doc(db, "users", currentUser.uid, "billOverrides", key), {
-              billId, occurrenceDate: dateStr, deleted: true, createdAt: serverTimestamp()
+              billId: billId, occurrenceDate: dateStr, deleted: true, createdAt: serverTimestamp()
             }, { merge: true });
           } catch (err) { alert(err?.message || "Failed to skip occurrence"); }
         });
@@ -2637,21 +2705,39 @@ service cloud.firestore {
       const periodCashIn = new Array(periods.length).fill(0);
       const periodCashOut = new Array(periods.length).fill(0);
       const periodCCSpend = new Array(periods.length).fill(0);
+      const periodItems = periods.map(() => []);
 
       if (periods.length) {
         const rangeStart = periods[0].start;
         const rangeEnd = periods[periods.length - 1].end;
 
-        const incomeOccurrences = generateIncomeOccurrences(rangeStart, rangeEnd);
-        for (const occ of incomeOccurrences) {
+        for (const occ of generateIncomeOccurrences(rangeStart, rangeEnd)) {
           const idx = assignToPeriod(occ.date, periods);
-          if (idx >= 0) periodCashIn[idx] += Number(occ.amount || 0);
+          if (idx < 0) continue;
+          const amt = Number(occ.amount || 0);
+          periodCashIn[idx] += amt;
+          periodItems[idx].push({
+            kind: "income", id: occ.incomeId, recurring: occ.recurring, key: occ.occurrenceKey,
+            date: occ.date, originalDate: occ.originalDate,
+            name: occ.source || "Income", sub: occ.recurring ? "Recurring income" : "One-time income",
+            amount: amt, flow: "in"
+          });
         }
 
-        const billOccurrences = generateBillOccurrences(rangeStart, rangeEnd);
-        for (const occ of billOccurrences) {
+        for (const occ of generateBillOccurrences(rangeStart, rangeEnd)) {
           const idx = assignToPeriod(occ.date, periods);
-          if (idx >= 0) periodCashOut[idx] += Number(occ.amount || 0);
+          if (idx < 0) continue;
+          const amt = Number(occ.amount || 0);
+          const onCredit = occ.payMethod === "credit";
+          if (onCredit) periodCCSpend[idx] += amt; else periodCashOut[idx] += amt;
+          const payLabel = billPayLabel(occ);
+          periodItems[idx].push({
+            kind: "bill", id: occ.billId, recurring: occ.recurring, key: occ.occurrenceKey,
+            date: occ.date, originalDate: occ.originalDate,
+            name: occ.name || "Bill",
+            sub: [occ.category, payLabel ? `via ${payLabel}` : "", occ.recurring ? "recurring" : "one-time"].filter(Boolean).join(" · "),
+            amount: amt, flow: onCredit ? "cc" : "out", onCredit
+          });
         }
       }
 
@@ -2660,22 +2746,32 @@ service cloud.firestore {
         const idx = assignToPeriod(t.date, periods);
         if (idx < 0) continue;
         const amt = Number(t.amount || 0);
+        let flow = null;
         if (t.cardType === "debit") {
-          if (t.txnType === "expense") periodCashOut[idx] += amt;
-          else if (t.txnType === "credit") periodCashOut[idx] -= amt;
+          if (t.txnType === "expense") { periodCashOut[idx] += amt; flow = "out"; }
+          else if (t.txnType === "credit") { periodCashOut[idx] -= amt; flow = "in"; }
         } else if (t.cardType === "credit") {
-          if (t.txnType === "payoff") periodCashOut[idx] += amt;
-          else if (t.txnType === "expense") periodCCSpend[idx] += amt;
-          else if (t.txnType === "credit") periodCCSpend[idx] -= amt;
+          if (t.txnType === "payoff") { periodCashOut[idx] += amt; flow = "out"; }
+          else if (t.txnType === "expense") { periodCCSpend[idx] += amt; flow = "cc"; }
+          else if (t.txnType === "credit") { periodCCSpend[idx] -= amt; flow = "cc-refund"; }
+        }
+        if (flow) {
+          periodItems[idx].push({
+            kind: "txn", id: t.id, recurring: false, key: null,
+            date: t.date, originalDate: t.date,
+            name: t.description || "Transaction", sub: t.cardName || "",
+            amount: amt, flow, txnType: t.txnType, cardType: t.cardType
+          });
         }
       }
 
-      return { periodCashIn, periodCashOut, periodCCSpend };
+      periodItems.forEach(list => list.sort((a, b) => parseISODateLocal(a.date) - parseISODateLocal(b.date)));
+      return { periodCashIn, periodCashOut, periodCCSpend, periodItems };
     }
 
     function computePlanner() {
       const periods = buildPeriods();
-      const { periodCashIn, periodCashOut, periodCCSpend } = computePeriodCashFlows(periods);
+      const { periodCashIn, periodCashOut, periodCCSpend, periodItems } = computePeriodCashFlows(periods);
 
       let carry = 0;
       const rows = [];
@@ -2684,7 +2780,7 @@ service cloud.firestore {
         const exp = periodCashOut[i];
         const net = income - exp;
         carry += net;
-        rows.push({ i, period: periods[i], income, expense: exp, ccSpend: periodCCSpend[i], net, carry });
+        rows.push({ i, period: periods[i], income, expense: exp, ccSpend: periodCCSpend[i], net, carry, items: periodItems[i] });
       }
 
       const today = parseISODateLocal(toISODate(new Date()));
@@ -2698,7 +2794,7 @@ service cloud.firestore {
       return { periods, rows, carryNextMonth };
     }
 
-    // Current-period metrics for the Dashboard (feature 3): pulls straight from the planner rows.
+    // Current-period metrics for the Dashboard: pulls straight from the planner rows.
     function computeCurrentPeriodMetrics() {
       const { periods, rows } = computePlanner();
       const todayISO = toISODate(new Date());
@@ -2715,28 +2811,31 @@ service cloud.firestore {
       };
     }
 
-    // Month-to-date net cashflow (feature 2): real income/expense activity so far this month.
-    function computeMonthToDateCashflow() {
-      const today = parseISODateLocal(toISODate(new Date()));
-      const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
-      const monthStartISO = toISODate(monthStart);
-      const todayISO = toISODate(today);
-
-      const mtdIncome = (state.incomes || []).reduce((s, i) => {
-        if (!i.date || i.date < monthStartISO || i.date > todayISO) return s;
-        return s + Number(i.amount || 0);
-      }, 0);
-
-      const mtdTxnExpense = (state.transactions || []).reduce((s, t) => {
-        if (!t.date || t.date < monthStartISO || t.date > todayISO) return s;
-        if (t.txnType === "expense") return s + Number(t.amount || 0);
-        if (t.txnType === "credit") return s - Number(t.amount || 0);
-        return s;
-      }, 0);
-
-      const mtdBills = generateBillOccurrences(monthStart, today).reduce((s, o) => s + Number(o.amount || 0), 0);
-
-      return mtdIncome - mtdTxnExpense - mtdBills;
+    // Change the date of one planner line item. Writes to the same Firestore docs Data Entry uses,
+    // so every view updates in real time through the existing snapshot listeners.
+    async function savePlannerItemDate(item, newISO) {
+      if (!currentUser || !item || !newISO) return;
+      if (newISO === item.date) return;
+      try {
+        if (item.kind === "txn") {
+          await setDoc(doc(db, "users", currentUser.uid, "transactions", item.id), { date: newISO }, { merge: true });
+        } else if (item.kind === "income" || item.kind === "bill") {
+          const isIncome = item.kind === "income";
+          if (!item.recurring) {
+            await setDoc(doc(db, "users", currentUser.uid, isIncome ? "incomes" : "bills", item.id), { date: newISO }, { merge: true });
+          } else {
+            await setDoc(doc(db, "users", currentUser.uid, isIncome ? "incomeOverrides" : "billOverrides", item.key), {
+              [isIncome ? "incomeId" : "billId"]: item.id,
+              occurrenceDate: item.originalDate,
+              newDate: newISO !== item.originalDate ? newISO : null,
+              deleted: false,
+              createdAt: serverTimestamp()
+            }, { merge: true });
+          }
+        }
+      } catch (err) {
+        alert(err?.message || "Failed to update date");
+      }
     }
 
     function computeDailyNetWorth() {
@@ -2771,9 +2870,10 @@ service cloud.firestore {
       $("#total-assets").textContent = formatMoney(d.assetsTotal);
       $("#total-liabilities").textContent = formatMoney(d.liabilitiesTotal);
 
-      const mtdCashflow = computeMonthToDateCashflow();
-      $("#net-cashflow").textContent = formatMoney(mtdCashflow);
-      $("#net-cashflow").className = "text-2xl font-bold " + (mtdCashflow >= 0 ? "text-emerald-700" : "text-rose-700");
+      $("#bank-cash-now").textContent = formatMoney(d.bankTotal);
+      $("#bank-cash-now").className = "text-2xl font-bold " + (d.bankTotal >= 0 ? "text-emerald-700" : "text-rose-700");
+      const acctCount = state.bankAccounts.length;
+      $("#bank-cash-sub").textContent = `As of ${d.todayISO} · ${acctCount} account${acctCount === 1 ? "" : "s"}`;
 
       const pm = computeCurrentPeriodMetrics();
       $("#period-carry-in").textContent = formatMoney(pm.carryIn);
@@ -2789,27 +2889,50 @@ service cloud.firestore {
       renderAccountsSummary();
     }
 
+    let plannerItemLookup = new Map();
+
+    function plannerItemBadges(it) {
+      if (it.kind === "income") return `<span class="badge badge-emerald">Income</span>`;
+      if (it.kind === "bill") return `<span class="badge badge-amber">Bill</span>` + (it.onCredit ? ` <span class="badge badge-brand">Credit Card</span>` : "");
+      return txnTypeBadge({ txnType: it.txnType }) + " " + cardTypeBadge({ cardType: it.cardType });
+    }
+
+    function plannerItemAmount(it) {
+      switch (it.flow) {
+        case "in": return `<span class="font-semibold text-emerald-700">+${formatMoney(it.amount)}</span>`;
+        case "out": return `<span class="font-semibold text-rose-700">−${formatMoney(it.amount)}</span>`;
+        case "cc": return `<span class="font-semibold text-slate-500" title="Credit card spend — billed later">${formatMoney(it.amount)} <span class="text-[10px] font-normal">CC</span></span>`;
+        default: return `<span class="font-semibold text-slate-500" title="Credit card refund">−${formatMoney(it.amount)} <span class="text-[10px] font-normal">CC</span></span>`;
+      }
+    }
+
     function renderPlanner() {
       const { rows, carryNextMonth } = computePlanner();
       $("#carry-forward-next-month").textContent = formatMoney(carryNextMonth);
 
       const tbody = $("#period-table-body");
       tbody.innerHTML = "";
+      plannerItemLookup = new Map();
 
       if (!rows.length) {
         tbody.innerHTML = `<tr><td colspan="5" class="px-4 py-4 text-center text-slate-500">No periods to display.</td></tr>`;
         return;
       }
 
+      const todayISO = toISODate(new Date());
+
       for (const r of rows) {
         const tr = document.createElement("tr");
         const carryClass = r.carry >= 0 ? "text-emerald-700" : "text-rose-700";
         const netClass = r.net >= 0 ? "text-emerald-700" : "text-rose-700";
+        const expanded = ui.expandedPeriodKeys.has(r.period.startISO);
+        const isCurrent = todayISO >= r.period.startISO && todayISO <= r.period.endISO;
 
         tr.innerHTML = `
           <td class="px-4 py-3 font-medium text-slate-800">
-            <div>${escapeHtml(r.period.startISO)} → ${escapeHtml(r.period.endISO)}</div>
+            <div>${escapeHtml(r.period.startISO)} → ${escapeHtml(r.period.endISO)} ${isCurrent ? '<span class="badge badge-brand ml-1">Current</span>' : ""}</div>
             <div class="text-xs text-slate-500 mt-1">#${r.i + 1}</div>
+            <button type="button" class="text-brand-600 hover:underline text-xs mt-1" data-period-toggle="${r.period.startISO}">${expanded ? "▾" : "▸"} Details (${r.items.length})</button>
           </td>
           <td class="px-4 py-3 text-right font-semibold text-emerald-700">${formatMoney(r.income)}</td>
           <td class="px-4 py-3 text-right font-semibold text-rose-700">
@@ -2820,7 +2943,55 @@ service cloud.firestore {
           <td class="px-4 py-3 text-right font-bold ${carryClass}">${formatMoney(r.carry)}</td>
         `;
         tbody.appendChild(tr);
+
+        const detailTr = document.createElement("tr");
+        detailTr.id = `period-detail-${r.period.startISO}`;
+        detailTr.className = expanded ? "" : "hidden";
+
+        const itemsHtml = r.items.length
+          ? r.items.map((it, n) => {
+              const lookupId = `${r.i}-${n}`;
+              plannerItemLookup.set(lookupId, it);
+              return `
+                <div class="flex flex-wrap items-center justify-between gap-3 bg-white border border-slate-200 rounded-lg px-3 py-2">
+                  <div class="min-w-[200px] flex-1">
+                    <div class="text-sm font-medium text-slate-800">${escapeHtml(it.name)} ${plannerItemBadges(it)}</div>
+                    ${it.sub ? `<div class="text-xs text-slate-500 mt-0.5">${escapeHtml(it.sub)}</div>` : ""}
+                  </div>
+                  <div class="text-sm">${plannerItemAmount(it)}</div>
+                  <div class="flex items-center gap-2">
+                    <input type="date" value="${escapeHtml(it.date)}" data-planner-date="${lookupId}"
+                           class="border border-slate-300 rounded-lg px-2 py-1 text-sm">
+                    <button type="button" class="text-emerald-600 hover:underline text-xs font-semibold" data-planner-save="${lookupId}">Save date</button>
+                  </div>
+                </div>`;
+            }).join("")
+          : `<div class="text-sm text-slate-500">No transactions in this period.</div>`;
+
+        detailTr.innerHTML = `<td colspan="5" class="px-4 py-3 bg-slate-50"><div class="space-y-2">${itemsHtml}</div></td>`;
+        tbody.appendChild(detailTr);
       }
+
+      tbody.querySelectorAll("[data-period-toggle]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const key = btn.dataset.periodToggle;
+          const row = $(`#period-detail-${key}`);
+          const willShow = row.classList.contains("hidden");
+          row.classList.toggle("hidden");
+          if (willShow) ui.expandedPeriodKeys.add(key); else ui.expandedPeriodKeys.delete(key);
+          btn.textContent = btn.textContent.replace(/^[▸▾]/, willShow ? "▾" : "▸");
+        });
+      });
+
+      tbody.querySelectorAll("[data-planner-save]").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          const id = btn.dataset.plannerSave;
+          const item = plannerItemLookup.get(id);
+          const input = tbody.querySelector(`[data-planner-date="${id}"]`);
+          if (!item || !input || !input.value) return;
+          await savePlannerItemDate(item, input.value);
+        });
+      });
 
       $("#period-summary").textContent = `Showing ${rows.length} periods (${ui.planner.horizonDays} days).`;
     }
@@ -2925,6 +3096,7 @@ service cloud.firestore {
         };
         ui.expandedBillIds = new Set();
         ui.expandedIncomeIds = new Set();
+        ui.expandedPeriodKeys = new Set();
         setRoute("data");
         return;
       }
