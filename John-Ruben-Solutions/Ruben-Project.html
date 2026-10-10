@@ -397,11 +397,11 @@
                 <table class="min-w-[880px] w-full text-sm">
                   <thead>
                     <tr class="bg-slate-50">
-                      <th class="text-left px-4 py-3 font-semibold text-slate-600">Period</th>
-                      <th class="text-right px-4 py-3 font-semibold text-slate-600">Cash In (Income)</th>
-                      <th class="text-right px-4 py-3 font-semibold text-slate-600">Cash Out (Debit + Payoffs + Bills)</th>
-                      <th class="text-right px-4 py-3 font-semibold text-slate-600">Net</th>
-                      <th class="text-right px-4 py-3 font-semibold text-slate-600">Carry‑forward</th>
+                      <th class="text-left px-4 py-3 font-semibold text-slate-600"><button type="button" data-sort-table="period" data-sort-key="date" class="inline-flex items-center gap-1 hover:text-slate-900">Period <span data-sort-ind class="text-xs text-slate-400">↕</span></button></th>
+                      <th class="text-right px-4 py-3 font-semibold text-slate-600"><button type="button" data-sort-table="period" data-sort-key="income" class="inline-flex items-center gap-1 hover:text-slate-900">Cash In (Income) <span data-sort-ind class="text-xs text-slate-400">↕</span></button></th>
+                      <th class="text-right px-4 py-3 font-semibold text-slate-600"><button type="button" data-sort-table="period" data-sort-key="expense" class="inline-flex items-center gap-1 hover:text-slate-900">Cash Out (Debit + Payoffs + Bills) <span data-sort-ind class="text-xs text-slate-400">↕</span></button></th>
+                      <th class="text-right px-4 py-3 font-semibold text-slate-600"><button type="button" data-sort-table="period" data-sort-key="net" class="inline-flex items-center gap-1 hover:text-slate-900">Net <span data-sort-ind class="text-xs text-slate-400">↕</span></button></th>
+                      <th class="text-right px-4 py-3 font-semibold text-slate-600"><button type="button" data-sort-table="period" data-sort-key="carry" class="inline-flex items-center gap-1 hover:text-slate-900">Carry‑forward <span data-sort-ind class="text-xs text-slate-400">↕</span></button></th>
                     </tr>
                   </thead>
                   <tbody id="period-table-body"></tbody>
@@ -487,8 +487,8 @@
                 <table class="w-full text-sm">
                   <thead>
                     <tr class="bg-slate-50">
-                      <th class="text-left px-3 py-2 font-semibold text-slate-600">Account</th>
-                      <th class="text-right px-3 py-2 font-semibold text-slate-600">Balance</th>
+                      <th class="text-left px-3 py-2 font-semibold text-slate-600"><button type="button" data-sort-table="banks" data-sort-key="name" class="inline-flex items-center gap-1 hover:text-slate-900">Account <span data-sort-ind class="text-xs text-slate-400">↕</span></button></th>
+                      <th class="text-right px-3 py-2 font-semibold text-slate-600"><button type="button" data-sort-table="banks" data-sort-key="balance" class="inline-flex items-center gap-1 hover:text-slate-900">Balance <span data-sort-ind class="text-xs text-slate-400">↕</span></button></th>
                       <th class="text-right px-3 py-2 font-semibold text-slate-600">Actions</th>
                     </tr>
                   </thead>
@@ -547,8 +547,8 @@
                 <table class="w-full text-sm">
                   <thead>
                     <tr class="bg-slate-50">
-                      <th class="text-left px-3 py-2 font-semibold text-slate-600">Card</th>
-                      <th class="text-right px-3 py-2 font-semibold text-slate-600">Balance Owed</th>
+                      <th class="text-left px-3 py-2 font-semibold text-slate-600"><button type="button" data-sort-table="credit" data-sort-key="name" class="inline-flex items-center gap-1 hover:text-slate-900">Card <span data-sort-ind class="text-xs text-slate-400">↕</span></button></th>
+                      <th class="text-right px-3 py-2 font-semibold text-slate-600"><button type="button" data-sort-table="credit" data-sort-key="balance" class="inline-flex items-center gap-1 hover:text-slate-900">Balance Owed <span data-sort-ind class="text-xs text-slate-400">↕</span></button></th>
                       <th class="text-right px-3 py-2 font-semibold text-slate-600">Actions</th>
                     </tr>
                   </thead>
@@ -602,8 +602,8 @@
                 <table class="w-full text-sm">
                   <thead>
                     <tr class="bg-slate-50">
-                      <th class="text-left px-3 py-2 font-semibold text-slate-600">Card</th>
-                      <th class="text-left px-3 py-2 font-semibold text-slate-600">Linked Bank Account</th>
+                      <th class="text-left px-3 py-2 font-semibold text-slate-600"><button type="button" data-sort-table="debit" data-sort-key="name" class="inline-flex items-center gap-1 hover:text-slate-900">Card <span data-sort-ind class="text-xs text-slate-400">↕</span></button></th>
+                      <th class="text-left px-3 py-2 font-semibold text-slate-600"><button type="button" data-sort-table="debit" data-sort-key="bank" class="inline-flex items-center gap-1 hover:text-slate-900">Linked Bank Account <span data-sort-ind class="text-xs text-slate-400">↕</span></button></th>
                       <th class="text-right px-3 py-2 font-semibold text-slate-600">Actions</th>
                     </tr>
                   </thead>
@@ -620,10 +620,10 @@
                 <table class="w-full text-sm">
                   <thead>
                     <tr class="bg-slate-50">
-                      <th class="text-left px-3 py-2 font-semibold text-slate-600">Card</th>
-                      <th class="text-left px-3 py-2 font-semibold text-slate-600">Date</th>
-                      <th class="text-left px-3 py-2 font-semibold text-slate-600">From Bank</th>
-                      <th class="text-right px-3 py-2 font-semibold text-slate-600">Amount</th>
+                      <th class="text-left px-3 py-2 font-semibold text-slate-600"><button type="button" data-sort-table="payoffs" data-sort-key="card" class="inline-flex items-center gap-1 hover:text-slate-900">Card <span data-sort-ind class="text-xs text-slate-400">↕</span></button></th>
+                      <th class="text-left px-3 py-2 font-semibold text-slate-600"><button type="button" data-sort-table="payoffs" data-sort-key="date" class="inline-flex items-center gap-1 hover:text-slate-900">Date <span data-sort-ind class="text-xs text-slate-400">↕</span></button></th>
+                      <th class="text-left px-3 py-2 font-semibold text-slate-600"><button type="button" data-sort-table="payoffs" data-sort-key="bank" class="inline-flex items-center gap-1 hover:text-slate-900">From Bank <span data-sort-ind class="text-xs text-slate-400">↕</span></button></th>
+                      <th class="text-right px-3 py-2 font-semibold text-slate-600"><button type="button" data-sort-table="payoffs" data-sort-key="amount" class="inline-flex items-center gap-1 hover:text-slate-900">Amount <span data-sort-ind class="text-xs text-slate-400">↕</span></button></th>
                     </tr>
                   </thead>
                   <tbody id="recent-payoffs-table-body"></tbody>
@@ -794,11 +794,11 @@
                 <table class="w-full text-sm">
                   <thead>
                     <tr class="bg-slate-50">
-                      <th class="text-left px-3 py-2 font-semibold text-slate-600">Source</th>
-                      <th class="text-left px-3 py-2 font-semibold text-slate-600">Date</th>
-                      <th class="text-left px-3 py-2 font-semibold text-slate-600">Bank Account</th>
-                      <th class="text-left px-3 py-2 font-semibold text-slate-600">Recurrence</th>
-                      <th class="text-right px-3 py-2 font-semibold text-slate-600">Amount</th>
+                      <th class="text-left px-3 py-2 font-semibold text-slate-600"><button type="button" data-sort-table="income" data-sort-key="source" class="inline-flex items-center gap-1 hover:text-slate-900">Source <span data-sort-ind class="text-xs text-slate-400">↕</span></button></th>
+                      <th class="text-left px-3 py-2 font-semibold text-slate-600"><button type="button" data-sort-table="income" data-sort-key="date" class="inline-flex items-center gap-1 hover:text-slate-900">Date <span data-sort-ind class="text-xs text-slate-400">↕</span></button></th>
+                      <th class="text-left px-3 py-2 font-semibold text-slate-600"><button type="button" data-sort-table="income" data-sort-key="bank" class="inline-flex items-center gap-1 hover:text-slate-900">Bank Account <span data-sort-ind class="text-xs text-slate-400">↕</span></button></th>
+                      <th class="text-left px-3 py-2 font-semibold text-slate-600"><button type="button" data-sort-table="income" data-sort-key="recurrence" class="inline-flex items-center gap-1 hover:text-slate-900">Recurrence <span data-sort-ind class="text-xs text-slate-400">↕</span></button></th>
+                      <th class="text-right px-3 py-2 font-semibold text-slate-600"><button type="button" data-sort-table="income" data-sort-key="amount" class="inline-flex items-center gap-1 hover:text-slate-900">Amount <span data-sort-ind class="text-xs text-slate-400">↕</span></button></th>
                       <th class="text-right px-3 py-2 font-semibold text-slate-600">Actions</th>
                     </tr>
                   </thead>
@@ -868,11 +868,11 @@
                 <table class="w-full text-sm">
                   <thead>
                     <tr class="bg-slate-50">
-                      <th class="text-left px-3 py-2 font-semibold text-slate-600">Name</th>
-                      <th class="text-left px-3 py-2 font-semibold text-slate-600">Category</th>
-                      <th class="text-left px-3 py-2 font-semibold text-slate-600">First Due</th>
-                      <th class="text-left px-3 py-2 font-semibold text-slate-600">Recurrence</th>
-                      <th class="text-right px-3 py-2 font-semibold text-slate-600">Amount</th>
+                      <th class="text-left px-3 py-2 font-semibold text-slate-600"><button type="button" data-sort-table="bills" data-sort-key="name" class="inline-flex items-center gap-1 hover:text-slate-900">Name <span data-sort-ind class="text-xs text-slate-400">↕</span></button></th>
+                      <th class="text-left px-3 py-2 font-semibold text-slate-600"><button type="button" data-sort-table="bills" data-sort-key="category" class="inline-flex items-center gap-1 hover:text-slate-900">Category <span data-sort-ind class="text-xs text-slate-400">↕</span></button></th>
+                      <th class="text-left px-3 py-2 font-semibold text-slate-600"><button type="button" data-sort-table="bills" data-sort-key="date" class="inline-flex items-center gap-1 hover:text-slate-900">First Due <span data-sort-ind class="text-xs text-slate-400">↕</span></button></th>
+                      <th class="text-left px-3 py-2 font-semibold text-slate-600"><button type="button" data-sort-table="bills" data-sort-key="recurrence" class="inline-flex items-center gap-1 hover:text-slate-900">Recurrence <span data-sort-ind class="text-xs text-slate-400">↕</span></button></th>
+                      <th class="text-right px-3 py-2 font-semibold text-slate-600"><button type="button" data-sort-table="bills" data-sort-key="amount" class="inline-flex items-center gap-1 hover:text-slate-900">Amount <span data-sort-ind class="text-xs text-slate-400">↕</span></button></th>
                       <th class="text-right px-3 py-2 font-semibold text-slate-600">Actions</th>
                     </tr>
                   </thead>
@@ -922,8 +922,8 @@
                 <table class="w-full text-sm">
                   <thead>
                     <tr class="bg-slate-50">
-                      <th class="text-left px-3 py-2 font-semibold text-slate-600">Name</th>
-                      <th class="text-right px-3 py-2 font-semibold text-slate-600">Value</th>
+                      <th class="text-left px-3 py-2 font-semibold text-slate-600"><button type="button" data-sort-table="assets" data-sort-key="name" class="inline-flex items-center gap-1 hover:text-slate-900">Name <span data-sort-ind class="text-xs text-slate-400">↕</span></button></th>
+                      <th class="text-right px-3 py-2 font-semibold text-slate-600"><button type="button" data-sort-table="assets" data-sort-key="value" class="inline-flex items-center gap-1 hover:text-slate-900">Value <span data-sort-ind class="text-xs text-slate-400">↕</span></button></th>
                       <th class="text-right px-3 py-2 font-semibold text-slate-600">Actions</th>
                     </tr>
                   </thead>
@@ -973,8 +973,8 @@
                 <table class="w-full text-sm">
                   <thead>
                     <tr class="bg-slate-50">
-                      <th class="text-left px-3 py-2 font-semibold text-slate-600">Name</th>
-                      <th class="text-right px-3 py-2 font-semibold text-slate-600">Balance</th>
+                      <th class="text-left px-3 py-2 font-semibold text-slate-600"><button type="button" data-sort-table="liabilities" data-sort-key="name" class="inline-flex items-center gap-1 hover:text-slate-900">Name <span data-sort-ind class="text-xs text-slate-400">↕</span></button></th>
+                      <th class="text-right px-3 py-2 font-semibold text-slate-600"><button type="button" data-sort-table="liabilities" data-sort-key="value" class="inline-flex items-center gap-1 hover:text-slate-900">Balance <span data-sort-ind class="text-xs text-slate-400">↕</span></button></th>
                       <th class="text-right px-3 py-2 font-semibold text-slate-600">Actions</th>
                     </tr>
                   </thead>
@@ -1089,6 +1089,7 @@ service cloud.firestore {
       expandedIncomeIds: new Set(),
       expandedPeriodKeys: new Set(),
       ledgerSort: { key: "date", dir: "desc" },
+      sorts: {},
       editing: {
         assetId: null,
         liabilityId: null,
@@ -1367,7 +1368,7 @@ service cloud.firestore {
     function renderAssets() {
       const tbody = $("#assets-table-body");
       tbody.innerHTML = "";
-      const items = state.assets.slice().sort((a,b) => (b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
+      const items = applySort("assets", state.assets.slice().sort((a,b) => (b.createdAt?.seconds||0)-(a.createdAt?.seconds||0)));
       if (!items.length) {
         tbody.innerHTML = `<tr><td colspan="3" class="px-3 py-3 text-center text-slate-500">No other assets yet.</td></tr>`;
         return;
@@ -1449,7 +1450,7 @@ service cloud.firestore {
     function renderLiabilities() {
       const tbody = $("#liabilities-table-body");
       tbody.innerHTML = "";
-      const items = state.liabilities.slice().sort((a,b) => (b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
+      const items = applySort("liabilities", state.liabilities.slice().sort((a,b) => (b.createdAt?.seconds||0)-(a.createdAt?.seconds||0)));
       if (!items.length) {
         tbody.innerHTML = `<tr><td colspan="3" class="px-3 py-3 text-center text-slate-500">No other liabilities yet.</td></tr>`;
         return;
@@ -1586,7 +1587,7 @@ service cloud.firestore {
 
     function renderBankAccounts() {
       const tbody = $("#banks-table-body");
-      const items = state.bankAccounts.slice().sort((a,b) => (b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
+      const items = applySort("banks", state.bankAccounts.slice().sort((a,b) => (b.createdAt?.seconds||0)-(a.createdAt?.seconds||0)));
       if (!items.length) {
         tbody.innerHTML = `<tr><td colspan="3" class="px-3 py-3 text-center text-slate-500">No bank accounts yet — add one to route income and debit cards.</td></tr>`;
       } else {
@@ -1722,7 +1723,7 @@ service cloud.firestore {
 
     function renderCreditCards() {
       const tbody = $("#credit-cards-table-body");
-      const items = state.creditCards.slice().sort((a,b) => (b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
+      const items = applySort("credit", state.creditCards.slice().sort((a,b) => (b.createdAt?.seconds||0)-(a.createdAt?.seconds||0)));
       if (!items.length) {
         tbody.innerHTML = `<tr><td colspan="3" class="px-3 py-3 text-center text-slate-500">No credit cards yet.</td></tr>`;
       } else {
@@ -1825,7 +1826,7 @@ service cloud.firestore {
 
     function renderDebitCards() {
       const tbody = $("#debit-cards-table-body");
-      const items = state.debitCards.slice().sort((a,b) => (b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
+      const items = applySort("debit", state.debitCards.slice().sort((a,b) => (b.createdAt?.seconds||0)-(a.createdAt?.seconds||0)));
       if (!items.length) {
         tbody.innerHTML = `<tr><td colspan="3" class="px-3 py-3 text-center text-slate-500">No debit cards yet.</td></tr>`;
       } else {
@@ -1923,11 +1924,12 @@ service cloud.firestore {
 
       const payoffsBody = $("#recent-payoffs-table-body");
       if (payoffsBody) {
-        const payoffs = (state.transactions || [])
+        let payoffs = (state.transactions || [])
           .filter(t => t.txnType === "payoff")
           .slice()
           .sort((a,b) => parseISODateLocal(b.date) - parseISODateLocal(a.date))
           .slice(0, 8);
+        payoffs = applySort("payoffs", payoffs);
 
         if (!payoffs.length) {
           payoffsBody.innerHTML = `<tr><td colspan="4" class="px-3 py-3 text-center text-slate-500">No payoffs recorded yet.</td></tr>`;
@@ -2188,6 +2190,57 @@ service cloud.firestore {
       if (summaryEl) summaryEl.textContent = `${items.length} transaction${items.length === 1 ? "" : "s"} logged · ${billRows.length} bill payment${billRows.length === 1 ? "" : "s"} to date.`;
     }
 
+    // ===== Generic table sorting (all tables except the Transaction Ledger, which has its own) =====
+    const lc = (v) => String(v ?? "").toLowerCase();
+    const bankNameById = (id) => lc((state.bankAccounts || []).find(b => b.id === id)?.name);
+    const recurrenceKey = (x) => !x.isRecurring ? "one-time" : (x.recurrenceType === "biweekly" ? "bi-weekly" : "monthly");
+    const num = (v) => Number(v) || 0;
+    const SORT_GETTERS = {
+      assets: { name: a => lc(a.name), value: a => num(a.value) },
+      liabilities: { name: l => lc(l.name), value: l => num(l.value) },
+      banks: { name: b => lc(b.name), balance: b => computeBankAccountBalance(b) },
+      credit: { name: c => lc(c.name), balance: c => computeCreditCardBalance(c) },
+      debit: { name: d => lc(d.name), bank: d => bankNameById(d.bankAccountId) },
+      payoffs: { card: p => lc(p.cardName), date: p => p.date || "", bank: p => bankNameById(p.sourceBankAccountId), amount: p => num(p.amount) },
+      income: { source: i => lc(i.source), date: i => i.date || "", bank: i => bankNameById(i.bankAccountId), recurrence: recurrenceKey, amount: i => num(i.amount) },
+      bills: { name: b => lc(b.name), category: b => lc(b.category), date: b => b.date || "", recurrence: recurrenceKey, amount: b => num(b.amount) },
+      period: { date: r => r.i, income: r => r.income, expense: r => r.expense, net: r => r.net, carry: r => r.carry }
+    };
+    const DESC_FIRST_KEYS = new Set(["balance", "amount", "value", "income", "expense", "net", "carry", "date"]);
+
+    function applySort(table, items) {
+      const st = ui.sorts[table];
+      const getter = st && SORT_GETTERS[table] && SORT_GETTERS[table][st.key];
+      if (!getter) return items;
+      const mult = st.dir === "asc" ? 1 : -1;
+      return items.slice().sort((a, b) => {
+        const va = getter(a), vb = getter(b);
+        const c = (typeof va === "string") ? va.localeCompare(vb) : va - vb;
+        return c * mult;
+      });
+    }
+
+    function updateSortIndicators() {
+      $$("[data-sort-table]").forEach(btn => {
+        const st = ui.sorts[btn.dataset.sortTable];
+        const active = !!st && st.key === btn.dataset.sortKey;
+        const ind = btn.querySelector("[data-sort-ind]");
+        if (!ind) return;
+        ind.textContent = active ? (st.dir === "asc" ? "▲" : "▼") : "↕";
+        ind.className = "text-xs " + (active ? "text-brand-600" : "text-slate-400");
+      });
+    }
+
+    $$("[data-sort-table]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const table = btn.dataset.sortTable, key = btn.dataset.sortKey;
+        const cur = ui.sorts[table];
+        if (cur && cur.key === key) cur.dir = cur.dir === "asc" ? "desc" : "asc";
+        else ui.sorts[table] = { key, dir: DESC_FIRST_KEYS.has(key) ? "desc" : "asc" };
+        refreshAllViews();
+      });
+    });
+
     $$("[data-ledger-sort]").forEach(btn => {
       btn.addEventListener("click", () => {
         const key = btn.dataset.ledgerSort;
@@ -2222,7 +2275,7 @@ service cloud.firestore {
     function renderIncomes() {
       const tbody = $("#income-table-body");
       tbody.innerHTML = "";
-      const items = sortByDateAsc(state.incomes, "date").reverse();
+      const items = applySort("income", sortByDateAsc(state.incomes, "date").reverse());
       if (!items.length) {
         tbody.innerHTML = `<tr><td colspan="6" class="px-3 py-3 text-center text-slate-500">No incomes yet.</td></tr>`;
         return;
@@ -2628,7 +2681,7 @@ service cloud.firestore {
     function renderBills() {
       const tbody = $("#bills-table-body");
       tbody.innerHTML = "";
-      const items = sortByDateAsc(state.bills, "date").reverse();
+      const items = applySort("bills", sortByDateAsc(state.bills, "date").reverse());
 
       if (!items.length) {
         tbody.innerHTML = `<tr><td colspan="6" class="px-3 py-3 text-center text-slate-500">No future bills yet.</td></tr>`;
@@ -3022,7 +3075,9 @@ service cloud.firestore {
     }
 
     function renderPlanner() {
-      const { rows, carryNextMonth } = computePlanner();
+      const planner = computePlanner();
+      const carryNextMonth = planner.carryNextMonth;
+      const rows = applySort("period", planner.rows);
       $("#carry-forward-next-month").textContent = formatMoney(carryNextMonth);
 
       const tbody = $("#period-table-body");
@@ -3182,6 +3237,7 @@ service cloud.firestore {
       }
       if (!routePeriod.classList.contains("hidden")) renderPlanner();
       if (!routeAccounts.classList.contains("hidden")) renderAccountsSummary();
+      updateSortIndicators();
     }
 
     // ===== Planner controls =====
