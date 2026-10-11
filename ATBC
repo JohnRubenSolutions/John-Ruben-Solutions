@@ -1,1 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Antioch Telugu Baptist Church | Sunday worship in Elmhurst, Illinois</title>
+<meta name="description" content="Antioch Telugu Baptist Church worships every Sunday at 1:30 PM Central Time at 367 S Spring Rd, Elmhurst, IL 60126. Sermons in Telugu and English. Everyone is welcome.">
+<meta property="og:title" content="Antioch Telugu Baptist Church">
+<meta property="og:description" content="Sunday worship at 1:30 PM Central Time in Elmhurst, Illinois.">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#101B3B">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Figtree:wght@400;500;600&display=swap" rel="stylesheet">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Church",
+  "name": "Antioch Telugu Baptist Church",
+  "foundingDate": "1991",
+  "telephone": "+1-847-602-2750",
+  "address": {
+    "@type": "PostalAddress",
+    "streetAddress": "367 S Spring Rd",
+    "addressLocality": "Elmhurst",
+    "addressRegion": "IL",
+    "postalCode": "60126",
+    "addressCountry": "US"
+  }
+}
+</script>
+
+<style>
+  :root {
+    --ink: #101B3B;
+    --ink-soft: #1C2B5A;
+    --paper: #F6F8FC;
+    --card: #FFFFFF;
+    --line: #DDE3F0;
+    --marigold: #F4A62A;
+    --marigold-deep: #8A5200;
+    --text: #1F2937;
+    --muted: #556075;
+    --radius: 16px;
+    --display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+    --body: "Figtree", "Segoe UI", system-ui, -apple-system, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 76px; }
+  body {
+    margin: 0;
+    font-family: var(--body);
+    font-size: 1.0625rem;
+    line-height: 1.65;
+    color: var(--text);
+    background: var(--paper);
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3 { font-family: var(--display); line-height: 1.12; margin: 0; letter-spacing: -0.01em; }
+  p { margin: 0 0 1rem; }
+  a { color: inherit; }
+  img, iframe { max-width: 100%; }
+  :focus-visible { outline: 3px solid var(--marigold); outline-offset: 3px; border-radius: 4px; }
+
+  .wrap { width: min(1080px, 100% - 2.5rem); margin-inline: auto; }
+  .skip { position: absolute; left: -999px; top: 0; background: #fff; color: var(--ink); padding: .6rem 1rem; z-index: 100; }
+  .skip:focus { left: 1rem; top: 1rem; }
+
+  /* Header */
+  header.site {
+    position: sticky; top: 0; z-index: 50;
+    background: var(--ink); color: #fff;
+    border-bottom: 1px solid rgba(255,255,255,.08);
+  }
+  header.site .wrap { display: flex; align-items: center; justify-content: space-between; gap: 1rem; min-height: 64px; }
+  .brand { font-family: var(--display); font-weight: 700; font-size: 1.1rem; text-decoration: none; letter-spacing: -0.01em; }
+  nav { display: flex; align-items: center; gap: 1.5rem; }
+  nav a { text-decoration: none; font-weight: 500; font-size: .98rem; color: rgba(255,255,255,.82); }
+  nav a:hover { color: #fff; }
+  nav a.call { background: var(--marigold); color: var(--ink); padding: .45rem 1rem; border-radius: 999px; font-weight: 600; }
+  nav a.call:hover { background: #ffbc4d; color: var(--ink); }
+  @media (max-width: 680px) {
+    nav a:not(.call) { display: none; }
+    .brand { font-size: 1rem; }
+  }
+
+  /* Buttons */
+  .btn {
+    display: inline-block; text-decoration: none; font-weight: 600;
+    padding: .8rem 1.4rem; border-radius: 999px; border: 2px solid transparent;
+    transition: background-color .15s, color .15s, border-color .15s;
+  }
+  .btn-primary { background: var(--marigold); color: var(--ink); }
+  .btn-primary:hover { background: #ffbc4d; }
+  .btn-ghost { border-color: rgba(255,255,255,.35); color: #fff; }
+  .btn-ghost:hover { border-color: #fff; }
+  .btn-dark { background: var(--ink); color: #fff; }
+  .btn-dark:hover { background: var(--ink-soft); }
+  .btn-line { border-color: var(--ink); color: var(--ink); }
+  .btn-line:hover { background: var(--ink); color: #fff; }
+
+  /* Hero */
+  .hero { background: var(--ink); color: #fff; position: relative; overflow: hidden; }
+  .hero::before {
+    content: ""; position: absolute; right: -180px; top: -160px;
+    width: 560px; height: 560px; border-radius: 50%;
+    background: var(--marigold); opacity: .14;
+  }
+  .hero .wrap {
+    position: relative; display: grid; grid-template-columns: 1.1fr .9fr;
+    gap: 3rem; align-items: center; padding-block: 5rem 5.5rem;
+  }
+  .hero h1 { font-size: clamp(2.5rem, 6vw, 4.25rem); font-weight: 700; margin-bottom: 1.25rem; }
+  .hero .lead { font-size: 1.2rem; color: rgba(255,255,255,.8); max-width: 34rem; }
+  .service {
+    background: var(--card); color: var(--text); border-radius: 22px;
+    padding: 2rem; box-shadow: 0 24px 60px rgba(0,0,0,.3);
+  }
+  .service .day { font-weight: 600; color: var(--marigold-deep); margin: 0; }
+  .service .time { font-family: var(--display); font-weight: 700; font-size: clamp(3rem, 8vw, 4.5rem); line-height: 1; color: var(--ink); margin: .25rem 0 .1rem; }
+  .service .zone { color: var(--muted); margin-bottom: 1.25rem; }
+  .service address { font-style: normal; font-weight: 500; padding-top: 1.25rem; border-top: 1px solid var(--line); }
+  .service .lang { color: var(--muted); font-size: .98rem; margin: .5rem 0 1.5rem; }
+  .service .actions { display: flex; flex-wrap: wrap; gap: .75rem; }
+  @media (max-width: 820px) {
+    .hero .wrap { grid-template-columns: 1fr; padding-block: 3.5rem 4rem; gap: 2.25rem; }
+  }
+
+  /* Anniversary */
+  .anniv { background: var(--marigold); color: var(--ink); }
+  .anniv .wrap { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem 2rem; padding-block: 1.75rem; }
+  .anniv h2 { font-size: clamp(1.4rem, 3vw, 1.9rem); }
+  .anniv p { margin: .25rem 0 0; max-width: 38rem; }
+  .anniv .count { font-family: var(--display); font-weight: 700; font-size: 1.6rem; white-space: nowrap; }
+
+  /* Sections */
+  section.block { padding-block: 5rem; }
+  section.block h2 { font-size: clamp(1.9rem, 4vw, 2.6rem); margin-bottom: 1.5rem; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 3.5rem; align-items: start; }
+  @media (max-width: 820px) { .two { grid-template-columns: 1fr; gap: 2.25rem; } section.block { padding-block: 3.5rem; } }
+  .prose { max-width: 38rem; }
+
+  /* Timeline */
+  .timeline { list-style: none; margin: 0; padding: 0 0 0 1.5rem; border-left: 2px solid var(--line); }
+  .timeline li { position: relative; padding: 0 0 2rem 1.25rem; }
+  .timeline li:last-child { padding-bottom: 0; }
+  .timeline li::before {
+    content: ""; position: absolute; left: calc(-1.5rem - 7px); top: .45rem;
+    width: 12px; height: 12px; border-radius: 50%;
+    background: var(--paper); border: 3px solid var(--marigold);
+  }
+  .timeline h3 { font-size: 1.25rem; margin-bottom: .25rem; }
+  .timeline p { margin: 0; color: var(--muted); }
+
+  /* Pastor */
+  .pastor { background: var(--card); border-block: 1px solid var(--line); }
+  .pastor .two { grid-template-columns: .8fr 1.2fr; }
+  .portrait {
+    aspect-ratio: 4 / 5; border-radius: 22px; background: var(--ink);
+    display: grid; place-items: center; color: var(--marigold);
+    font-family: var(--display); font-weight: 700; font-size: 4.5rem;
+    max-width: 340px; width: 100%;
+  }
+  .pastor .role { color: var(--marigold-deep); font-weight: 600; margin-bottom: 1.25rem; }
+  .facts { list-style: none; margin: 1.5rem 0; padding: 0; display: grid; gap: .9rem; }
+  .facts li { padding-left: 1.25rem; position: relative; }
+  .facts li::before { content: ""; position: absolute; left: 0; top: .7em; width: 7px; height: 7px; border-radius: 50%; background: var(--marigold); }
+  @media (max-width: 820px) { .pastor .two { grid-template-columns: 1fr; } .portrait { max-width: 220px; font-size: 3.25rem; } }
+
+  /* Visit */
+  .visit-info { display: grid; gap: 1.5rem; }
+  .visit-info h3 { font-size: 1.1rem; margin-bottom: .25rem; }
+  .visit-info p { margin: 0; color: var(--muted); }
+  .visit-info p strong { color: var(--text); font-weight: 600; }
+  .map { border: 0; width: 100%; height: 380px; border-radius: var(--radius); background: var(--line); }
+  .note { font-size: .95rem; color: var(--muted); margin-top: 1.5rem; }
+
+  footer.site { background: var(--ink); color: rgba(255,255,255,.75); padding-block: 2.5rem; font-size: .96rem; }
+  footer.site .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 1rem 2rem; }
+  footer.site p { margin: 0; }
+  footer.site a { color: #fff; }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    * { transition: none !important; }
+  }
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="site">
+  <div class="wrap">
+    <a class="brand" href="#top">Antioch Telugu Baptist Church</a>
+    <nav aria-label="Main">
+      <a href="#about">Our story</a>
+      <a href="#pastor">Our pastor</a>
+      <a href="#visit">Visit</a>
+      <a class="call" href="tel:+18476022750">Call us</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+
+  <!-- HERO: the one memorable thing is the Sunday time -->
+  <section class="hero" id="top">
+    <div class="wrap">
+      <div>
+        <h1>Worship with us every Sunday.</h1>
+        <p class="lead">Antioch Telugu Baptist Church has gathered in the Chicago area since 1991. Whether you are new to town or have been looking for a church home, you are welcome here.</p>
+      </div>
+
+      <div class="service">
+        <p class="day">Every Sunday</p>
+        <p class="time">1:30 PM</p>
+        <p class="zone">Central Time</p>
+        <address>
+          Elmhurst Presbyterian Church<br>
+          367 S Spring Rd<br>
+          Elmhurst, IL 60126
+        </address>
+        <p class="lang">Sermons are shared in both Telugu and English.</p>
+        <div class="actions">
+          <a class="btn btn-dark" href="https://www.google.com/maps/dir/?api=1&destination=367+S+Spring+Rd,+Elmhurst,+IL+60126" target="_blank" rel="noopener">Get directions</a>
+          <a class="btn btn-line" href="tel:+18476022750">Call (847) 602-2750</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ANNIVERSARY -->
+  <section class="anniv" id="anniversary" aria-labelledby="anniv-title">
+    <div class="wrap">
+      <div>
+        <h2 id="anniv-title">Our 35th anniversary is October 18, 2026.</h2>
+        <!-- TODO: add the anniversary schedule (time, place, special guests) when it is final. -->
+        <p>Details will be posted here soon. Call (847) 602-2750 if you would like to know more.</p>
+      </div>
+      <div class="count" id="countdown" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <!-- ABOUT -->
+  <section class="block" id="about">
+    <div class="wrap two">
+      <div class="prose">
+        <h2>Our story</h2>
+        <p>Antioch Telugu Baptist Church was founded in 1991 and is the first Telugu Baptist church in the United States.</p>
+        <p>We began in Northlake, Illinois. Today we worship on Sundays at Elmhurst Presbyterian Church, whose space we are grateful to share.</p>
+        <p>Our church is part of the wider Baptist family, including the American Baptist Churches of Metro Chicago and the Alliance of Asian American Baptist Churches.</p>
+      </div>
+
+      <ol class="timeline" aria-label="Church history">
+        <li>
+          <h3>1991</h3>
+          <p>The church is founded by David V. Sagar.</p>
+        </li>
+        <li>
+          <h3>Northlake, Illinois</h3>
+          <p>Our first home, where the congregation grew as the first Telugu Baptist church in the U.S.</p>
+        </li>
+        <li>
+          <h3>Elmhurst, Illinois</h3>
+          <p>Our Sunday worship now takes place at Elmhurst Presbyterian Church.</p>
+        </li>
+        <li>
+          <h3>October 18, 2026</h3>
+          <p>We celebrate 35 years together.</p>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- PASTOR -->
+  <section class="block pastor" id="pastor">
+    <div class="wrap two">
+      <!-- TODO: replace this placeholder with a photo, e.g.
+           <img src="pastor.jpg" alt="Rev. Dr. David Vidya Sagar" style="aspect-ratio:4/5;object-fit:cover;border-radius:22px;max-width:340px;width:100%"> -->
+      <div class="portrait" role="img" aria-label="Photo of Rev. Dr. David Vidya Sagar coming soon">DVS</div>
+
+      <div class="prose">
+        <h2>Rev. Dr. David Vidya Sagar</h2>
+        <p class="role">Pastor</p>
+        <p>Pastor Sagar leads our congregation and also serves the wider church around the world as an associate global servant with International Ministries, consulting on development in India.</p>
+        <ul class="facts">
+          <li>He promotes relationships and cooperation among Telugu Baptist churches worldwide.</li>
+          <li>With Telugu Christian leaders, he directs the Telugu Baptist Samaikyatha initiative. Samaikyatha means unity and equality, and the goal is a fellowship network of over 1 million Telugu Baptists in India. It also aims to renew mission-minded churches and bless Indian communities around the world.</li>
+          <li>He is a resource person for the Baptist Council of Telugu Churches and the India Mission Coordination Committee.</li>
+          <li>He is an active member of the American Baptist Churches of Metro Chicago and the Alliance of Asian American Baptist Churches.</li>
+        </ul>
+        <a class="btn btn-line" href="https://internationalministries.org/abcusa-pastor-from-illinois-appointed-for-global-mission-service-in-india/" target="_blank" rel="noopener">Read the International Ministries announcement</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- VISIT -->
+  <section class="block" id="visit">
+    <div class="wrap">
+      <h2>Plan your visit</h2>
+      <div class="two">
+        <div class="visit-info">
+          <div>
+            <h3>When</h3>
+            <p><strong>Sundays at 1:30 PM Central Time</strong></p>
+          </div>
+          <div>
+            <h3>Where</h3>
+            <p><strong>Elmhurst Presbyterian Church</strong><br>367 S Spring Rd, Elmhurst, IL 60126</p>
+          </div>
+          <div>
+            <h3>Language</h3>
+            <p>Sermons are shared in both Telugu and English.</p>
+          </div>
+          <div>
+            <h3>Questions?</h3>
+            <p><a href="tel:+18476022750"><strong>(847) 602-2750</strong></a><br>
+            <!-- TODO: replace with the exact page link, e.g. https://www.facebook.com/yourpage -->
+            <a href="https://www.facebook.com/search/top?q=Antioch%20Telugu%20Baptist%20Church" target="_blank" rel="noopener">Find us on Facebook</a></p>
+          </div>
+        </div>
+
+        <div>
+          <iframe class="map" title="Map showing 367 S Spring Rd, Elmhurst, Illinois"
+            loading="lazy" referrerpolicy="no-referrer-when-downgrade"
+            src="https://www.google.com/maps?q=367+S+Spring+Rd,+Elmhurst,+IL+60126&amp;output=embed"></iframe>
+          <p class="note">We worship in space shared with Elmhurst Presbyterian Church.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site">
+  <div class="wrap">
+    <p>Antioch Telugu Baptist Church<br>367 S Spring Rd, Elmhurst, IL 60126</p>
+    <p>Sundays at 1:30 PM Central Time<br><a href="tel:+18476022750">(847) 602-2750</a></p>
+  </div>
+</footer>
+
+<script>
+  // Anniversary countdown. October is Central Daylight Time (UTC-5).
+  (function () {
+    var el = document.getElementById("countdown");
+    if (!el) return;
+    var target = new Date("2026-10-17T00:00:00-05:00");
+    var days = Math.ceil((target - new Date()) / 86400000);
+    if (days > 1) el.textContent = days + " days to go";
+    else if (days === 1) el.textContent = "Tomorrow";
+    else if (days === 0) el.textContent = "Today";
+    else el.style.display = "none";
+  })();
+</script>
+</body>
+</html>
 
