@@ -1,158 +1,2173 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-J25PL1Z8SW"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
+    <!-- Google Analytics (carried over from your Home and Apply pages) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-J25PL1Z8SW"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+        gtag('config', 'G-J25PL1Z8SW', { send_page_view: false });
+    </script>
 
-  gtag('config', 'G-J25PL1Z8SW');
-</script>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>John Ruben Solutions - Weight Management Tools</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#0b1220">
+    <meta name="color-scheme" content="dark">
+    <title>John Ruben Solutions - Weight Management Tools</title>
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!--
+      FIRESTORE SECURITY RULES (paste in Firebase console > Firestore > Rules).
+      The tracker stores everything under users/{uid}/..., so lock it to the owner:
 
-<script src="https://cdn.tailwindcss.com"></script>
-<script>
-    tailwind.config = {
-        theme: {
-            extend: {
-                colors: {
-                    brand: { 
-                        navy: '#0f172a', 
-                        dark: '#020617',
-                        card: '#1e293b',
-                        input: '#334155',
-                        green: '#84cc16', 
-                        teal: '#22d3ee',
-                        text: '#f8fafc',
-                        muted: '#94a3b8'
-                    }
-                },
-                fontFamily: { 
-                    sans: ['"Plus Jakarta Sans"', 'sans-serif'],
-                    comfortaa: ['"Comfortaa"', 'cursive'] 
-                },
-                boxShadow: {
-                    'glow': '0 0 20px rgba(132, 204, 22, 0.15)',
-                    'glow-teal': '0 0 20px rgba(34, 211, 238, 0.15)'
-                }
-            }
+      rules_version = '2';
+      service cloud.firestore {
+        match /databases/{database}/documents {
+          match /users/{uid}/{document=**} {
+            allow read, write: if request.auth != null && request.auth.uid == uid;
+          }
         }
-    }
-</script>
+      }
+    -->
 
-<style>
-    body { background-color: #0f172a; color: #f8fafc; }
-    .animate-up { animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
-    @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-    
-    /* PULSE ANIMATION */
-    @keyframes pulse-dot {
-        0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
-        70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
-        100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
-    }
-    .animate-pulse-dot {
-        animation: pulse-dot 2s infinite;
-    }
-</style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+
+    <script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone@7.24.7/babel.min.js"></script>
+
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js" type="text/javascript"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, query, where, onSnapshot, deleteDoc, doc, setDoc, getDoc, orderBy, serverTimestamp, getDocs, limit, writeBatch } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyD2h_sejv6lB8sFC15xHSgqxfdD2hLd5Kg",
+            authDomain: "john-ruben-solutions.firebaseapp.com",
+            projectId: "john-ruben-solutions",
+            storageBucket: "john-ruben-solutions.firebasestorage.app",
+            messagingSenderId: "761855596159",
+            appId: "1:761855596159:web:a4bbe805663c2304c5d14a",
+            measurementId: "G-1T2J8VR066"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const googleProvider = new GoogleAuthProvider();
+
+        window.fb = { auth, db, googleProvider, signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, sendPasswordResetEmail, collection, addDoc, query, where, onSnapshot, deleteDoc, doc, setDoc, getDoc, getDocs, orderBy, serverTimestamp, limit, writeBatch };
+        window.dispatchEvent(new Event('fb-ready'));
+    </script>
+
+    <script>
+        tailwind.config = { theme: { extend: { fontFamily: { sans: ['"Plus Jakarta Sans"', 'sans-serif'] } } } }
+    </script>
+    <style>
+        :root {
+            --bg:#0b1220; --s1:#111a2c; --s2:#18233a; --s3:#22304d; --line:#26334d;
+            --tx:#e8eef8; --mut:#8a98b3;
+            --lime:#a3e635; --teal:#22d3ee; --amber:#fbbf24; --violet:#a78bfa; --red:#f87171;
+        }
+        html, body { background: var(--bg); color: var(--tx); font-family: 'Plus Jakarta Sans', system-ui, sans-serif; font-variant-numeric: tabular-nums; -webkit-text-size-adjust: 100%; }
+        .card { background: var(--s1); border: 1px solid var(--line); border-radius: 18px; }
+        .inset { background: var(--s2); border-radius: 12px; }
+        .muted { color: var(--mut); }
+        .field { background: var(--s2); border: 1px solid transparent; border-radius: 12px; color: var(--tx); padding: .75rem .9rem; font-size: 16px; outline: none; width: 100%; font-family: inherit; }
+        .field:focus { border-color: var(--teal); }
+        .field::placeholder { color: #5f6e8a; }
+        select.field { appearance: none; }
+        .btn { border-radius: 12px; font-weight: 700; padding: .75rem 1rem; transition: background .15s, color .15s; cursor: pointer; font-size: .9rem; }
+        .btn:disabled { cursor: not-allowed; }
+        .btn-lime { background: var(--lime); color: #0b1220; }
+        .btn-lime:hover { background: #bef264; }
+        .btn-teal { background: var(--teal); color: #0b1220; }
+        .btn-teal:hover { background: #67e8f9; }
+        .btn-ghost { background: var(--s2); color: var(--tx); border: 1px solid var(--line); }
+        .btn-ghost:hover { background: var(--s3); }
+        .btn-danger { background: rgba(248,113,113,.12); color: var(--red); }
+        .btn-danger:hover { background: rgba(248,113,113,.22); }
+        .chip { display: inline-flex; align-items: center; gap: .25rem; border-radius: 999px; padding: .15rem .6rem; font-size: .72rem; font-weight: 700; background: var(--s2); }
+        .tabbar { background: rgba(11,18,32,.92); backdrop-filter: blur(12px); border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom); }
+        .tab { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: .55rem 0; font-size: .68rem; font-weight: 700; color: var(--mut); flex: 1; }
+        .tab.on { color: var(--lime); }
+        .tab.on.train { color: var(--teal); }
+        :focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+        .seg { display: flex; background: var(--s1); border: 1px solid var(--line); border-radius: 12px; padding: 3px; }
+        .seg button { flex: 1; padding: .5rem; border-radius: 9px; font-size: .8rem; font-weight: 700; color: var(--mut); }
+        .seg button.on { background: var(--lime); color: #0b1220; }
+        .hscroll { display: flex; gap: .5rem; overflow-x: auto; padding-bottom: .25rem; scrollbar-width: none; }
+        .hscroll::-webkit-scrollbar { display: none; }
+        #reader { width: 100% !important; border: none !important; }
+        #reader video { object-fit: cover; border-radius: 12px; }
+        .pop { animation: pop .18s ease-out; }
+        @keyframes pop { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+        .pulse { animation: pulse 2s infinite; }
+        @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .55; } }
+        details > summary { list-style: none; cursor: pointer; }
+        details > summary::-webkit-details-marker { display: none; }
+        details[open] .chev { transform: rotate(90deg); }
+        .chev { transition: transform .15s; }
+        .navrow { display: flex; gap: .4rem; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+        .navrow::-webkit-scrollbar { display: none; }
+        .navpill { white-space: nowrap; padding: .5rem .95rem; border-radius: 999px; font-size: .82rem; font-weight: 700; background: var(--s1); border: 1px solid var(--line); color: var(--mut); transition: color .15s, border-color .15s; }
+        .navpill:hover { color: var(--tx); }
+        .navpill.on { background: var(--lime); color: #0b1220; border-color: var(--lime); }
+        .flow-card { display: block; width: 100%; text-align: left; transition: border-color .15s, background .15s; }
+        .flow-card:hover { border-color: var(--lime); background: var(--s2); }
+        .flow-card.t:hover { border-color: var(--teal); }
+        .flow-card.v:hover { border-color: var(--violet); }
+        .step-n { width: 28px; height: 28px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: .78rem; font-weight: 800; background: var(--s3); }
+        .live-dot { width: 10px; height: 10px; border-radius: 999px; background: var(--red); animation: dot 2s infinite; }
+        @keyframes dot { 0% { box-shadow: 0 0 0 0 rgba(248,113,113,.6); } 70% { box-shadow: 0 0 0 7px rgba(248,113,113,0); } 100% { box-shadow: 0 0 0 0 rgba(248,113,113,0); } }
+        .custom-scroll::-webkit-scrollbar { width: 6px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: var(--s3); border-radius: 10px; }
+        @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+    </style>
 </head>
-<body class="antialiased pb-20 selection:bg-brand-green selection:text-brand-navy">
+<body>
+    <div id="root"></div>
 
-    <div class="max-w-3xl mx-auto px-4 pt-10">
+    <script type="text/babel">
+        const { useState, useEffect, useRef, useMemo } = React;
+        const API_KEY = '4FRpc4urF9W2UedPH6agara8y52PR0efkZRmoPvv';
 
-        <div class="text-center mb-10">
-            <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight text-white mb-2">JOHN RUBEN</h1>
-            <p class="text-xs font-bold text-brand-green uppercase tracking-[0.3em] mb-6">Weight Management Tools</p>
-            
-            <div class="max-w-xl mx-auto space-y-4">
-                <h2 class="text-2xl font-bold text-white">Take Control of Your Daily Diet</h2>
-                
-                <p class="text-brand-muted text-sm leading-relaxed">
-                    Whether you want to <strong class="text-white">lose weight</strong>, <strong class="text-white">gain muscle</strong>, or simply <strong class="text-white">live healthier</strong>, our <strong class="text-white">free tools</strong> are here to help you calculate <strong class="text-white">metabolic targets</strong> and check <strong class="text-white">medication</strong> information.
-                </p>
+        /* ---------- site settings (edit these) ---------- */
+        // Google Form for the live workshop interest survey. Update the form's questions to match
+        // (see the reply for suggested questions). Keep "?embedded=true" for the in-page version.
+        const WORKSHOP_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSeCiEjqlrbNIQPJsogV_SMZeQj7sJEMfMoHFMzYCk81pCHrjw/viewform?embedded=true';
+        const LINKS = {
+            protocols: 'https://johnrubensolutions.github.io/John-Ruben-Solutions/John-Ruben-Solutions/learn-more.html',
+            about: 'https://www.johnrubensolutions.com/about-me',
+            disclaimer: 'https://www.johnrubensolutions.com/disclaimer'
+        };
 
-                <p class="text-brand-green/90 italic font-medium text-xs md:text-sm border-l-2 border-brand-green pl-3 mx-auto max-w-md">
-                    "For God gave us a spirit not of fear but of power and love and self-control." — 2 Timothy 1:7
-                </p>
-            </div>
-        </div>
+        const WORKOUT_LIBRARY = {
+            "Chest": ["Bench Press", "Incline DB Press", "Cable Flyes", "Pushups", "Dips"],
+            "Back": ["Pull Ups", "Lat Pulldowns", "Bent Over Rows", "Deadlifts", "Face Pulls", "Stability Ball Hyperextension"],
+            "Shoulders": ["Overhead Press", "Dumbbell Front Raise", "Dumbbell Lateral Raise", "Rear Delt Flyes"],
+            "Arms": ["Dumbbell Bicep Curl", "Hammer Curls", "Cable Tricep Pushdown", "Skull Crushers"],
+            "Legs": ["Squats", "Leg Press", "Leg Extensions", "Hamstring Curls", "Calf Raises", "Hip Bridge Thrusts", "Side Leg Raises", "Standing Hip Adduction", "Air Squats"],
+            "Core": ["Exercise Ball Crunch", "Plank", "Leg Raises", "Russian Twists"],
+            "Cardio/Other": ["Running", "Jog in place", "Cycling", "Swimming"]
+        };
+        const EX_GROUP = {};
+        Object.entries(WORKOUT_LIBRARY).forEach(([g, list]) => list.forEach(e => { EX_GROUP[e] = g; }));
+        const MUSCLE_GROUPS = ["Chest", "Back", "Shoulders", "Arms", "Legs", "Core"];
 
-        <div class="space-y-4 mb-6">
-            <div class="animate-up">
-                <a href="https://johnrubensolutions.github.io/John-Ruben-Solutions/John-Ruben-Solutions/macro-calculator.html" target="_top" class="group relative block w-full">
-                    <div class="absolute inset-0 bg-gradient-to-r from-brand-green to-lime-500 rounded-2xl blur opacity-40 group-hover:opacity-60 transition-opacity"></div>
-                    <div class="relative bg-gradient-to-r from-brand-card to-slate-800 border border-brand-green/50 p-6 rounded-2xl flex items-center justify-between hover:scale-[1.01] transition-transform">
-                        <div class="flex items-center gap-4">
-                            <div class="bg-brand-green/20 p-3 rounded-xl text-brand-green text-2xl">
-                                📊
-                            </div>
-                            <div class="text-left">
-                                <h3 class="text-lg font-extrabold text-white group-hover:text-brand-green transition-colors">Macro Target Calculator</h3>
-                                <p class="text-xs text-brand-muted">Calculate your daily metabolic ceiling & protein needs.</p>
-                            </div>
-                        </div>
-                        <div class="bg-brand-navy p-2 rounded-full text-brand-green group-hover:bg-brand-green group-hover:text-brand-navy transition-colors">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
-                        </div>
+        /* ---------- helpers ---------- */
+        const pad = n => String(n).padStart(2, '0');
+        const localISO = (d = new Date()) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+        const parseISO = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d, 12, 0, 0); };
+        const addDays = (s, n) => { const d = parseISO(s); d.setDate(d.getDate() + n); return localISO(d); };
+        const num = v => { const n = parseFloat(v); return isNaN(n) ? 0 : n; };
+        const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+        const avg = arr => arr.reduce((a, b) => a + b, 0) / arr.length;
+
+        const getWeekNumber = (d) => {
+            const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+            date.setUTCDate(date.getUTCDate() + 4 - (date.getUTCDay() || 7));
+            const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+            return `${date.getUTCFullYear()}-W${Math.ceil((((date - yearStart) / 86400000) + 1) / 7)}`;
+        };
+        const formatWeekLabel = (weekStr) => {
+            const parts = weekStr.split('-');
+            return `Week ${parts[1].replace('W', '')}, ${parts[0]}`;
+        };
+
+        /* ---------- evidence-based target calculator ---------- */
+        // Sources for every rule below are listed in the Science tab (EVIDENCE).
+        const computeTargets = (p, weightLb) => {
+            const flags = [];
+            const kg = weightLb * 0.453592;
+            const hRaw = num(p.height);
+            const unit = p.heightUnit || (hRaw > 100 ? 'cm' : 'in');
+            const heightCm = hRaw ? (unit === 'cm' ? hRaw : hRaw * 2.54) : 175;
+            const age = num(p.age) || 30;
+            const male = (p.gender || 'male') === 'male';
+            const activity = num(p.activity) || 1.55;
+            const goalParsed = parseFloat(p.goal);
+            const goal = isNaN(goalParsed) ? -500 : goalParsed;
+
+            if (num(p.age) > 0 && num(p.age) < 18) flags.push('These targets use adult equations and guidelines. Under 18, ask a pediatric clinician before using them.');
+
+            // Mifflin-St Jeor resting energy x activity factor
+            const bmr = 10 * kg + 6.25 * heightCm - 5 * age + (male ? 5 : -161);
+            const tdee = Math.round(bmr * activity);
+
+            let delta = goal;
+            if (delta < 0) {
+                const cap = Math.round(tdee * 0.25);
+                if (-delta > cap) { delta = -cap; flags.push(`Deficit limited to 25% of maintenance (${cap} kcal) to keep weight loss gradual.`); }
+                else if (-delta > 750) flags.push('A deficit above 750 kcal/day is more aggressive than guideline-based advice (500-750). Watch your weekly rate on the Trends tab.');
+            }
+            let cals = tdee + delta;
+            const floor = male ? 1500 : 1200;
+            if (cals < floor) { cals = floor; flags.push(`Calories raised to the ${floor} kcal/day minimum used in clinical guidelines. Intakes below ~800 kcal/day need medical supervision.`); }
+
+            // Protein: g per kg body weight, 1.6-2.4, capped at 40% of calories
+            const ppk = clamp(num(p.proteinPerKg) || 1.8, 1.6, 2.4);
+            let pG = Math.round(ppk * kg);
+            if (pG * 4 > cals * 0.4) { pG = Math.round(cals * 0.4 / 4); flags.push('Protein capped at 40% of calories.'); }
+
+            // Fat: 20-40% of calories (default 25%), carbs fill the remainder
+            const fatPct = clamp(num(p.fatPct) || 25, 20, 40) / 100;
+            let fG = Math.round(cals * fatPct / 9);
+            let cG = Math.round((cals - pG * 4 - fG * 9) / 4);
+            if (cG < 0) { fG = Math.round(cals * 0.2 / 9); cG = Math.max(0, Math.round((cals - pG * 4 - fG * 9) / 4)); }
+
+            const fiber = Math.round(cals / 1000 * 14);
+            return { targets: { calories: cals, protein: pG, carbs: cG, fat: fG, fiber }, bmr: Math.round(bmr), tdee, delta, flags, kg, ppk };
+        };
+
+        /* ---------- evidence library ---------- */
+        const GRADES = {
+            A: { color: 'var(--lime)', name: 'Randomized evidence', text: 'Randomized trial(s) or a meta-analysis of randomized trials that tested this question directly.' },
+            B: { color: 'var(--teal)', name: 'Guideline', text: 'A clinical guideline or dietary reference standard built on trials plus expert review.' },
+            C: { color: 'var(--amber)', name: 'Supporting evidence', text: 'A validation study, mathematical model, regulatory standard or consensus. No direct randomized trial exists for this item.' }
+        };
+        const EVIDENCE = [
+            {
+                id: 'protein', grade: 'A', title: 'Protein target', usedIn: 'Daily protein goal (default 1.8 g/kg, adjustable 1.6-2.4)',
+                summary: 'Total protein of about 1.6 g/kg/day or more supports lean-mass gains from lifting. In a hard calorie deficit, 2.4 g/kg/day preserved and even added lean mass better than 1.2 g/kg/day.',
+                studies: [
+                    { cite: 'Morton RW et al. Br J Sports Med 2018;52(6):376-384', design: 'Systematic review and meta-analysis of 49 randomized trials (1,863 adults), resistance training for 6 weeks or more', finding: 'Protein supplementation improved strength, lean mass and muscle size. Extra benefit for lean mass levelled off around 1.62 g/kg/day total intake (upper confidence bound about 2.2).' },
+                    { cite: 'Longland TM et al. Am J Clin Nutr 2016;103(3):738-746', design: 'Single-blind randomized trial, 40 young men, 4 weeks, about 40% energy deficit plus intense training', finding: '2.4 vs 1.2 g/kg/day: lean mass +1.2 vs +0.1 kg; fat mass -4.8 vs -3.5 kg.' }
+                ],
+                caveat: 'The meta-analysis excluded weight-loss studies. The deficit trial was short, in lean young men training six days a week. Talk to a clinician before raising protein if you have kidney disease.'
+            },
+            {
+                id: 'pace', grade: 'A', title: 'Rate of weight loss', usedIn: 'Weekly rate card on the Trends tab (0.5-1.0% of body weight per week)',
+                summary: 'In athletes lifting four times a week, losing about 0.7% of body weight per week gained more lean mass and strength than losing about 1.4% per week.',
+                studies: [
+                    { cite: 'Garthe I et al. Int J Sport Nutr Exerc Metab 2011;21(2):97-104', design: 'Randomized trial, 24 elite athletes, 0.7% vs 1.4% body weight per week with 4 resistance sessions per week (open-label, DEXA body composition)', finding: 'The slower group increased lean mass and 1RM strength more; both groups lost similar fat.' },
+                    { cite: 'Garthe I et al. Int J Sport Nutr Exerc Metab 2011;21(5):426-435', design: '6 and 12 month follow-up of the same trial', finding: 'No group differences after 12 months.' }
+                ],
+                caveat: 'Small trial in elite athletes. The 0.5-1.0% band is this app\'s rule built around the tested 0.7% arm. Daily scale weight swings with water, so the app compares weekly averages.'
+            },
+            {
+                id: 'floor', grade: 'B', title: 'Calorie deficit and minimum intake', usedIn: 'Deficit limit and 1,200 / 1,500 kcal/day floor in your targets',
+                summary: 'Guidelines for adults with overweight or obesity advise a 500-750 kcal/day deficit, or 1,200-1,500 kcal/day for women and 1,500-1,800 for men. Very low-calorie diets (under 800 kcal/day) are for medically monitored programs only.',
+                studies: [
+                    { cite: 'Jensen MD et al. 2013 AHA/ACC/TOS Guideline for the Management of Overweight and Obesity in Adults. Circulation 2014;129(25 Suppl 2):S102-S138', design: 'Clinical guideline with graded evidence review; its authors rate calorie restriction by these methods as strong evidence (NHLBI grade A)', finding: 'Source of the deficit sizes, the calorie ranges and the under-800 kcal caution.' }
+                ],
+                caveat: 'The guideline covers adults with overweight or obesity. The app uses its lower bounds as a safety floor for everyone and also caps the deficit at 25% of maintenance, which is a conservative app rule rather than a trial result. Not for teens, pregnancy, or anyone with an eating-disorder history.'
+            },
+            {
+                id: 'macros', grade: 'A', title: 'Carbohydrate vs fat split', usedIn: 'Fat 25% of calories (adjustable 20-40%), carbs fill the rest. The old body-type ratios are no longer used.',
+                summary: 'Once calories and protein are set, the carb-to-fat split makes little difference to fat loss over a year. Pick the split you can stick to.',
+                studies: [
+                    { cite: 'Sacks FM et al. N Engl J Med 2009;360(9):859-873', design: 'Randomized trial, 811 overweight adults, 2 years, four diets differing in fat, protein and carbohydrate', finding: 'Clinically meaningful weight loss on all diets, with no meaningful differences between them.' },
+                    { cite: 'Gardner CD et al. JAMA 2018;319(7):667-679 (DIETFITS)', design: 'Randomized trial, 609 adults, 12 months, healthy low-fat vs healthy low-carb', finding: 'No significant difference in weight change. Neither genotype pattern nor insulin response predicted who did better on which diet.' }
+                ],
+                caveat: 'Ecto/meso/endomorph "body type" macro ratios have no randomized support, so the calculator ignores them. Your saved body type is kept in your profile data untouched.'
+            },
+            {
+                id: 'weigh', grade: 'A', title: 'Daily weigh-ins', usedIn: 'Daily weight box and weekly-average trend (not day-to-day reactions)',
+                summary: 'Weighing daily with feedback produced more weight loss than a delayed-start control, with no increase in adverse psychological outcomes in that trial.',
+                studies: [
+                    { cite: 'Steinberg DM et al. Obesity 2013;21(9):1789-1797', design: 'Randomized trial, 91 overweight adults, 6 months (open-label)', finding: 'The daily self-weighing group lost significantly more weight than controls at 3 and 6 months.' },
+                    { cite: 'Steinberg DM et al. Am J Prev Med 2014 (same trial, psychological outcomes)', design: 'Randomized trial, 6 months', finding: 'No adverse psychological outcomes from daily weighing.' }
+                ],
+                caveat: 'Participants also got weekly tailored feedback, and the trial excluded people who were not trying to lose weight. If weighing makes you anxious, or you have a history of disordered eating, skip it and talk to a clinician.'
+            },
+            {
+                id: 'volume', grade: 'A', title: 'Weekly sets per muscle group', usedIn: 'Weekly sets panel on the Train tab (marker at 10 sets)',
+                summary: 'More weekly hard sets per muscle were linked to more muscle growth, with 10 or more sets per week outperforming fewer than 5 or 5-9.',
+                studies: [
+                    { cite: 'Schoenfeld BJ, Ogborn D, Krieger JW. J Sports Sci 2017;35(11):1073-1082', design: 'Systematic review and dose-response meta-analysis of resistance-training studies', finding: 'Graded dose-response between weekly set volume and hypertrophy.' }
+                ],
+                caveat: 'Most included trials were open-label (lifting cannot be blinded). Returns diminish at high volumes, and little of this evidence comes from people in a calorie deficit.'
+            },
+            {
+                id: 'rest', grade: 'A', title: 'Rest between sets', usedIn: 'Rest timer presets (default 2 minutes)',
+                summary: 'Resting 3 minutes between sets built more strength and thigh muscle thickness than resting 1 minute in trained men.',
+                studies: [
+                    { cite: 'Schoenfeld BJ et al. J Strength Cond Res 2016;30(7):1805-1812', design: 'Randomized trial, 21 resistance-trained men, 8 weeks, 1 vs 3 minute rest', finding: 'Longer rests gave greater gains in strength and quadriceps thickness.' }
+                ],
+                caveat: 'Small trial in trained men, mostly compound lifts. Shorter rests are fine for smaller isolation exercises.'
+            },
+            {
+                id: 'resistance', grade: 'A', title: 'Resistance training while losing weight', usedIn: 'Train tab and the Drug Check note for GLP-1 medicines',
+                summary: 'In older adults with obesity, adding exercise to a weight-loss diet improved physical function, most with combined aerobic plus resistance training. Programs with resistance training limited the lean-mass loss that comes with dieting.',
+                studies: [
+                    { cite: 'Villareal DT et al. N Engl J Med 2017;376(20):1943-1955 (LIFT)', design: 'Randomized trial, 160 adults aged 65 or older with obesity, 6 months, diet plus aerobic, resistance or combined exercise vs diet-only control (open-label)', finding: 'Physical performance improved in all exercise groups and most in the combined group. Resistance-containing programs preserved more lean mass than aerobic exercise alone.' }
+                ],
+                caveat: 'Older adults, not taking weight-loss medicines, and exercise cannot be blinded. Younger adults and people on GLP-1 medicines were not studied here.'
+            },
+            {
+                id: 'glp1', grade: 'A', title: 'Weight and lean mass on GLP-1 medicines', usedIn: 'Drug Check: weight signal and muscle note for semaglutide, tirzepatide and related drugs',
+                summary: 'In double-blind trials, semaglutide 2.4 mg and tirzepatide produced about 15-21% weight loss over 68-72 weeks versus 2-4% on placebo. In DXA substudies, roughly a quarter to two-fifths of the weight lost registered as lean mass, and with semaglutide the lean share of body mass still rose.',
+                studies: [
+                    { cite: 'Wilding JPH et al. N Engl J Med 2021;384(11):989-1002 (STEP 1)', design: 'Double-blind randomized trial, 1,961 adults with overweight or obesity, semaglutide 2.4 mg vs placebo, 68 weeks, plus lifestyle intervention', finding: 'Mean weight change about -14.9% vs -2.4%.' },
+                    { cite: 'Wilding JPH et al. Body composition analysis of STEP 1 (exploratory DXA substudy, 140 participants)', design: 'Substudy within the double-blind trial, DXA scans at baseline and week 68', finding: 'Weight -15.0% vs -3.6%. Fat mass -19.3%, total lean mass -9.7%, lean share of body mass +3.0 percentage points. About 40% of weight lost was lean mass in secondary analyses.' },
+                    { cite: 'Jastreboff AM et al. N Engl J Med 2022;387(3):205-216 (SURMOUNT-1)', design: 'Double-blind randomized trial, 2,539 adults with overweight or obesity, tirzepatide 5, 10 or 15 mg vs placebo, 72 weeks', finding: 'Mean weight change about -15.0%, -19.5%, -20.9% vs -3.1%.' },
+                    { cite: 'Look M et al. Diabetes Obes Metab 2025 (SURMOUNT-1 DXA substudy, about 160 participants)', design: 'DXA substudy within the double-blind trial', finding: 'About a quarter of the weight lost was lean mass.' }
+                ],
+                caveat: 'DXA "lean mass" includes water and organ tissue as well as muscle, so it overstates true muscle loss. Substudies were exploratory and in subsets of participants. Doses approved for diabetes are lower and usually produce less weight loss. None of these trials tested protein or exercise advice on these medicines, and trials that do may have appeared since this page was written.'
+            },
+            {
+                id: 'druglabel', grade: 'C', title: 'Medication label screening', usedIn: 'Drug Check: weight, appetite and metabolic keyword screen of FDA label text',
+                summary: 'The Drug Check tool searches the text of an FDA label for weight- and metabolism-related terms and shows the matching excerpts. A hit means the label mentions the term, not that the drug causes it in everyone.',
+                studies: [
+                    { cite: 'U.S. FDA. Content and format of prescription drug labeling, 21 CFR 201.57. Data via openFDA', design: 'Regulatory standard. The Adverse Reactions section separates events seen in controlled trials from post-marketing reports.', finding: 'Trial tables that compare drug with placebo are the best guide to how common an effect is. Post-marketing reports cannot establish frequency or cause.' }
+                ],
+                caveat: 'Keyword matching cannot read context, so a sentence like "no weight gain was observed" still matches. Read the excerpt and the label itself. Never stop or change a medicine because of this tool.'
+            },
+            {
+                id: 'bmr', grade: 'C', title: 'Maintenance calories', usedIn: 'Maintenance estimate (Mifflin-St Jeor x activity factor)',
+                summary: 'Mifflin-St Jeor was the most accurate common equation for resting energy in a systematic review. Activity factors are rough multipliers.',
+                studies: [
+                    { cite: 'Mifflin MD et al. Am J Clin Nutr 1990;51(2):241-247', design: 'Derivation study using indirect calorimetry in healthy adults', finding: 'The prediction equation used in this app.' },
+                    { cite: 'Frankenfield D et al. J Am Diet Assoc 2005;105(5):775-789', design: 'Systematic review comparing prediction equations with measured resting metabolic rate', finding: 'Mifflin-St Jeor predicted within 10% of measured values for more people than the other equations.' }
+                ],
+                caveat: 'A randomized trial cannot test a prediction equation, so this is validation evidence. Individual error can exceed 10%. Your own weekly weight trend is the better calibration.'
+            },
+            {
+                id: 'model', grade: 'C', title: 'Why "3,500 kcal = 1 lb" is only a rough guide', usedIn: 'Projected rate shown in the calculator and Profile',
+                summary: 'Weight change slows as you lose because energy needs fall. A static 3,500 kcal per pound rule overestimates long-term loss.',
+                studies: [
+                    { cite: 'Hall KD et al. Lancet 2011;378(9793):826-837', design: 'Mathematical model of human energy balance', finding: 'Dynamic model predicts slower weight change over time than the static rule.' }
+                ],
+                caveat: 'Modelling, not a trial. The app labels projections as estimates and relies on your measured trend.'
+            },
+            {
+                id: 'fiber', grade: 'C', title: 'Fiber and fat ranges', usedIn: 'Fiber goal of 14 g per 1,000 kcal; fat never below 20% of calories',
+                summary: 'The US dietary reference intakes set adequate fiber at 14 g per 1,000 kcal and an acceptable fat range of 20-35% of calories for adults.',
+                studies: [
+                    { cite: 'Institute of Medicine. Dietary Reference Intakes for Energy, Carbohydrate, Fiber, Fat, Fatty Acids, Cholesterol, Protein, and Amino Acids. National Academies Press; 2005', design: 'Expert consensus standard; the fiber value rests mainly on prospective cohort data', finding: 'Source of both ranges.' }
+                ],
+                caveat: 'The fiber figure is not from a randomized trial. Treat it as a reasonable reference, not a proven dose. The app lets you set fat up to 40% if you prefer.'
+            }
+        ];
+
+        /* ---------- routing (hash based, so every section is linkable) ---------- */
+        const SECTIONS = ['home', 'calculator', 'tracker', 'drugs', 'workshop'];
+        const SECTION_TITLES = { home: 'Home', calculator: 'Macro calculator', tracker: 'Elite Tracker', drugs: 'Drug check', workshop: 'Live workshop' };
+        const readHash = () => { const h = window.location.hash.replace('#', ''); return SECTIONS.includes(h) ? h : 'home'; };
+        const useSection = () => {
+            const [section, setSection] = useState(readHash);
+            useEffect(() => {
+                const on = () => { setSection(readHash()); window.scrollTo(0, 0); };
+                window.addEventListener('hashchange', on);
+                return () => window.removeEventListener('hashchange', on);
+            }, []);
+            useEffect(() => {
+                document.title = `${SECTION_TITLES[section]} - John Ruben Solutions`;
+                try { if (window.gtag) window.gtag('event', 'page_view', { page_title: document.title, page_path: '/#' + section }); } catch (e) { }
+            }, [section]);
+            const go = (s) => { if (window.location.hash === '#' + s) window.scrollTo(0, 0); else window.location.hash = s; };
+            return [section, go];
+        };
+
+        /* ---------- small UI parts ---------- */
+        const ICONS = {
+            food: <g><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2M7 2v20M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7" /></g>,
+            train: <g><path d="m6.5 6.5 11 11M21 21l-1-1M3 3l1 1M18 22l4-4M2 6l4-4M3 10l7-7M14 21l7-7" /></g>,
+            trends: <g><path d="M3 3v18h18M7 14v4M12 8v10M17 11v7" /></g>,
+            science: <g><path d="M10 2v7.5L4.5 19a2 2 0 0 0 1.8 3h11.4a2 2 0 0 0 1.8-3L14 9.5V2M8.5 2h7M7 16h10" /></g>,
+            you: <g><circle cx="12" cy="8" r="4" /><path d="M4 21a8 8 0 0 1 16 0" /></g>,
+            camera: <g><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" /><circle cx="12" cy="13" r="3" /></g>,
+            left: <g><path d="m15 18-6-6 6-6" /></g>,
+            right: <g><path d="m9 18 6-6-6-6" /></g>,
+            x: <g><path d="M18 6 6 18M6 6l12 12" /></g>,
+            plus: <g><path d="M12 5v14M5 12h14" /></g>,
+            edit: <g><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" /></g>,
+            chev: <g><path d="m9 18 6-6-6-6" /></g>,
+            calc: <g><rect x="4" y="3" width="16" height="18" rx="2" /><path d="M8 7h8M8 12h.01M12 12h.01M16 12h.01M8 16h.01M12 16h.01M16 16h.01" /></g>,
+            pill: <g><path d="m10.5 20.5-7-7a4.95 4.95 0 0 1 7-7l7 7a4.95 4.95 0 0 1-7 7ZM8.5 8.5l7 7" /></g>,
+            users: <g><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8M22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8" /></g>,
+            ext: <g><path d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /></g>,
+            alert: <g><circle cx="12" cy="12" r="10" /><path d="M12 8v4M12 16h.01" /></g>,
+            check: <g><path d="M20 6 9 17l-5-5" /></g>,
+            search: <g><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></g>
+        };
+        const Icon = ({ n, size = 20 }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{ICONS[n]}</svg>
+        );
+
+        const GradeBadge = ({ g }) => (
+            <span className="chip" style={{ color: GRADES[g].color, border: `1px solid ${GRADES[g].color}55` }}>Grade {g}</span>
+        );
+
+        const Ring = ({ value, max, size = 118 }) => {
+            const r = 48, c = 2 * Math.PI * r;
+            const pct = max > 0 ? Math.min(1, value / max) : 0;
+            const over = value > max;
+            return (
+                <div style={{ width: size, height: size }} className="relative shrink-0">
+                    <svg viewBox="0 0 120 120" width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
+                        <circle cx="60" cy="60" r={r} fill="none" stroke="var(--s3)" strokeWidth="10" />
+                        <circle cx="60" cy="60" r={r} fill="none" stroke={over ? 'var(--red)' : 'var(--lime)'} strokeWidth="10" strokeLinecap="round" strokeDasharray={c} strokeDashoffset={c * (1 - pct)} style={{ transition: 'stroke-dashoffset .5s' }} />
+                    </svg>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                        <span className="text-2xl font-extrabold leading-none">{Math.abs(Math.round(max - value)).toLocaleString()}</span>
+                        <span className="text-[11px] muted mt-1">{over ? 'kcal over' : 'kcal left'}</span>
                     </div>
-                </a>
-            </div>
-        </div>
-
-        <div class="grid grid-cols-2 md:grid-cols-3 gap-3 mb-10">
-            <a href="https://johnrubensolutions.github.io/John-Ruben-Solutions/John-Ruben-Solutions/drug-information.html" target="_top" class="p-4 bg-brand-card border border-slate-700 hover:border-brand-teal hover:shadow-glow-teal rounded-2xl text-center transition-all group">
-                <div class="text-2xl mb-2 group-hover:scale-110 transition-transform">💊</div>
-                <div class="text-xs font-bold text-white">Drug Info</div>
-            </a>
-            <a href="https://johnrubensolutions.github.io/John-Ruben-Solutions/John-Ruben-Solutions/learn-more.html" target="_top" class="p-4 bg-brand-card border border-slate-700 hover:border-white rounded-2xl text-center transition-all group">
-                <div class="text-2xl mb-2 group-hover:scale-110 transition-transform">📚</div>
-                <div class="text-xs font-bold text-white">Protocols</div>
-            </a>
-            <a href="https://www.johnrubensolutions.com/about-me" target="_top" class="p-4 bg-brand-card border border-slate-700 hover:border-white rounded-2xl text-center transition-all group">
-                <div class="text-2xl mb-2 group-hover:scale-110 transition-transform">👤</div>
-                <div class="text-xs font-bold text-white">About Me</div>
-            </a>
-        </div>
-
-        <div class="flex justify-center mb-10 w-full">
-            <a href="https://johnrubensolutions.github.io/John-Ruben-Solutions/John-Ruben-Solutions/apply.html" target="_top" class="group relative w-full"> 
-                <div class="absolute inset-0 bg-brand-green blur-lg opacity-20 group-hover:opacity-40 transition-opacity rounded-full"></div>
-                
-                <div class="relative flex items-center justify-between bg-gradient-to-r from-brand-card to-slate-800 border border-brand-green/30 p-3 pr-5 rounded-full shadow-2xl hover:scale-[1.01] transition-transform cursor-pointer">
-                    
-                    <div class="flex items-center gap-3 w-full"> 
-                        <div class="bg-brand-navy p-2.5 rounded-full relative flex-shrink-0">
-                            <div class="w-3 h-3 bg-red-500 rounded-full animate-pulse-dot"></div>
-                        </div>
-                        
-                        <div class="flex flex-col text-left flex-grow">
-                            <span class="text-[11px] md:text-xs font-bold uppercase tracking-wide text-brand-green leading-tight">Limited Spots Available</span>
-                            <span class="font-extrabold text-[13px] md:text-sm text-white leading-tight whitespace-nowrap">APPLY FOR A LIVE CALL TODAY!</span>
-                        </div>
-                    </div>
-
-                    <svg xmlns="http://www.w3.org/2000/svg" class="text-white/50 w-5 h-5 flex-shrink-0 group-hover:translate-x-1 transition-transform ml-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
                 </div>
-            </a>
-        </div>
+            );
+        };
 
-        <div class="text-center border-t border-slate-800 pt-8 pb-4">
-            <p class="text-[10px] font-bold text-slate-500 mb-2">© 2026 John Ruben Solutions, LLC.</p>
-            <p class="text-[10px] text-slate-600 leading-relaxed max-w-lg mx-auto">
-                <strong>Disclaimer:</strong> Educational purposes only. Not medical advice. Always seek the advice of your physician regarding medical conditions. John Ruben Rajendran is a licensed pharmacist, but he is not YOUR pharmacist.
-            </p>
-            <a href="https://www.johnrubensolutions.com/disclaimer" class="text-[10px] text-brand-teal underline mt-2 block">View Full Disclaimer</a>
-        </div>
+        const MacroBar = ({ label, color, v, t }) => {
+            const pct = t > 0 ? Math.min(100, (v / t) * 100) : 0;
+            return (
+                <div>
+                    <div className="flex justify-between text-xs mb-1">
+                        <span className="font-bold" style={{ color }}>{label}</span>
+                        <span className="muted"><span className="text-white font-bold">{Math.round(v)}</span> / {t} g</span>
+                    </div>
+                    <div className="h-1.5 rounded-full" style={{ background: 'var(--s3)' }}>
+                        <div className="h-1.5 rounded-full" style={{ width: pct + '%', background: color, transition: 'width .4s' }}></div>
+                    </div>
+                </div>
+            );
+        };
 
-    </div>
+        const beep = () => {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const o = ctx.createOscillator(); const g = ctx.createGain();
+                o.connect(g); g.connect(ctx.destination);
+                o.frequency.value = 880; g.gain.value = 0.15;
+                o.start(); o.stop(ctx.currentTime + 0.35);
+            } catch (e) { }
+            try { if (navigator.vibrate) navigator.vibrate(250); } catch (e) { }
+        };
 
+        const Timer = () => {
+            const [preset, setPreset] = useState(() => { try { return parseInt(localStorage.getItem('restPreset')) || 120; } catch (e) { return 120; } });
+            const [left, setLeft] = useState(preset);
+            const [active, setActive] = useState(false);
+            useEffect(() => {
+                if (!active) return;
+                if (left <= 0) { setActive(false); beep(); return; }
+                const t = setTimeout(() => setLeft(l => l - 1), 1000);
+                return () => clearTimeout(t);
+            }, [active, left]);
+            const pick = (s) => { setPreset(s); setLeft(s); setActive(false); try { localStorage.setItem('restPreset', String(s)); } catch (e) { } };
+            const fmt = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+            return (
+                <div className="card p-4 mb-4">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <div className="text-sm font-bold">Rest timer</div>
+                            <div className="text-xs muted">2-3 min for big lifts, 60-90 s for small ones</div>
+                        </div>
+                        <span className={`font-mono text-3xl font-bold ${active ? 'pulse' : ''}`} style={{ color: active ? 'var(--teal)' : 'var(--mut)' }}>{fmt(left)}</span>
+                    </div>
+                    <div className="flex items-center gap-2 mt-3">
+                        {[60, 90, 120, 180].map(s => (
+                            <button key={s} onClick={() => pick(s)} className="chip" style={{ background: preset === s ? 'var(--teal)' : 'var(--s2)', color: preset === s ? '#0b1220' : 'var(--tx)' }}>{s % 60 === 0 ? (s / 60) + ' min' : s + ' s'}</button>
+                        ))}
+                        <div className="flex-1"></div>
+                        <button onClick={() => { setLeft(preset); setActive(false); }} className="btn btn-ghost" style={{ padding: '.4rem .8rem' }}>Reset</button>
+                        <button onClick={() => { if (left <= 0) setLeft(preset); setActive(!active); }} className={`btn ${active ? 'btn-danger' : 'btn-teal'}`} style={{ padding: '.4rem 1rem' }}>{active ? 'Stop' : 'Start'}</button>
+                    </div>
+                </div>
+            );
+        };
+
+        const SetRow = ({ idx, existing, last, onSave, onClear }) => {
+            const [reps, setReps] = useState(existing ? existing.reps : "");
+            const [w, setW] = useState(existing ? existing.weight : (last ? last.weight : ""));
+            useEffect(() => {
+                if (existing) { setReps(existing.reps); setW(existing.weight); }
+            }, [existing && existing.reps, existing && existing.weight]);
+            const commit = async () => {
+                if (reps !== "" && w !== "" && num(reps) > 0 && num(w) >= 0) await onSave(idx, reps, w);
+                else if (reps === "" && existing) { await onClear(idx); setW(last ? last.weight : ""); }
+            };
+            return (
+                <div className="flex items-center gap-2 p-2 rounded-xl" style={{ background: existing ? 'rgba(34,211,238,.07)' : 'var(--s2)' }}>
+                    <span className="w-6 text-center text-xs font-bold muted">{idx + 1}</span>
+                    <input type="number" inputMode="numeric" placeholder="Reps" value={reps} onChange={e => setReps(e.target.value)} onBlur={commit} aria-label={`Set ${idx + 1} reps`} className="field text-center font-bold" style={{ padding: '.55rem' }} />
+                    <input type="number" inputMode="decimal" placeholder="Lbs" value={w} onChange={e => setW(e.target.value)} onBlur={commit} aria-label={`Set ${idx + 1} weight in pounds`} className="field text-center font-bold" style={{ padding: '.55rem', color: 'var(--teal)' }} />
+                    <span className="w-20 text-[11px] muted text-right leading-tight">{last ? <>Last<br />{last.reps} x {last.weight}</> : ''}</span>
+                </div>
+            );
+        };
+
+        const Disclaimer = () => (
+            <div className="text-center pt-8 pb-4 mt-10" style={{ borderTop: '1px solid var(--line)' }}>
+                <p className="text-[11px] font-bold muted mb-2">&copy; 2026 John Ruben Solutions, LLC.</p>
+                <p className="text-[11px] leading-relaxed max-w-lg mx-auto" style={{ color: '#6b7a96' }}>
+                    <strong>Disclaimer:</strong> Educational purposes only. Not medical advice. Always seek the advice of your physician regarding medical conditions. John Ruben Rajendran is a licensed pharmacist, but he is not YOUR pharmacist.
+                </p>
+                <a href={LINKS.disclaimer} target="_top" className="text-[11px] underline mt-2 inline-block" style={{ color: 'var(--teal)' }}>View full disclaimer</a>
+            </div>
+        );
+
+        /* ---------- auth ---------- */
+        const AuthScreen = ({ onBack }) => {
+            const [isRegister, setIsRegister] = useState(false);
+            const [isReset, setIsReset] = useState(false);
+            const [email, setEmail] = useState("");
+            const [password, setPassword] = useState("");
+            const [error, setError] = useState("");
+            const [successMsg, setSuccessMsg] = useState("");
+
+            const handleGoogleLogin = async () => {
+                if (!window.fb) { setError("Sign-in is still loading. Wait a moment and try again."); return; }
+                try { await window.fb.signInWithPopup(window.fb.auth, window.fb.googleProvider); }
+                catch (err) { setError(err.message); }
+            };
+            const handleSubmit = async (e) => {
+                e.preventDefault();
+                setError(""); setSuccessMsg("");
+                if (!window.fb) { setError("Sign-in is still loading. Wait a moment and try again."); return; }
+                try {
+                    if (isReset) {
+                        await window.fb.sendPasswordResetEmail(window.fb.auth, email);
+                        setSuccessMsg("Reset link sent. Check your email.");
+                        setTimeout(() => setIsReset(false), 3000);
+                    } else if (isRegister) {
+                        await window.fb.createUserWithEmailAndPassword(window.fb.auth, email, password);
+                    } else {
+                        await window.fb.signInWithEmailAndPassword(window.fb.auth, email, password);
+                    }
+                } catch (err) { setError(err.message); }
+            };
+
+            return (
+                <div className="min-h-screen flex items-center justify-center p-4">
+                    <div className="card p-8 w-full max-w-sm pop" style={{ boxShadow: '0 20px 60px rgba(0,0,0,.45)' }}>
+                        <button onClick={onBack} className="inline-flex items-center gap-1 text-xs muted mb-4 hover:text-white"><Icon n="left" size={16} /> Back to home</button>
+                        <h1 className="text-2xl font-extrabold mb-1 text-center">{isReset ? "Reset password" : (isRegister ? "Join Elite Tracker" : "Elite Tracker")}</h1>
+                        <p className="text-xs muted text-center mb-6">Nutrition and training, tied to the research.</p>
+
+                        {!isReset && (
+                            <button onClick={handleGoogleLogin} className="btn w-full mb-4" style={{ background: '#fff', color: '#0b1220' }}>Continue with Google</button>
+                        )}
+
+                        <form onSubmit={handleSubmit} className="space-y-3">
+                            <input type="email" placeholder="Email" autoComplete="email" className="field" value={email} onChange={e => setEmail(e.target.value)} required />
+                            {!isReset && (
+                                <input type="password" placeholder="Password" autoComplete={isRegister ? "new-password" : "current-password"} className="field" value={password} onChange={e => setPassword(e.target.value)} required />
+                            )}
+                            {error && <p className="text-xs text-center" style={{ color: 'var(--red)' }}>{error}</p>}
+                            {successMsg && <p className="text-xs text-center" style={{ color: 'var(--lime)' }}>{successMsg}</p>}
+                            <button type="submit" className="btn btn-lime w-full">{isReset ? "Send reset link" : (isRegister ? "Sign up" : "Log in")}</button>
+                        </form>
+
+                        {!isReset && !isRegister && (
+                            <button onClick={() => { setIsReset(true); setError(""); }} className="w-full mt-4 text-xs" style={{ color: 'var(--teal)' }}>Forgot password?</button>
+                        )}
+                        {isReset ? (
+                            <button onClick={() => { setIsReset(false); setError(""); }} className="w-full mt-4 text-xs muted underline">Back to login</button>
+                        ) : (
+                            <button onClick={() => { setIsRegister(!isRegister); setError(""); }} className="w-full mt-4 text-xs muted underline">
+                                {isRegister ? "Already have an account? Log in" : "Need an account? Sign up"}
+                            </button>
+                        )}
+
+                        <div className="mt-8 pt-4 text-center" style={{ borderTop: '1px solid var(--line)' }}>
+                            <p className="text-xs font-bold muted mb-2">New here?</p>
+                            <p className="text-[11px] muted leading-relaxed">
+                                Tap <strong>Need an account? Sign up</strong>, enter your email and a secure password, then tap <strong>Sign up</strong>. You will land on your dashboard. Open the <strong>You</strong> tab first to set up your profile.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        /* =====================================================================
+           HOME
+           ===================================================================== */
+        const Home = ({ go }) => (
+            <div>
+                <section className="pt-4 pb-6">
+                    <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight leading-[1.05]">Weight management, grounded in randomized trials.</h1>
+                    <p className="muted text-sm md:text-base leading-relaxed mt-4 max-w-xl">
+                        Whether you want to <strong className="text-white">lose weight</strong>, <strong className="text-white">gain muscle</strong> or <strong className="text-white">live healthier</strong>, these <strong className="text-white">free tools</strong> help you set metabolic targets, track them, and check what your medications say about weight. Every number links back to its source.
+                    </p>
+                </section>
+
+                <div className="grid md:grid-cols-3 gap-3">
+                    <button onClick={() => go('calculator')} className="card flow-card p-5">
+                        <div className="flex items-center justify-between mb-4">
+                            <span className="step-n" style={{ color: 'var(--lime)' }}>1</span>
+                            <span style={{ color: 'var(--lime)' }}><Icon n="calc" size={24} /></span>
+                        </div>
+                        <div className="font-extrabold text-lg">Set your targets</div>
+                        <p className="text-xs muted leading-relaxed mt-1">Calories, protein, carbs and fat from your size, activity and goal. No account needed.</p>
+                    </button>
+                    <button onClick={() => go('tracker')} className="card flow-card t p-5">
+                        <div className="flex items-center justify-between mb-4">
+                            <span className="step-n" style={{ color: 'var(--teal)' }}>2</span>
+                            <span style={{ color: 'var(--teal)' }}><Icon n="trends" size={24} /></span>
+                        </div>
+                        <div className="font-extrabold text-lg">Track it</div>
+                        <p className="text-xs muted leading-relaxed mt-1">Log food and lifting, scan barcodes, and watch your weekly trend in Elite Tracker.</p>
+                    </button>
+                    <button onClick={() => go('drugs')} className="card flow-card v p-5">
+                        <div className="flex items-center justify-between mb-4">
+                            <span className="step-n" style={{ color: 'var(--violet)' }}>3</span>
+                            <span style={{ color: 'var(--violet)' }}><Icon n="pill" size={24} /></span>
+                        </div>
+                        <div className="font-extrabold text-lg">Check your medications</div>
+                        <p className="text-xs muted leading-relaxed mt-1">See which weight and metabolic effects an FDA label mentions, with the label text beside it.</p>
+                    </button>
+                </div>
+
+                <button onClick={() => go('workshop')} className="card flow-card w-full mt-3 p-4" style={{ borderColor: 'rgba(163,230,53,.35)' }}>
+                    <div className="flex items-center gap-4">
+                        <div className="p-3 rounded-full" style={{ background: 'var(--bg)' }}><div className="live-dot"></div></div>
+                        <div className="flex-1">
+                            <div className="font-extrabold text-sm">Would you join a live workshop?</div>
+                            <div className="text-xs muted mt-0.5">Two-minute survey to help decide the topics, format and timing.</div>
+                        </div>
+                        <span className="muted"><Icon n="right" /></span>
+                    </div>
+                </button>
+
+                <div className="grid grid-cols-2 gap-3 mt-3">
+                    <a href={LINKS.protocols} target="_top" className="card flow-card p-4 flex items-center justify-between">
+                        <div><div className="font-bold text-sm">Protocols</div><div className="text-[11px] muted mt-0.5">Learn more</div></div>
+                        <span className="muted"><Icon n="ext" size={18} /></span>
+                    </a>
+                    <a href={LINKS.about} target="_top" className="card flow-card p-4 flex items-center justify-between">
+                        <div><div className="font-bold text-sm">About me</div><div className="text-[11px] muted mt-0.5">Who is behind this</div></div>
+                        <span className="muted"><Icon n="ext" size={18} /></span>
+                    </a>
+                </div>
+
+                <p className="italic text-xs md:text-sm mt-8 pl-3 max-w-md" style={{ color: 'rgba(163,230,53,.9)', borderLeft: '2px solid var(--lime)' }}>
+                    "For God gave us a spirit not of fear but of power and love and self-control." &mdash; 2 Timothy 1:7
+                </p>
+            </div>
+        );
+
+        /* =====================================================================
+           MACRO CALCULATOR (public, same engine as the tracker)
+           ===================================================================== */
+        const GOAL_OPTIONS = [['-750', 'Lose, steady (-750 kcal)'], ['-500', 'Lose, moderate (-500 kcal)'], ['-250', 'Lose, gentle (-250 kcal)'], ['0', 'Maintain'], ['250', 'Gain, lean (+250 kcal)'], ['500', 'Gain, faster (+500 kcal)']];
+        const ACTIVITY_OPTIONS = [['1.2', 'Sedentary, desk job, little exercise'], ['1.375', 'Light, exercise 1-3 days/week'], ['1.55', 'Moderate, exercise 3-5 days/week'], ['1.725', 'High, exercise 6-7 days/week'], ['1.9', 'Very high, physical job plus training']];
+
+        const Calculator = ({ go }) => {
+            const [c, setC] = useState({ weight: '', weightUnit: 'lb', height: '', heightUnit: 'in', age: '', gender: 'male', activity: '1.55', goal: '-500', proteinPerKg: '1.8', fatPct: '25' });
+            const set = (k, v) => setC(p => ({ ...p, [k]: v }));
+            const wLb = c.weightUnit === 'kg' ? num(c.weight) / 0.453592 : num(c.weight);
+            const ready = wLb >= 50 && wLb <= 700 && num(c.height) > 0 && num(c.age) > 0;
+            const out = useMemo(() => ready ? computeTargets(c, wLb) : null, [c, wLb, ready]);
+            const t = out && out.targets;
+            const kcalSplit = t ? { p: t.protein * 4, c: t.carbs * 4, f: t.fat * 9 } : null;
+            const tot = kcalSplit ? (kcalSplit.p + kcalSplit.c + kcalSplit.f) || 1 : 1;
+
+            return (
+                <div className="space-y-4">
+                    <div>
+                        <h1 className="text-3xl font-extrabold tracking-tight">Macro target calculator</h1>
+                        <p className="text-sm muted mt-2 leading-relaxed">Your daily calories and macros, built on trial-based rules. Nothing is saved or sent anywhere.</p>
+                    </div>
+
+                    <div className="card p-5">
+                        <div className="grid grid-cols-2 gap-3">
+                            <label className="text-xs muted">Weight
+                                <div className="flex gap-2 mt-1">
+                                    <input type="number" inputMode="decimal" className="field" value={c.weight} onChange={e => set('weight', e.target.value)} placeholder={c.weightUnit === 'lb' ? '180' : '82'} />
+                                    <select className="field" style={{ width: 80 }} value={c.weightUnit} onChange={e => set('weightUnit', e.target.value)}><option value="lb">lb</option><option value="kg">kg</option></select>
+                                </div>
+                            </label>
+                            <label className="text-xs muted">Height
+                                <div className="flex gap-2 mt-1">
+                                    <input type="number" inputMode="decimal" className="field" value={c.height} onChange={e => set('height', e.target.value)} placeholder={c.heightUnit === 'in' ? '70' : '178'} />
+                                    <select className="field" style={{ width: 80 }} value={c.heightUnit} onChange={e => set('heightUnit', e.target.value)}><option value="in">in</option><option value="cm">cm</option></select>
+                                </div>
+                            </label>
+                            <label className="text-xs muted">Age
+                                <input type="number" inputMode="numeric" className="field mt-1" value={c.age} onChange={e => set('age', e.target.value)} placeholder="30" />
+                            </label>
+                            <label className="text-xs muted">Sex used in the energy equation
+                                <select className="field mt-1" value={c.gender} onChange={e => set('gender', e.target.value)}><option value="male">Male</option><option value="female">Female</option></select>
+                            </label>
+                            <label className="text-xs muted col-span-2">Activity
+                                <select className="field mt-1" value={c.activity} onChange={e => set('activity', e.target.value)}>{ACTIVITY_OPTIONS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select>
+                            </label>
+                            <label className="text-xs muted col-span-2">Goal
+                                <select className="field mt-1" value={c.goal} onChange={e => set('goal', e.target.value)}>{GOAL_OPTIONS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select>
+                            </label>
+                            <label className="text-xs muted">Protein (g per kg)
+                                <input type="number" step="0.1" min="1.6" max="2.4" inputMode="decimal" className="field mt-1" value={c.proteinPerKg} onChange={e => set('proteinPerKg', e.target.value)} />
+                            </label>
+                            <label className="text-xs muted">Fat (% of calories)
+                                <input type="number" step="1" min="20" max="40" inputMode="numeric" className="field mt-1" value={c.fatPct} onChange={e => set('fatPct', e.target.value)} />
+                            </label>
+                        </div>
+                        <p className="text-[11px] muted mt-3 leading-relaxed">Protein stays between 1.6 and 2.4 g/kg and fat between 20% and 40%. Carbs fill the rest.</p>
+                    </div>
+
+                    {!out ? (
+                        <div className="card p-5 text-sm muted">Enter your weight, height and age to see your targets.</div>
+                    ) : (
+                        <div className="card p-5" style={{ borderColor: 'rgba(163,230,53,.35)' }}>
+                            <div className="flex items-end justify-between">
+                                <div>
+                                    <div className="text-xs muted">Daily target</div>
+                                    <div className="text-4xl font-extrabold" style={{ color: 'var(--lime)' }}>{t.calories.toLocaleString()}<span className="text-sm muted font-bold"> kcal</span></div>
+                                </div>
+                                <div className="text-right text-xs muted leading-relaxed">
+                                    <div>Resting <b className="text-white">{out.bmr.toLocaleString()}</b></div>
+                                    <div>Maintenance <b className="text-white">{out.tdee.toLocaleString()}</b></div>
+                                    <div>Goal <b className="text-white">{out.delta > 0 ? '+' : ''}{out.delta}</b></div>
+                                </div>
+                            </div>
+                            <div className="flex h-2 rounded-full overflow-hidden mt-4" aria-hidden="true">
+                                <div style={{ width: (kcalSplit.p / tot * 100) + '%', background: 'var(--teal)' }}></div>
+                                <div style={{ width: (kcalSplit.c / tot * 100) + '%', background: 'var(--lime)' }}></div>
+                                <div style={{ width: (kcalSplit.f / tot * 100) + '%', background: 'var(--amber)' }}></div>
+                            </div>
+                            <div className="grid grid-cols-4 gap-2 text-center mt-4 text-xs">
+                                {[['Protein', t.protein, 'var(--teal)'], ['Carbs', t.carbs, 'var(--lime)'], ['Fat', t.fat, 'var(--amber)'], ['Fiber', t.fiber, 'var(--violet)']].map(([l, v, col]) => (
+                                    <div key={l} className="inset p-2"><div className="font-bold" style={{ color: col }}>{l}</div><div className="font-extrabold text-sm">{v} g</div></div>
+                                ))}
+                            </div>
+                            {out.delta !== 0 && (
+                                <p className="text-xs muted leading-relaxed mt-4">Projected change is roughly {(out.delta * 7 / 3500).toFixed(1)} lb per week at first. It usually slows over time, so trust your measured trend over this estimate.</p>
+                            )}
+                            {out.flags.map((fl, i) => <p key={i} className="text-xs mt-2" style={{ color: 'var(--amber)' }}>{fl}</p>)}
+                            <div className="flex gap-2 mt-5 flex-wrap">
+                                <button onClick={() => go('tracker')} className="btn btn-lime">Track these in Elite Tracker</button>
+                                <button onClick={() => go('drugs')} className="btn btn-ghost">Check a medication</button>
+                            </div>
+                            <p className="text-[11px] muted mt-4 leading-relaxed">Estimates for general wellness, not medical advice. Rules and sources are listed in the Science tab of the tracker. Talk to a clinician first if you are pregnant or breastfeeding, have diabetes or take glucose-lowering medicine, have kidney disease, or have a history of disordered eating.</p>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        /* =====================================================================
+           DRUG CHECK (openFDA label screen)
+           ===================================================================== */
+        const SECTION_LABELS = {
+            adverse_reactions: 'Adverse reactions', warnings: 'Warnings', warnings_and_cautions: 'Warnings and precautions',
+            boxed_warning: 'Boxed warning', clinical_studies: 'Clinical studies', precautions: 'Precautions'
+        };
+        const KEYWORDS = {
+            gain: ['weight gain', 'weight increased', 'increase in weight', 'increased weight', 'fluid retention', 'increased appetite', 'hyperphagia', 'edema', 'obesity', 'fat redistribution', 'body mass index increased', 'metabolic syndrome'],
+            loss: ['weight loss', 'weight decreased', 'decrease in weight', 'decreased weight', 'decreased appetite', 'loss of appetite', 'anorexia', 'cachexia', 'body mass index decreased', 'wasting', 'failure to thrive'],
+            metabolic: ['hyperglycemia', 'hypoglycemia', 'insulin resistance', 'dyslipidemia', 'hyperlipidemia', 'hypertriglyceridemia', 'cholesterol increased', 'triglycerides increased', 'metabolic acidosis', 'metabolic alkalosis', 'thyroid function', 'hypothyroidism', 'hyperthyroidism']
+        };
+        const esc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const scanLabel = (drug, sectionKeys, words) => {
+            const hits = []; const seen = new Set();
+            sectionKeys.forEach(key => {
+                (drug[key] || []).forEach(raw => {
+                    const text = String(raw);
+                    words.forEach(w => {
+                        if (seen.has(w)) return;
+                        const m = new RegExp('\\b' + esc(w) + '\\b', 'i').exec(text);
+                        if (!m) return;
+                        seen.add(w);
+                        const s = Math.max(0, m.index - 110), e = Math.min(text.length, m.index + m[0].length + 110);
+                        hits.push({ term: w, section: SECTION_LABELS[key], snippet: (s > 0 ? '... ' : '') + text.slice(s, e).replace(/\s+/g, ' ').trim() + (e < text.length ? ' ...' : '') });
+                    });
+                });
+            });
+            return hits;
+        };
+        const GLP1_NAMES = ['semaglutide', 'tirzepatide', 'liraglutide', 'dulaglutide', 'exenatide', 'lixisenatide'];
+        const GLP1_WEIGHT_MSG = {
+            semaglutide: 'In the double-blind STEP 1 trial, semaglutide 2.4 mg lowered body weight by about 15% over 68 weeks versus about 2% on placebo. Doses approved for diabetes are lower and usually produce less weight loss.',
+            tirzepatide: 'In the double-blind SURMOUNT-1 trial, tirzepatide lowered body weight by about 15-21% over 72 weeks depending on dose, versus about 3% on placebo. Doses approved for diabetes start lower.',
+            other: 'This GLP-1-class label lists weight loss and decreased appetite. The size of the effect varies by drug and dose, and is generally smaller than with semaglutide 2.4 mg or tirzepatide.'
+        };
+
+        const analyzeDrug = (d) => {
+            const generic = ((d.openfda.generic_name || [''])[0] || '').toLowerCase();
+            const brand = ((d.openfda.brand_name || [''])[0] || '').toLowerCase();
+            let mechanism = "Mechanism of action data not available in the standard FDA summary.";
+            if (d.mechanism_of_action && d.mechanism_of_action.length > 0) {
+                mechanism = String(d.mechanism_of_action[0]).replace(/Mechanism of Action/i, "").trim() || mechanism;
+            }
+            const glp1 = GLP1_NAMES.find(n => generic.includes(n) || brand.includes(n)) || (['ozempic', 'wegovy', 'rybelsus', 'mounjaro', 'zepbound', 'saxenda', 'victoza', 'trulicity', 'byetta', 'bydureon'].some(n => brand.includes(n)) ? 'other' : null);
+            const weightSections = ['adverse_reactions', 'warnings', 'warnings_and_cautions', 'boxed_warning', 'clinical_studies'];
+            const metaSections = ['adverse_reactions', 'warnings', 'warnings_and_cautions', 'boxed_warning', 'precautions'];
+            const gain = scanLabel(d, weightSections, KEYWORDS.gain);
+            const loss = scanLabel(d, weightSections, KEYWORDS.loss);
+            const metabolic = scanLabel(d, metaSections, KEYWORDS.metabolic);
+            const kind = glp1 ? (glp1 === 'semaglutide' || glp1 === 'tirzepatide' ? glp1 : 'other') : null;
+            return { mechanism, gain, loss, metabolic, glp1: !!glp1, glp1Msg: kind ? GLP1_WEIGHT_MSG[kind] : '' };
+        };
+
+        const Excerpts = ({ hits }) => (
+            <details className="mt-3">
+                <summary className="text-xs font-bold inline-flex items-center gap-1" style={{ color: 'var(--teal)' }}><span className="chev"><Icon n="chev" size={14} /></span> Show label excerpts ({hits.length})</summary>
+                <div className="mt-2 space-y-2">
+                    {hits.slice(0, 5).map((h, i) => (
+                        <div key={i} className="inset p-3 text-xs leading-relaxed">
+                            <div className="font-bold">"{h.term}" <span className="muted font-medium">in {h.section}</span></div>
+                            <div className="muted mt-1">{h.snippet}</div>
+                        </div>
+                    ))}
+                </div>
+            </details>
+        );
+
+        const DrugCheck = ({ go }) => {
+            const [query, setQuery] = useState("");
+            const [resultsList, setResultsList] = useState([]);
+            const [selected, setSelected] = useState(null);
+            const [showDropdown, setShowDropdown] = useState(false);
+            const [loading, setLoading] = useState(false);
+            const [error, setError] = useState("");
+            const [moaOpen, setMoaOpen] = useState(false);
+            const dropdownRef = useRef(null);
+
+            useEffect(() => {
+                const onDown = (event) => { if (dropdownRef.current && !dropdownRef.current.contains(event.target)) setShowDropdown(false); };
+                document.addEventListener("mousedown", onDown);
+                return () => document.removeEventListener("mousedown", onDown);
+            }, []);
+
+            const handleSearch = async (e) => {
+                e.preventDefault();
+                const q = query.trim().replace(/["\\]/g, '');
+                if (!q) return;
+                setLoading(true); setError(""); setSelected(null); setShowDropdown(false); setMoaOpen(false);
+                try {
+                    const search = `openfda.brand_name:"${q}"+OR+openfda.generic_name:"${q}"`;
+                    const response = await fetch(`https://api.fda.gov/drug/label.json?search=${encodeURI(search).replace(/%2B/g, '+')}&limit=25`);
+                    const data = await response.json();
+                    if (data.error || !data.results) { setError("No medications found. Check the spelling, or try the generic name."); setResultsList([]); }
+                    else {
+                        const seen = new Set();
+                        const valid = data.results.filter(r => r.openfda && r.openfda.brand_name).filter(r => {
+                            const k = (r.openfda.brand_name[0] + '|' + ((r.openfda.generic_name || [''])[0]) + '|' + ((r.openfda.manufacturer_name || [''])[0])).toLowerCase();
+                            if (seen.has(k)) return false; seen.add(k); return true;
+                        });
+                        if (!valid.length) { setError("No labels with a brand name were found. Try the generic name."); setResultsList([]); }
+                        else { setResultsList(valid); setShowDropdown(true); }
+                    }
+                } catch (err) { setError("The FDA database could not be reached. Check your connection and try again."); }
+                finally { setLoading(false); }
+            };
+
+            const selectDrug = (d) => {
+                setSelected({
+                    name: d.openfda.brand_name[0],
+                    generic: d.openfda.generic_name ? d.openfda.generic_name[0] : "Generic not listed",
+                    manufacturer: d.openfda.manufacturer_name ? d.openfda.manufacturer_name[0] : "Unknown",
+                    ...analyzeDrug(d)
+                });
+                setShowDropdown(false); setQuery(""); setMoaOpen(false);
+                try { if (window.gtag) window.gtag('event', 'drug_check', { drug: d.openfda.brand_name[0] }); } catch (e) { }
+            };
+
+            const sel = selected;
+            return (
+                <div className="space-y-5">
+                    <div>
+                        <h1 className="text-3xl font-extrabold tracking-tight">Drug check</h1>
+                        <p className="text-sm muted mt-2 leading-relaxed">Search a medication to see what its FDA label says about weight and metabolism. This tool reads label text. It does not tell you whether a drug will affect you.</p>
+                    </div>
+
+                    <div className="relative z-20" ref={dropdownRef}>
+                        <form onSubmit={handleSearch} className="flex gap-2">
+                            <div className="relative flex-1">
+                                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 muted"><Icon n="search" size={18} /></span>
+                                <input type="text" className="field" style={{ paddingLeft: '2.6rem' }} placeholder="Brand or generic name (e.g. Metformin)" value={query} onChange={e => setQuery(e.target.value)} autoComplete="off" aria-label="Search a medication" />
+                            </div>
+                            <button type="submit" disabled={loading} className="btn btn-lime" style={{ opacity: loading ? .7 : 1 }}>{loading ? "Searching..." : "Search"}</button>
+                        </form>
+
+                        {showDropdown && resultsList.length > 0 && (
+                            <div className="card absolute top-full left-0 right-0 mt-2 overflow-hidden z-30 pop" style={{ boxShadow: '0 20px 50px rgba(0,0,0,.5)' }}>
+                                <div className="custom-scroll overflow-y-auto" style={{ maxHeight: 288 }}>
+                                    {resultsList.map((drug, idx) => (
+                                        <button key={idx} onClick={() => selectDrug(drug)} className="block w-full text-left p-3.5 hover:bg-white/5" style={{ borderBottom: '1px solid var(--line)' }}>
+                                            <div className="font-bold">{drug.openfda.brand_name[0]}</div>
+                                            <div className="text-xs muted mt-0.5">{drug.openfda.generic_name ? drug.openfda.generic_name[0].slice(0, 60) + (drug.openfda.generic_name[0].length > 60 ? "..." : "") : "Generic not listed"}</div>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                        {error && <div role="alert" className="mt-3 p-3 rounded-xl text-sm font-bold text-center" style={{ background: 'rgba(248,113,113,.1)', color: 'var(--red)' }}>{error}</div>}
+                    </div>
+
+                    {!sel && !error && (
+                        <div className="card p-5 text-sm muted leading-relaxed">Try <b className="text-white">Ozempic</b>, <b className="text-white">Zepbound</b>, <b className="text-white">Metformin</b> or <b className="text-white">Prednisone</b>. Results come from the U.S. FDA's openFDA label database.</div>
+                    )}
+
+                    {sel && (
+                        <div className="card overflow-hidden pop">
+                            <div className="p-6" style={{ background: 'var(--s2)' }}>
+                                <span className="chip" style={{ background: 'var(--bg)' }}>FDA label data</span>
+                                <h2 className="text-3xl font-extrabold mt-3">{sel.name}</h2>
+                                <p className="font-medium mt-1" style={{ color: 'var(--teal)' }}>{sel.generic}</p>
+                                <p className="text-xs muted mt-3">Manufacturer: {sel.manufacturer}</p>
+                            </div>
+
+                            <div className="p-5 space-y-6">
+                                <div>
+                                    <h3 className="font-extrabold text-sm mb-2">How it works</h3>
+                                    <div className="inset p-4 text-sm leading-relaxed muted">
+                                        {moaOpen || sel.mechanism.length <= 200 ? sel.mechanism : sel.mechanism.substring(0, 200) + "..."}
+                                        {sel.mechanism.length > 200 && (
+                                            <button onClick={() => setMoaOpen(!moaOpen)} className="block mt-2 text-xs font-bold" style={{ color: 'var(--teal)' }}>{moaOpen ? "Show less" : "Read full mechanism"}</button>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <h3 className="font-extrabold text-sm mb-2">Weight signals in the label</h3>
+                                    {sel.glp1 && (
+                                        <div className="p-4 rounded-2xl mb-3" style={{ background: 'rgba(167,139,250,.1)', border: '1px solid rgba(167,139,250,.35)' }}>
+                                            <div className="font-extrabold text-sm" style={{ color: 'var(--violet)' }}>Weight loss shown in randomized trials</div>
+                                            <p className="text-xs leading-relaxed mt-1">{sel.glp1Msg}</p>
+                                        </div>
+                                    )}
+                                    {sel.gain.length > 0 && (
+                                        <div className="p-4 rounded-2xl mb-3" style={{ background: 'rgba(251,191,36,.08)', border: '1px solid rgba(251,191,36,.35)' }}>
+                                            <div className="font-extrabold text-sm" style={{ color: 'var(--amber)' }}>Label mentions weight gain or fluid retention</div>
+                                            <p className="text-xs leading-relaxed mt-1 muted">Matched terms: {sel.gain.map(h => h.term).join(', ')}.</p>
+                                            <Excerpts hits={sel.gain} />
+                                        </div>
+                                    )}
+                                    {sel.loss.length > 0 && !sel.glp1 && (
+                                        <div className="p-4 rounded-2xl mb-3" style={{ background: 'rgba(34,211,238,.08)', border: '1px solid rgba(34,211,238,.35)' }}>
+                                            <div className="font-extrabold text-sm" style={{ color: 'var(--teal)' }}>Label mentions weight loss or appetite suppression</div>
+                                            <p className="text-xs leading-relaxed mt-1 muted">Matched terms: {sel.loss.map(h => h.term).join(', ')}.</p>
+                                            <Excerpts hits={sel.loss} />
+                                        </div>
+                                    )}
+                                    {sel.loss.length > 0 && sel.glp1 && (
+                                        <div className="mb-3"><Excerpts hits={sel.loss} /></div>
+                                    )}
+                                    {sel.gain.length === 0 && sel.loss.length === 0 && !sel.glp1 && (
+                                        <div className="inset p-4 text-center">
+                                            <div className="font-bold">No weight terms found</div>
+                                            <p className="text-xs muted mt-1">The screen found no weight-related keywords in the label sections it reads.</p>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {sel.metabolic.length > 0 && (
+                                    <div className="p-4 rounded-2xl" style={{ background: 'rgba(167,139,250,.08)', border: '1px solid rgba(167,139,250,.3)' }}>
+                                        <div className="flex items-start gap-2">
+                                            <span style={{ color: 'var(--violet)' }}><Icon n="alert" size={18} /></span>
+                                            <div>
+                                                <div className="font-extrabold text-sm">Label mentions blood sugar, lipid or thyroid effects</div>
+                                                <p className="text-xs leading-relaxed mt-1 muted">Matched terms: {sel.metabolic.map(h => h.term).join(', ')}.</p>
+                                            </div>
+                                        </div>
+                                        <Excerpts hits={sel.metabolic} />
+                                    </div>
+                                )}
+
+                                {sel.glp1 && (
+                                    <div className="p-5 rounded-2xl" style={{ background: 'var(--s2)' }}>
+                                        <div className="flex items-center gap-2 mb-2" style={{ color: 'var(--teal)' }}><Icon n="train" size={18} /><span className="font-extrabold text-sm">Lean mass and these medicines</span></div>
+                                        <p className="text-xs leading-relaxed">Weight lost on these drugs includes lean mass. In DXA substudies of double-blind trials, roughly a quarter to two-fifths of the weight lost was lean mass (semaglutide: about 40%, with lean mass down 9.7% and fat mass down 19.3%; tirzepatide: about 25%). DXA lean mass also counts water and organ tissue, so it overstates muscle loss, and the lean share of body mass still rose with semaglutide.</p>
+                                        <p className="text-xs leading-relaxed mt-2">What helps preserve lean mass comes from trials in other groups of people. Higher protein (2.4 vs 1.2 g/kg/day) kept lean mass during a calorie deficit in young men, and resistance-containing exercise limited lean-mass loss during diet-induced weight loss in older adults. No trial cited here tested those steps in people taking these medicines. A reasonable plan to discuss with your prescriber is lifting two to three days a week and protein at 1.6 g/kg/day or more, unless you have kidney disease.</p>
+                                        <div className="flex gap-2 mt-3 flex-wrap">
+                                            <button onClick={() => go('calculator')} className="btn btn-ghost" style={{ padding: '.45rem .9rem', fontSize: '.78rem' }}>Calculate my protein target</button>
+                                            <button onClick={() => go('tracker')} className="btn btn-ghost" style={{ padding: '.45rem .9rem', fontSize: '.78rem' }}>Open the tracker</button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="px-6 py-4 text-center" style={{ borderTop: '1px solid var(--line)', background: 'var(--bg)' }}>
+                                <p className="text-[11px] muted leading-relaxed">Source: openFDA label text. A keyword match means the label mentions a term, not that the drug causes it for you. Not medical advice. Do not stop or change a medicine without talking to your prescriber or pharmacist.</p>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        /* =====================================================================
+           LIVE WORKSHOP INTEREST SURVEY
+           ===================================================================== */
+        const Workshop = () => {
+            const [agreed, setAgreed] = useState(false);
+            const [open, setOpen] = useState(false);
+            const plainUrl = WORKSHOP_FORM_URL.replace('?embedded=true', '');
+            const unlock = () => {
+                if (!agreed) return;
+                setOpen(true);
+                try { if (window.gtag) window.gtag('event', 'workshop_survey_open'); } catch (e) { }
+            };
+            return (
+                <div className="space-y-4">
+                    <div>
+                        <h1 className="text-3xl font-extrabold tracking-tight">Would you join a live workshop?</h1>
+                        <p className="text-sm muted mt-2 leading-relaxed">I'm gauging interest in a live, educational workshop on evidence-based weight management. Your answers decide whether I run it, which topics come first, and what format and time work best.</p>
+                    </div>
+
+                    <div className="card p-5">
+                        <h2 className="font-bold text-sm mb-3">Before you start</h2>
+                        {!open ? (
+                            <>
+                                <label className="flex items-start gap-3 cursor-pointer p-3 rounded-xl" style={{ background: 'rgba(251,191,36,.08)', border: '1px solid rgba(251,191,36,.35)' }}>
+                                    <input type="checkbox" checked={agreed} onChange={e => setAgreed(e.target.checked)} className="mt-1" style={{ width: 20, height: 20, accentColor: '#a3e635' }} />
+                                    <span className="text-xs leading-relaxed" style={{ color: '#fde68a' }}>
+                                        I understand this survey only measures interest in a possible workshop. Answering does not reserve a spot or commit me to anything. I agree to be contacted at the email I provide about workshop updates. Any workshop would be for education only, not medical advice, diagnosis or treatment, and John Ruben is acting as an educator, not as my personal pharmacist.
+                                    </span>
+                                </label>
+                                <button onClick={unlock} disabled={!agreed} className="btn btn-lime w-full mt-3" style={{ opacity: agreed ? 1 : .45 }}>Agree and open the survey</button>
+                            </>
+                        ) : (
+                            <div className="flex items-center gap-2 text-sm font-bold" style={{ color: 'var(--lime)' }}><Icon n="check" size={18} /> Agreement recorded for this visit. The survey is below.</div>
+                        )}
+                    </div>
+
+                    {open && (
+                        <div className="card p-2 pop" style={{ borderTop: '4px solid var(--lime)' }}>
+                            <iframe title="Live workshop interest survey" src={WORKSHOP_FORM_URL} width="100%" height="1800" frameBorder="0" marginHeight="0" marginWidth="0" style={{ background: '#fff', borderRadius: 12 }}>Loading...</iframe>
+                            <a href={plainUrl} target="_blank" rel="noopener noreferrer" className="block text-center text-xs underline py-3" style={{ color: 'var(--teal)' }}>Survey not loading? Open it in a new tab</a>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        /* =====================================================================
+           ELITE TRACKER (all original functionality)
+           ===================================================================== */
+        const Tracker = ({ user, onHome, go }) => {
+            const [tab, setTab] = useState("food");
+            const [profile, setProfile] = useState(null);
+            const [storedTargets, setStoredTargets] = useState({ calories: 2000, protein: 150, carbs: 200, fat: 60, fiber: 28 });
+            const [currentDate, setCurrentDate] = useState(localISO());
+            const [toast, setToast] = useState("");
+
+            // nutrition
+            const [query, setQuery] = useState("");
+            const [results, setResults] = useState([]);
+            const [nutritionLog, setNutritionLog] = useState([]);
+            const [recent, setRecent] = useState([]);
+            const [weightInput, setWeightInput] = useState("");
+            const [weightsMap, setWeightsMap] = useState({});
+            const [showManual, setShowManual] = useState(false);
+            const [manualForm, setManualForm] = useState({ name: "", p: "", c: "", f: "", fib: "" });
+            const [selectedFood, setSelectedFood] = useState(null);
+            const [displayAmount, setDisplayAmount] = useState(100);
+            const [measureUnit, setMeasureUnit] = useState('g');
+            const [isScanning, setIsScanning] = useState(false);
+            const [loading, setLoading] = useState(false);
+
+            // trends
+            const [allLogs, setAllLogs] = useState([]);
+            const [chartMode, setChartMode] = useState('weekly');
+            const [isChartLoading, setIsChartLoading] = useState(false);
+
+            // training
+            const [workoutAll, setWorkoutAll] = useState([]);
+            const [customSets, setCustomSets] = useState({});
+            const [showLibrary, setShowLibrary] = useState(false);
+            const [libQuery, setLibQuery] = useState("");
+            const [customEx, setCustomEx] = useState({ name: "", group: "Chest" });
+            const [activeRoutine, setActiveRoutine] = useState([]);
+
+            // profile form
+            const [form, setForm] = useState({ height: "", heightUnit: "in", age: "", gender: "male", activity: "1.55", goal: "-500", proteinPerKg: "1.8", fatPct: "25" });
+            const [formDirty, setFormDirty] = useState(false);
+
+            const scannerRef = useRef(null);
+            const chartRef = useRef(null);
+            const chartInstance = useRef(null);
+            const toastTimer = useRef(null);
+
+            const notify = (m) => { setToast(m); clearTimeout(toastTimer.current); toastTimer.current = setTimeout(() => setToast(""), 3500); };
+            const fbReady = () => !!window.fb;
+
+            /* profile */
+            useEffect(() => { loadProfile(user.uid); }, [user.uid]);
+
+            const loadProfile = async (uid) => {
+                try {
+                    const snap = await window.fb.getDoc(window.fb.doc(window.fb.db, "users", uid, "data", "profile"));
+                    if (snap.exists()) {
+                        const p = snap.data();
+                        setProfile(p);
+                        setForm(f => ({
+                            height: p.height ?? "", heightUnit: p.heightUnit || (num(p.height) > 100 ? 'cm' : 'in'), age: p.age ?? "",
+                            gender: p.gender || 'male', activity: String(p.activity ?? '1.55'),
+                            goal: String(isNaN(parseFloat(p.goal)) ? -500 : parseFloat(p.goal)),
+                            proteinPerKg: String(p.proteinPerKg ?? '1.8'), fatPct: String(p.fatPct ?? '25')
+                        }));
+                    }
+                    const tSnap = await window.fb.getDoc(window.fb.doc(window.fb.db, "users", uid, "data", "targets"));
+                    if (tSnap.exists()) setStoredTargets(t => ({ ...t, ...tSnap.data() }));
+                } catch (e) { console.error("Profile load failed", e); }
+            };
+
+            const saveProfile = async () => {
+                const data = {
+                    height: num(form.height) || "", heightUnit: form.heightUnit, age: num(form.age) || "",
+                    gender: form.gender, activity: form.activity, goal: form.goal,
+                    proteinPerKg: form.proteinPerKg, fatPct: form.fatPct
+                };
+                try {
+                    // merge:true keeps every existing field (including bodyType) intact
+                    await window.fb.setDoc(window.fb.doc(window.fb.db, "users", user.uid, "data", "profile"), data, { merge: true });
+                    setProfile(p => ({ ...(p || {}), ...data }));
+                    setFormDirty(false);
+                    notify("Profile saved. Targets updated.");
+                } catch (e) { notify("Could not save profile. Check your connection."); }
+            };
+
+            /* weight reference + targets */
+            const refWeight = useMemo(() => {
+                const w = num(weightInput);
+                if (w >= 50) return w;
+                const dates = Object.keys(weightsMap).filter(d => d <= currentDate && num(weightsMap[d]) >= 50).sort();
+                if (dates.length) return num(weightsMap[dates[dates.length - 1]]);
+                const all = Object.keys(weightsMap).filter(d => num(weightsMap[d]) >= 50).sort();
+                return all.length ? num(weightsMap[all[all.length - 1]]) : 0;
+            }, [weightInput, weightsMap, currentDate]);
+
+            const calc = useMemo(() => (profile && refWeight) ? computeTargets(profile, refWeight) : null, [profile, refWeight]);
+            const targets = calc ? calc.targets : storedTargets;
+            const formCalc = useMemo(() => refWeight ? computeTargets(form, refWeight) : null, [form, refWeight]);
+
+            /* live data */
+            useEffect(() => {
+                if (!fbReady()) return;
+                const fb = window.fb;
+                const nQ = fb.query(fb.collection(fb.db, "users", user.uid, "logs"), fb.where("date", "==", currentDate));
+                const unsubN = fb.onSnapshot(nQ, (snap) => {
+                    const raw = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                    raw.sort((a, b) => (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0));
+                    setNutritionLog(raw);
+                });
+                const rRef = fb.doc(fb.db, "users", user.uid, "active_routines", currentDate);
+                const unsubR = fb.onSnapshot(rRef, (d) => { setActiveRoutine(d.exists() ? (d.data().exercises || []) : []); });
+                return () => { unsubN(); unsubR(); };
+            }, [user, currentDate]);
+
+            useEffect(() => {
+                if (!fbReady()) return;
+                const fb = window.fb;
+                const unsubW = fb.onSnapshot(fb.collection(fb.db, "users", user.uid, "workout_logs"), (snap) => {
+                    setWorkoutAll(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+                });
+                const unsubS = fb.onSnapshot(fb.collection(fb.db, "users", user.uid, "daily_stats"), (snap) => {
+                    const m = {};
+                    snap.docs.forEach(d => { const x = d.data(); const key = x.date || d.id; if (num(x.weight) > 0) m[key] = num(x.weight); });
+                    setWeightsMap(m);
+                });
+                return () => { unsubW(); unsubS(); };
+            }, [user]);
+
+            useEffect(() => {
+                const w = weightsMap[currentDate];
+                setWeightInput(w ? String(w) : "");
+            }, [currentDate, weightsMap[currentDate]]);
+
+            // recent foods (one-tap re-log)
+            useEffect(() => {
+                if (!fbReady()) return;
+                const fb = window.fb;
+                (async () => {
+                    try {
+                        const snap = await fb.getDocs(fb.query(fb.collection(fb.db, "users", user.uid, "logs"), fb.orderBy("createdAt", "desc"), fb.limit(60)));
+                        const seen = new Set(); const out = [];
+                        snap.docs.forEach(d => { const x = d.data(); if (x.name && !seen.has(x.name) && out.length < 8) { seen.add(x.name); out.push(x); } });
+                        setRecent(out);
+                    } catch (e) { /* ordering needs createdAt; silently skip */ }
+                })();
+            }, [user, nutritionLog.length]);
+
+            // all nutrition logs for trends
+            useEffect(() => {
+                if (tab !== 'trends' || !fbReady()) return;
+                let alive = true;
+                setIsChartLoading(true);
+                (async () => {
+                    try {
+                        const snap = await window.fb.getDocs(window.fb.collection(window.fb.db, "users", user.uid, "logs"));
+                        if (alive) setAllLogs(snap.docs.map(d => d.data()));
+                    } catch (e) { console.error("Trends load failed", e); }
+                    if (alive) setIsChartLoading(false);
+                })();
+                return () => { alive = false; };
+            }, [tab, user, nutritionLog.length]);
+
+            /* scanner */
+            useEffect(() => {
+                if (isScanning) {
+                    const scanner = new Html5Qrcode("reader");
+                    scannerRef.current = scanner;
+                    scanner.start(
+                        { facingMode: "environment" },
+                        { fps: 15, qrbox: { width: 250, height: 250 } },
+                        (decodedText) => { stopScanner(decodedText); },
+                        () => { }
+                    ).catch(err => { console.error("Scanner Start Error", err); setIsScanning(false); notify("Camera unavailable. Allow camera access and try again."); });
+                }
+                return () => {
+                    if (scannerRef.current && scannerRef.current.isScanning) scannerRef.current.stop().catch(() => { });
+                };
+            }, [isScanning]);
+
+            const startScanner = () => { setResults([]); setIsScanning(true); };
+            const stopScanner = (foundCode = null) => {
+                if (scannerRef.current) {
+                    scannerRef.current.stop().then(() => {
+                        scannerRef.current.clear();
+                        setIsScanning(false);
+                        if (foundCode) { setQuery(foundCode); setTimeout(() => handleSearch(null, foundCode), 100); }
+                    }).catch(() => setIsScanning(false));
+                } else setIsScanning(false);
+            };
+
+            /* food search */
+            const handleSearch = async (e, overrideQuery = null) => {
+                if (e && e.preventDefault) e.preventDefault();
+                const qTerm = (overrideQuery || query).trim();
+                if (!qTerm) return;
+                setLoading(true); setResults([]); setSelectedFood(null);
+
+                if (/^\d{8,14}$/.test(qTerm)) {
+                    try {
+                        const res = await fetch(`https://api.nal.usda.gov/fdc/v1/foods/search?api_key=${API_KEY}&query=${qTerm}&pageSize=1&dataType=Branded,SR Legacy`);
+                        const data = await res.json();
+                        if (data.foods && data.foods.length > 0) { await selectFood(data.foods[0]); setLoading(false); return; }
+                    } catch (err) { console.error("USDA barcode fail", err); }
+                    try {
+                        const res = await fetch(`https://world.openfoodfacts.org/api/v0/product/${qTerm}.json`);
+                        const data = await res.json();
+                        if (data.status === 1) {
+                            const p = data.product; const n = p.nutriments;
+                            setSelectedFood({
+                                name: `(OFF) ${p.product_name}`,
+                                calories: n['energy-kcal_100g'] || 0, protein: n.proteins_100g || 0, carbs: n.carbohydrates_100g || 0,
+                                fat: n.fat_100g || 0, fiber: n.fiber_100g || 0, userGrams: 100
+                            });
+                            setDisplayAmount(100); setMeasureUnit('g'); setLoading(false);
+                            return;
+                        }
+                    } catch (err) { console.error("OFF barcode fail", err); }
+                    notify("No match for that barcode. Try searching by name or add a custom food.");
+                }
+
+                try {
+                    const res = await fetch(`https://api.nal.usda.gov/fdc/v1/foods/search?api_key=${API_KEY}&query=${encodeURIComponent(qTerm)}&pageSize=10&dataType=Foundation,SR Legacy,Branded`);
+                    const data = await res.json();
+                    if (data.foods) setResults(data.foods.map(f => ({ ...f, description: `(USDA) ${f.description}`, fdcId: f.fdcId })));
+                    if (!data.foods || !data.foods.length) notify("No foods found. Try a simpler search term.");
+                } catch (err) { console.error("Text search failed", err); notify("Search failed. Check your connection."); }
+                setLoading(false);
+            };
+
+            const selectFood = async (food) => {
+                setLoading(true);
+                if (food.userGrams) { setSelectedFood(food); setLoading(false); return; }
+                let foodDetails = food;
+                let nutrients = food.foodNutrients || [];
+                try {
+                    const res = await fetch(`https://api.nal.usda.gov/fdc/v1/food/${food.fdcId}?api_key=${API_KEY}`);
+                    if (res.ok) { const d = await res.json(); foodDetails = d; nutrients = d.foodNutrients || []; }
+                } catch (err) { console.log("Detail fetch failed, falling back to search result data"); }
+
+                const getVal = (ids) => {
+                    if (!nutrients) return 0;
+                    const n = nutrients.find(x => ids.includes(x.nutrientId || x.nutrient?.id));
+                    return n ? (n.amount || n.value || 0) : 0;
+                };
+                setSelectedFood({
+                    name: foodDetails.description,
+                    calories: getVal([1008, 208, 2047]), protein: getVal([1003, 203]), carbs: getVal([1005, 205]),
+                    fat: getVal([1004, 204]), fiber: getVal([1079, 291]), userGrams: 100
+                });
+                setDisplayAmount(100); setMeasureUnit('g'); setResults([]); setLoading(false);
+            };
+
+            const addToLog = async () => {
+                if (!selectedFood) return;
+                const rawVal = parseFloat(displayAmount) || 0;
+                if (rawVal <= 0) { notify("Enter an amount greater than zero."); return; }
+                const calculatedGrams = measureUnit === 'oz' ? rawVal * 28.3495 : rawVal;
+                const f = calculatedGrams / 100;
+                try {
+                    await window.fb.addDoc(window.fb.collection(window.fb.db, "users", user.uid, "logs"), {
+                        name: selectedFood.name, grams: calculatedGrams, calories: selectedFood.calories * f,
+                        protein: parseFloat((selectedFood.protein * f).toFixed(1)), carbs: parseFloat((selectedFood.carbs * f).toFixed(1)),
+                        fat: parseFloat((selectedFood.fat * f).toFixed(1)), fiber: parseFloat((selectedFood.fiber * f).toFixed(1)),
+                        date: currentDate, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                        createdAt: window.fb.serverTimestamp()
+                    });
+                    setSelectedFood(null); setQuery("");
+                } catch (e) { notify("Could not save. Check your connection."); }
+            };
+
+            const relog = async (item) => {
+                try {
+                    await window.fb.addDoc(window.fb.collection(window.fb.db, "users", user.uid, "logs"), {
+                        name: item.name, grams: item.grams || 0, calories: item.calories || 0, protein: item.protein || 0,
+                        carbs: item.carbs || 0, fat: item.fat || 0, fiber: item.fiber || 0, date: currentDate,
+                        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), createdAt: window.fb.serverTimestamp()
+                    });
+                } catch (e) { notify("Could not save. Check your connection."); }
+            };
+
+            const editLog = async (item) => {
+                if (!(item.grams > 0)) return;
+                const entered = window.prompt("New amount in grams", String(Math.round(item.grams)));
+                const g = parseFloat(entered);
+                if (!g || g <= 0) return;
+                const r = g / item.grams;
+                await window.fb.setDoc(window.fb.doc(window.fb.db, "users", user.uid, "logs", item.id), {
+                    grams: g, calories: item.calories * r, protein: parseFloat((item.protein * r).toFixed(1)),
+                    carbs: parseFloat((item.carbs * r).toFixed(1)), fat: parseFloat((item.fat * r).toFixed(1)), fiber: parseFloat(((item.fiber || 0) * r).toFixed(1))
+                }, { merge: true });
+            };
+
+            const deleteLog = async (item) => {
+                if (!window.confirm(`Remove ${item.name}?`)) return;
+                await window.fb.deleteDoc(window.fb.doc(window.fb.db, "users", user.uid, "logs", item.id));
+            };
+
+            const submitManual = async (e) => {
+                e.preventDefault();
+                const p = parseFloat(manualForm.p) || 0, c = parseFloat(manualForm.c) || 0, f = parseFloat(manualForm.f) || 0, fib = parseFloat(manualForm.fib) || 0;
+                const cals = (p * 4) + (c * 4) + (f * 9);
+                await window.fb.addDoc(window.fb.collection(window.fb.db, "users", user.uid, "logs"), {
+                    name: manualForm.name || "Custom", grams: 0, calories: cals, protein: p, carbs: c, fat: f, fiber: fib,
+                    date: currentDate, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), createdAt: window.fb.serverTimestamp()
+                });
+                setShowManual(false); setManualForm({ name: "", p: "", c: "", f: "", fib: "" });
+            };
+
+            const changeDate = (offset) => setCurrentDate(d => addDays(d, offset));
+
+            const saveWeight = async () => {
+                const w = num(weightInput);
+                if (weightInput === "" || w < 50 || w > 700) { if (weightInput !== "") notify("Enter weight in pounds (50-700)."); return; }
+                if (weightsMap[currentDate] === w) return;
+                try {
+                    await window.fb.setDoc(window.fb.doc(window.fb.db, "users", user.uid, "daily_stats", currentDate), { weight: w, date: currentDate }, { merge: true });
+                } catch (e) { notify("Could not save weight."); }
+            };
+
+            /* workouts */
+            const saveEntry = async (exName, group, setIdx, reps, weight) => {
+                if (!user || reps === "" || weight === "") return;
+                const entryId = `${currentDate}_${exName.replace(/\s+/g, '_')}_set${setIdx}`;
+                const data = {
+                    exercise: exName, setIndex: setIdx, reps: parseInt(reps), weight: parseFloat(weight),
+                    volume: parseInt(reps) * parseFloat(weight), date: currentDate, timestamp: window.fb.serverTimestamp()
+                };
+                if (group) data.group = group;
+                await window.fb.setDoc(window.fb.doc(window.fb.db, "users", user.uid, "workout_logs", entryId), data);
+            };
+
+            const clearEntry = async (exName, setIdx) => {
+                const entryId = `${currentDate}_${exName.replace(/\s+/g, '_')}_set${setIdx}`;
+                await window.fb.deleteDoc(window.fb.doc(window.fb.db, "users", user.uid, "workout_logs", entryId));
+            };
+
+            const removeExercise = async (idx) => {
+                const exName = activeRoutine[idx].name;
+                if (!window.confirm(`Remove ${exName} and its logged sets for this day?`)) return;
+                const updatedRoutine = activeRoutine.filter((_, i) => i !== idx);
+                await window.fb.setDoc(window.fb.doc(window.fb.db, "users", user.uid, "active_routines", currentDate), { exercises: updatedRoutine });
+                if (exName) {
+                    const q = window.fb.query(
+                        window.fb.collection(window.fb.db, "users", user.uid, "workout_logs"),
+                        window.fb.where("date", "==", currentDate),
+                        window.fb.where("exercise", "==", exName)
+                    );
+                    const snapshot = await window.fb.getDocs(q);
+                    const batch = window.fb.writeBatch(window.fb.db);
+                    snapshot.docs.forEach(d => batch.delete(d.ref));
+                    await batch.commit();
+                }
+            };
+
+            const addExerciseToRoutine = async (exerciseName, group) => {
+                if (activeRoutine.some(e => e.name === exerciseName)) { notify(`${exerciseName} is already in today's workout.`); return; }
+                const newEx = { name: exerciseName, type: 'lifting', sets: 3 };
+                if (group) newEx.group = group;
+                await window.fb.setDoc(window.fb.doc(window.fb.db, "users", user.uid, "active_routines", currentDate), { exercises: [...activeRoutine, newEx] });
+                setShowLibrary(false); setLibQuery("");
+            };
+
+            const repeatLastWorkout = async () => {
+                try {
+                    const snap = await window.fb.getDocs(window.fb.collection(window.fb.db, "users", user.uid, "active_routines"));
+                    const prior = snap.docs.filter(d => d.id < currentDate && (d.data().exercises || []).length > 0).sort((a, b) => b.id.localeCompare(a.id));
+                    if (!prior.length) { notify("No earlier workout found to repeat."); return; }
+                    await window.fb.setDoc(window.fb.doc(window.fb.db, "users", user.uid, "active_routines", currentDate), { exercises: prior[0].data().exercises });
+                    notify(`Copied the workout from ${prior[0].id}.`);
+                } catch (e) { notify("Could not copy the last workout."); }
+            };
+
+            /* derived: nutrition */
+            const nutritionTotals = nutritionLog.reduce((acc, i) => ({ cals: acc.cals + (i.calories || 0), pro: acc.pro + (i.protein || 0), carb: acc.carb + (i.carbs || 0), fat: acc.fat + (i.fat || 0), fib: acc.fib + (i.fiber || 0) }), { cals: 0, pro: 0, carb: 0, fat: 0, fib: 0 });
+
+            /* derived: training */
+            const workoutLogs = useMemo(() => workoutAll.filter(l => l.date === currentDate), [workoutAll, currentDate]);
+            const activeExerciseNames = activeRoutine.map(e => e.name);
+            const totalVolume = workoutLogs.filter(l => activeExerciseNames.includes(l.exercise)).reduce((a, c) => a + (Number(c.volume) || 0), 0);
+
+            const history = useMemo(() => {
+                // most recent earlier session per exercise: { sets: {idx: {reps, weight}}, date }
+                const h = {}; const best = {};
+                workoutAll.forEach(l => {
+                    const reps = num(l.reps), wt = num(l.weight);
+                    if (reps > 0 && reps <= 12) { const e1 = wt * (1 + reps / 30); if (!best[l.exercise] || e1 > best[l.exercise]) best[l.exercise] = e1; }
+                    if (l.date >= currentDate) return;
+                    if (!h[l.exercise] || l.date > h[l.exercise].date) h[l.exercise] = { date: l.date, sets: {} };
+                });
+                workoutAll.forEach(l => {
+                    if (l.date >= currentDate) return;
+                    if (h[l.exercise] && h[l.exercise].date === l.date) h[l.exercise].sets[l.setIndex] = { reps: l.reps, weight: l.weight };
+                });
+                return { h, best };
+            }, [workoutAll, currentDate]);
+
+            const weeklySets = useMemo(() => {
+                const start = addDays(currentDate, -6);
+                const counts = {}; MUSCLE_GROUPS.forEach(g => counts[g] = 0);
+                workoutAll.forEach(l => {
+                    if (l.date < start || l.date > currentDate || !(num(l.reps) > 0)) return;
+                    const g = EX_GROUP[l.exercise] || l.group;
+                    if (counts[g] !== undefined) counts[g]++;
+                });
+                return counts;
+            }, [workoutAll, currentDate]);
+
+            /* derived: trends */
+            const trends = useMemo(() => {
+                const dayMap = {};
+                const ensure = (d) => dayMap[d] || (dayMap[d] = { cals: 0, pro: 0, weight: null, hasActivity: false });
+                allLogs.forEach(l => { const o = ensure(l.date); o.cals += (l.calories || 0); o.pro += (l.protein || 0); o.hasActivity = true; });
+                workoutAll.forEach(w => { ensure(w.date).hasActivity = true; });
+                Object.entries(weightsMap).forEach(([d, w]) => { ensure(d).weight = w; });
+
+                // adherence (10% tolerance) + protein days
+                const tc = targets.calories || 2000;
+                let compliant = 0, withCals = 0, proHit = 0;
+                Object.values(dayMap).forEach(day => {
+                    if (day.cals > 0) {
+                        withCals++;
+                        if (day.cals >= tc * 0.9 && day.cals <= tc * 1.1) compliant++;
+                        if (day.pro >= (targets.protein || 0) * 0.9) proHit++;
+                    }
+                });
+                const adherence = withCals ? Math.round(compliant / withCals * 100) : 0;
+                const proteinPct = withCals ? Math.round(proHit / withCals * 100) : 0;
+
+                // streak, local dates
+                let streak = 0;
+                const today = localISO();
+                let d = today;
+                if (!(dayMap[d] && dayMap[d].hasActivity)) d = addDays(today, -1);
+                while (dayMap[d] && dayMap[d].hasActivity) { streak++; d = addDays(d, -1); }
+
+                // weekly chart data
+                const weekData = {};
+                Object.keys(dayMap).sort().forEach(ds => {
+                    const wk = getWeekNumber(parseISO(ds));
+                    if (!weekData[wk]) weekData[wk] = { weights: [], cals: [] };
+                    if (dayMap[ds].weight > 0) weekData[wk].weights.push(dayMap[ds].weight);
+                    if (dayMap[ds].cals > 0) weekData[wk].cals.push(dayMap[ds].cals);
+                });
+                const weekly = { labels: [], weights: [], cals: [] };
+                Object.keys(weekData).sort().forEach(wk => {
+                    weekly.labels.push(formatWeekLabel(wk));
+                    const w = weekData[wk].weights, c = weekData[wk].cals;
+                    weekly.weights.push(w.length ? parseFloat(avg(w).toFixed(1)) : null);
+                    weekly.cals.push(c.length ? Math.round(avg(c)) : null);
+                });
+
+                // daily chart data (last 60 days) with 7-day moving average
+                const daily = { labels: [], weights: [], ma: [], cals: [] };
+                for (let i = 59; i >= 0; i--) {
+                    const ds = addDays(today, -i);
+                    daily.labels.push(ds.slice(5));
+                    daily.weights.push(dayMap[ds] && dayMap[ds].weight ? dayMap[ds].weight : null);
+                    daily.cals.push(dayMap[ds] && dayMap[ds].cals > 0 ? Math.round(dayMap[ds].cals) : null);
+                    const win = [];
+                    for (let j = 0; j < 7; j++) { const x = dayMap[addDays(ds, -j)]; if (x && x.weight) win.push(x.weight); }
+                    daily.ma.push(win.length ? parseFloat(avg(win).toFixed(1)) : null);
+                }
+
+                // weekly rate: last 7 days vs the 7 days before
+                const cur = [], prev = [];
+                for (let j = 0; j < 7; j++) {
+                    const a = dayMap[addDays(today, -j)], b = dayMap[addDays(today, -7 - j)];
+                    if (a && a.weight) cur.push(a.weight);
+                    if (b && b.weight) prev.push(b.weight);
+                }
+                let rate = null;
+                if (cur.length >= 3 && prev.length >= 3) {
+                    const c = avg(cur), p = avg(prev);
+                    rate = { pct: (c - p) / p * 100, lbs: c - p, cur: c };
+                }
+                return { adherence, proteinPct, streak, weekly, daily, rate, hasData: Object.keys(dayMap).length > 0 };
+            }, [allLogs, workoutAll, weightsMap, targets.calories, targets.protein]);
+
+            const rateAdvice = useMemo(() => {
+                const r = trends.rate; if (!r) return null;
+                const goalParsed = parseFloat(profile && profile.goal); const goal = isNaN(goalParsed) ? -500 : goalParsed;
+                const pct = r.pct; const abs = Math.abs(pct).toFixed(2);
+                const lbs = `${r.lbs > 0 ? '+' : ''}${r.lbs.toFixed(1)} lb`;
+                if (goal < 0) {
+                    if (pct <= -1.0) return { tone: 'warn', head: `Losing ${abs}% per week (${lbs})`, body: 'That is faster than the 0.5-1.0% band. In the randomized trial comparing paces, the faster group (1.4%/week) did worse on lean mass and strength than the 0.7%/week group. Consider raising calories by about 100-200 kcal/day. That adjustment is a practical rule, not a tested protocol.' };
+                    if (pct <= -0.5) return { tone: 'ok', head: `On pace: ${abs}% per week (${lbs})`, body: 'Inside the 0.5-1.0% band that surrounds the pace used in the Garthe 2011 trial. Keep protein and lifting consistent.' };
+                    if (pct < -0.1) return { tone: 'info', head: `Gentle loss: ${abs}% per week (${lbs})`, body: 'Slower than the target band, which is fine if you are happy with it. Give it another week or two of consistent logging before changing anything, since water and food volume move the scale. If it stays under 0.25%/week with good adherence, trimming 100-250 kcal/day or adding activity is a reasonable step (practical rule).' };
+                    return { tone: 'info', head: `Weight is flat or rising (${lbs})`, body: 'Check that logging is complete on most days and portions are weighed. If both are solid for 2+ weeks, a 100-250 kcal/day reduction is a reasonable adjustment (practical rule).' };
+                }
+                return { tone: 'info', head: `Weekly change: ${pct > 0 ? '+' : ''}${pct.toFixed(2)}% (${lbs})`, body: 'Your goal is maintenance or gain, so no pace band applies. Watch for steady movement in the direction you want.' };
+            }, [trends.rate, profile]);
+
+            /* chart */
+            useEffect(() => {
+                if (tab !== 'trends' || !chartRef.current) return;
+                if (chartInstance.current) chartInstance.current.destroy();
+                const ctx = chartRef.current.getContext('2d');
+                const isDaily = chartMode === 'daily';
+                const src = isDaily ? trends.daily : trends.weekly;
+                const datasets = isDaily ? [
+                    { label: 'Weight (lbs)', data: src.weights, borderColor: 'rgba(34,211,238,.45)', backgroundColor: 'rgba(34,211,238,.45)', yAxisID: 'y', showLine: false, pointRadius: 3 },
+                    { label: '7-day average', data: src.ma, borderColor: '#22d3ee', backgroundColor: '#22d3ee', yAxisID: 'y', tension: 0.3, pointRadius: 0, borderWidth: 3, spanGaps: true },
+                    { label: 'Calories', data: src.cals, borderColor: '#a3e635', backgroundColor: 'rgba(163,230,53,.55)', type: 'bar', yAxisID: 'y1', barPercentage: 0.8 }
+                ] : [
+                    { label: 'Avg weight (lbs)', data: src.weights, borderColor: '#22d3ee', backgroundColor: '#22d3ee', yAxisID: 'y', tension: 0.3, spanGaps: true },
+                    { label: 'Avg calories', data: src.cals, borderColor: '#a3e635', backgroundColor: 'rgba(163,230,53,.7)', type: 'bar', yAxisID: 'y1', barPercentage: 0.5 }
+                ];
+                chartInstance.current = new Chart(ctx, {
+                    type: 'line',
+                    data: { labels: src.labels, datasets },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        interaction: { mode: 'index', intersect: false },
+                        plugins: { legend: { position: 'top', labels: { color: '#e8eef8', boxWidth: 12 } } },
+                        scales: {
+                            x: { ticks: { color: '#8a98b3', maxTicksLimit: isDaily ? 8 : 6 }, grid: { color: '#22304d' } },
+                            y: { type: 'linear', position: 'left', title: { display: true, text: 'Weight (lbs)', color: '#22d3ee' }, ticks: { color: '#8a98b3' }, grid: { color: '#22304d' } },
+                            y1: { type: 'linear', position: 'right', title: { display: true, text: 'Calories', color: '#a3e635' }, ticks: { color: '#8a98b3' }, grid: { drawOnChartArea: false }, min: 0 }
+                        }
+                    }
+                });
+                return () => { if (chartInstance.current) { chartInstance.current.destroy(); chartInstance.current = null; } };
+            }, [tab, chartMode, trends.weekly, trends.daily]);
+
+            /* PDF */
+            const exportMasterReport = async () => {
+                try {
+                    const { jsPDF } = window.jspdf;
+                    const doc = new jsPDF();
+                    const logsSnap = await window.fb.getDocs(window.fb.collection(window.fb.db, "users", user.uid, "logs"));
+                    const allNutrition = logsSnap.docs.map(d => d.data());
+
+                    const historyByDate = {};
+                    const blank = () => ({ nutrition: [], cals: 0, pro: 0, carb: 0, fat: 0, fib: 0, grams: 0, volume: 0 });
+                    allNutrition.forEach(n => {
+                        if (!historyByDate[n.date]) historyByDate[n.date] = blank();
+                        const h = historyByDate[n.date];
+                        h.nutrition.push(n);
+                        h.cals += (n.calories || 0); h.pro += (n.protein || 0); h.carb += (n.carbs || 0); h.fat += (n.fat || 0); h.fib += (n.fiber || 0); h.grams += (n.grams || 0);
+                    });
+                    workoutAll.forEach(w => {
+                        if (!historyByDate[w.date]) historyByDate[w.date] = blank();
+                        historyByDate[w.date].volume += (Number(w.volume) || 0);
+                    });
+
+                    const sortedDates = Object.keys(historyByDate).sort().reverse();
+                    doc.setFontSize(18); doc.text("ELITE PERFORMANCE HISTORY", 14, 20);
+                    doc.setFontSize(8); doc.text("Targets are estimates for general wellness and are not medical advice.", 14, 26);
+                    let yPos = 35;
+                    const bold = (t) => ({ content: t, styles: { fontStyle: 'bold', fillColor: [230, 230, 230] } });
+
+                    sortedDates.forEach(date => {
+                        if (yPos > 260) { doc.addPage(); yPos = 20; }
+                        const day = historyByDate[date];
+                        const bw = weightsMap[date] ? ` | BODY WT: ${weightsMap[date]} lbs` : '';
+                        doc.setFontSize(10); doc.text(`DATE: ${date}${bw} | VOLUME: ${day.volume.toLocaleString()} lbs`, 14, yPos);
+                        const rows = day.nutrition.map(n => [
+                            n.name, Math.round(n.grams || 0) + 'g', Math.round(n.calories || 0),
+                            (n.protein || 0).toFixed(1) + 'g', (n.carbs || 0).toFixed(1) + 'g', (n.fat || 0).toFixed(1) + 'g', (n.fiber || 0).toFixed(1) + 'g'
+                        ]);
+                        rows.push([bold('DAILY TOTAL'), bold(Math.round(day.grams) + 'g'), bold(Math.round(day.cals).toString()), bold(day.pro.toFixed(1) + 'g'), bold(day.carb.toFixed(1) + 'g'), bold(day.fat.toFixed(1) + 'g'), bold(day.fib.toFixed(1) + 'g')]);
+                        doc.autoTable({ startY: yPos + 2, head: [['Food', 'Weight', 'Cals', 'P', 'C', 'F', 'Fib']], body: rows, theme: 'grid', styles: { fontSize: 7 } });
+                        yPos = doc.lastAutoTable.finalY + 10;
+                    });
+
+                    if (sortedDates.length > 0) {
+                        doc.addPage();
+                        doc.setFontSize(18); doc.text("WEEKLY AVERAGES", 14, 20);
+                        const getUTC = (ds) => { const [y, m, d] = ds.split('-'); return new Date(Date.UTC(y, m - 1, d)); };
+                        const lastUTC = getUTC(sortedDates[0]);
+                        const weekRows = [];
+                        let anchor = getUTC('2025-12-28');
+                        let weekNum = 1;
+                        const todayUTC = getUTC(localISO());
+                        while (anchor <= lastUTC || anchor <= todayUTC) {
+                            const weekStartStr = anchor.toISOString().split('T')[0];
+                            const weekEnd = new Date(anchor); weekEnd.setUTCDate(weekEnd.getUTCDate() + 6);
+                            const weekEndStr = weekEnd.toISOString().split('T')[0];
+                            const days = [];
+                            for (let i = 0; i < 7; i++) { const d = new Date(anchor); d.setUTCDate(d.getUTCDate() + i); days.push(d.toISOString().split('T')[0]); }
+                            const active = days.filter(d => historyByDate[d] && historyByDate[d].cals > 0);
+                            const wts = days.map(d => weightsMap[d]).filter(Boolean);
+                            if (active.length > 0 || wts.length > 0) {
+                                const n = active.length || 1;
+                                const s = (k) => active.reduce((a, d) => a + historyByDate[d][k], 0);
+                                weekRows.push([
+                                    `Week ${weekNum} (${weekStartStr} to ${weekEndStr})`,
+                                    wts.length ? avg(wts).toFixed(1) : '-',
+                                    Math.round(s('grams') / n) + 'g', Math.round(s('cals') / n),
+                                    (s('pro') / n).toFixed(1) + 'g', (s('carb') / n).toFixed(1) + 'g', (s('fat') / n).toFixed(1) + 'g', (s('fib') / n).toFixed(1) + 'g'
+                                ]);
+                            }
+                            anchor.setUTCDate(anchor.getUTCDate() + 7);
+                            weekNum++;
+                            if (weekNum > 500) break;
+                        }
+                        if (weekRows.length > 0) {
+                            weekRows.reverse();
+                            doc.autoTable({ startY: 25, head: [['Week', 'Avg body wt', 'Avg food g', 'Avg Cals', 'Avg P', 'Avg C', 'Avg F', 'Avg Fib']], body: weekRows, theme: 'striped', styles: { fontSize: 8 } });
+                        }
+                    }
+                    doc.save("Elite_Master_Report.pdf");
+                } catch (e) { console.error(e); notify("Could not build the report."); }
+            };
+
+            const currentRatio = selectedFood ? ((measureUnit === 'oz' ? parseFloat(displayAmount) * 28.3495 : parseFloat(displayAmount)) / 100) || 0 : 0;
+            const isToday = currentDate === localISO();
+            const prettyDate = parseISO(currentDate).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+
+            /* ---------- render sections ---------- */
+            const renderHeader = () => (
+                <div className="sticky top-0 z-30 -mx-4 px-4 pt-4 pb-3" style={{ background: 'rgba(11,18,32,.94)', backdropFilter: 'blur(10px)' }}>
+                    <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                            <button onClick={onHome} className="card flex items-center gap-1 pl-2 pr-3 py-1.5 text-xs font-bold muted hover:text-white" aria-label="Back to home"><Icon n="left" size={16} /> Home</button>
+                            <div className="font-extrabold text-lg tracking-tight">Elite Tracker</div>
+                        </div>
+                        {!isToday && <button onClick={() => setCurrentDate(localISO())} className="chip" style={{ background: 'var(--lime)', color: '#0b1220' }}>Back to today</button>}
+                    </div>
+                    <div className="flex gap-2">
+                        <div className="card flex items-center flex-1 px-1">
+                            <button onClick={() => changeDate(-1)} className="p-2.5 muted hover:text-white" aria-label="Previous day"><Icon n="left" /></button>
+                            <label className="relative flex-1 text-center font-bold text-sm cursor-pointer">
+                                {isToday ? 'Today, ' : ''}{prettyDate}
+                                <input type="date" value={currentDate} onChange={e => e.target.value && setCurrentDate(e.target.value)} className="absolute inset-0 opacity-0 cursor-pointer w-full" aria-label="Pick a date" />
+                            </label>
+                            <button onClick={() => changeDate(1)} className="p-2.5 muted hover:text-white" aria-label="Next day"><Icon n="right" /></button>
+                        </div>
+                        <div className="card flex items-center px-3">
+                            <span className="text-xs muted mr-2">Weight</span>
+                            <input type="number" inputMode="decimal" value={weightInput} onChange={e => setWeightInput(e.target.value)} onBlur={saveWeight} onKeyDown={e => e.key === 'Enter' && e.target.blur()} placeholder="0.0" aria-label="Body weight in pounds" className="bg-transparent font-bold w-16 text-right outline-none" style={{ fontSize: 16, color: 'var(--tx)' }} />
+                            <span className="text-xs font-bold ml-1" style={{ color: 'var(--lime)' }}>lbs</span>
+                        </div>
+                    </div>
+                </div>
+            );
+
+            const renderFood = () => (
+                <div className="pop">
+                    {!profile && (
+                        <button onClick={() => setTab('you')} className="card w-full p-4 mb-4 text-left" style={{ borderColor: 'var(--lime)' }}>
+                            <div className="font-bold text-sm">Set up your profile</div>
+                            <div className="text-xs muted mt-1">Add height, age and goal to get calorie and macro targets based on trial evidence. Using default targets for now.</div>
+                        </button>
+                    )}
+                    {profile && !refWeight && (
+                        <div className="card p-4 mb-4 text-xs muted">Enter today's weight above to calculate your targets. Using saved defaults until then.</div>
+                    )}
+
+                    <div className="card p-5 mb-4">
+                        <div className="flex items-center gap-5">
+                            <Ring value={nutritionTotals.cals} max={targets.calories} />
+                            <div className="flex-1 space-y-3">
+                                <div className="text-xs muted">Target <span className="text-white font-bold">{targets.calories.toLocaleString()}</span> kcal, eaten <span className="text-white font-bold">{Math.round(nutritionTotals.cals).toLocaleString()}</span></div>
+                                <MacroBar label="Protein" color="var(--teal)" v={nutritionTotals.pro} t={targets.protein} />
+                                <MacroBar label="Carbs" color="var(--lime)" v={nutritionTotals.carb} t={targets.carbs} />
+                                <MacroBar label="Fat" color="var(--amber)" v={nutritionTotals.fat} t={targets.fat} />
+                                <MacroBar label="Fiber" color="var(--violet)" v={nutritionTotals.fib} t={targets.fiber || 28} />
+                            </div>
+                        </div>
+                        {calc && calc.flags.length > 0 && (
+                            <div className="mt-4 p-3 rounded-xl text-xs leading-relaxed" style={{ background: 'rgba(251,191,36,.1)', color: 'var(--amber)' }}>
+                                {calc.flags.map((f, i) => <div key={i}>{f}</div>)}
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="flex gap-2 mb-3">
+                        <form onSubmit={handleSearch} className="flex-1 relative">
+                            <input type="text" value={query} onChange={e => setQuery(e.target.value)} placeholder="Search a food or scan a barcode" className="field pr-12" aria-label="Search foods" />
+                            <button type="button" onClick={startScanner} className="absolute right-3 top-1/2 -translate-y-1/2 muted hover:text-white" aria-label="Scan barcode"><Icon n="camera" size={22} /></button>
+                        </form>
+                        <button onClick={handleSearch} className="btn btn-lime">{loading ? "..." : "Find"}</button>
+                        <button onClick={() => setShowManual(!showManual)} className="btn btn-ghost">Custom</button>
+                    </div>
+
+                    {recent.length > 0 && !selectedFood && results.length === 0 && (
+                        <div className="mb-4">
+                            <div className="text-xs muted mb-2">Log again</div>
+                            <div className="hscroll">
+                                {recent.map((r, i) => (
+                                    <button key={i} onClick={() => relog(r)} className="card shrink-0 px-3 py-2 text-left" style={{ maxWidth: 180 }}>
+                                        <div className="text-xs font-bold truncate">{r.name.replace(/^\((USDA|OFF)\)\s*/, '')}</div>
+                                        <div className="text-[11px] muted">{Math.round(r.calories)} kcal{r.grams > 0 ? ` - ${Math.round(r.grams)} g` : ''}</div>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {showManual && (
+                        <div className="card p-4 mb-4 pop relative">
+                            <button onClick={() => setShowManual(false)} className="absolute top-3 right-3 muted" aria-label="Close"><Icon n="x" /></button>
+                            <h3 className="font-bold mb-3">Add a custom food</h3>
+                            <form onSubmit={submitManual} className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                                <input className="field col-span-2 md:col-span-4" placeholder="Food name" required value={manualForm.name} onChange={e => setManualForm({ ...manualForm, name: e.target.value })} />
+                                <input type="number" step="any" inputMode="decimal" className="field" placeholder="Protein (g)" required value={manualForm.p} onChange={e => setManualForm({ ...manualForm, p: e.target.value })} />
+                                <input type="number" step="any" inputMode="decimal" className="field" placeholder="Carbs (g)" required value={manualForm.c} onChange={e => setManualForm({ ...manualForm, c: e.target.value })} />
+                                <input type="number" step="any" inputMode="decimal" className="field" placeholder="Fat (g)" required value={manualForm.f} onChange={e => setManualForm({ ...manualForm, f: e.target.value })} />
+                                <input type="number" step="any" inputMode="decimal" className="field" placeholder="Fiber (g)" value={manualForm.fib} onChange={e => setManualForm({ ...manualForm, fib: e.target.value })} />
+                                <button type="submit" className="btn btn-lime col-span-2 md:col-span-4">Add to log</button>
+                            </form>
+                            <p className="text-[11px] muted mt-2">Calories are calculated from macros (4/4/9 kcal per gram).</p>
+                        </div>
+                    )}
+
+                    {results.length > 0 && (
+                        <div className="card mb-4 overflow-hidden" style={{ maxHeight: 260, overflowY: 'auto' }}>
+                            {results.map(f => <button key={f.fdcId} onClick={() => selectFood(f)} className="block w-full text-left p-3 text-sm hover:bg-white/5" style={{ borderBottom: '1px solid var(--line)' }}>{f.description}</button>)}
+                        </div>
+                    )}
+
+                    {selectedFood && (
+                        <div className="card p-5 mb-4 pop relative" style={{ borderColor: 'var(--lime)' }}>
+                            <button onClick={() => setSelectedFood(null)} className="absolute top-4 right-4 muted" aria-label="Close"><Icon n="x" /></button>
+                            <p className="font-bold mb-4 pr-10 leading-snug">{selectedFood.name}</p>
+                            <div className="inset flex items-center justify-between p-2 mb-3">
+                                <div className="flex items-center gap-2">
+                                    <input type="number" inputMode="decimal" value={displayAmount} onFocus={() => setDisplayAmount('')} onChange={e => setDisplayAmount(e.target.value)} className="w-20 bg-transparent font-bold text-2xl text-center outline-none" placeholder="0" aria-label="Amount" />
+                                    <button onClick={() => setMeasureUnit(measureUnit === 'g' ? 'oz' : 'g')} className="chip" style={{ background: 'transparent', border: '1px solid var(--lime)', color: 'var(--lime)' }}>{measureUnit}</button>
+                                </div>
+                                <div className="text-right pr-1">
+                                    <span className="block text-2xl font-bold leading-none">{Math.round(selectedFood.calories * currentRatio || 0)}</span>
+                                    <span className="text-[11px] muted">kcal</span>
+                                </div>
+                            </div>
+                            <div className="flex gap-2 mb-4">
+                                {(measureUnit === 'g' ? [50, 100, 150, 200] : [1, 2, 4, 8]).map(a => (
+                                    <button key={a} onClick={() => setDisplayAmount(a)} className="chip">{a} {measureUnit}</button>
+                                ))}
+                            </div>
+                            <div className="grid grid-cols-4 gap-2 mb-4 text-center text-xs">
+                                {[['Protein', 'var(--teal)', selectedFood.protein], ['Carbs', 'var(--lime)', selectedFood.carbs], ['Fat', 'var(--amber)', selectedFood.fat], ['Fiber', 'var(--violet)', selectedFood.fiber]].map(([l, c, v]) => (
+                                    <div key={l} className="inset p-2"><span className="font-bold block mb-1" style={{ color: c }}>{l}</span>{(v * currentRatio).toFixed(1)}g</div>
+                                ))}
+                            </div>
+                            <button onClick={addToLog} className="btn btn-lime w-full py-3.5">Add to daily log</button>
+                        </div>
+                    )}
+
+                    <div className="space-y-2">
+                        {nutritionLog.length === 0 && (
+                            <div className="card p-6 text-center text-sm muted">Nothing logged for this day. Search a food, scan a barcode, or add a custom entry.</div>
+                        )}
+                        {nutritionLog.map(item => (
+                            <div key={item.id} className="card p-3">
+                                <div className="flex items-start justify-between gap-2">
+                                    <div className="min-w-0">
+                                        <div className="font-bold text-sm truncate">{item.name}</div>
+                                        <div className="text-[11px] muted">{item.grams > 0 ? `${Math.round(item.grams)} g` : 'Custom entry'}{item.time ? ` - ${item.time}` : ''}</div>
+                                    </div>
+                                    <div className="flex items-center gap-1 shrink-0">
+                                        <span className="font-extrabold mr-1">{Math.round(item.calories)}<span className="text-[11px] muted font-medium"> kcal</span></span>
+                                        {item.grams > 0 && <button onClick={() => editLog(item)} className="p-1.5 muted hover:text-white" aria-label={`Edit amount of ${item.name}`}><Icon n="edit" size={16} /></button>}
+                                        <button onClick={() => deleteLog(item)} className="p-1.5 hover:text-white" style={{ color: 'var(--red)' }} aria-label={`Remove ${item.name}`}><Icon n="x" size={16} /></button>
+                                    </div>
+                                </div>
+                                <div className="flex gap-3 mt-2 text-[11px] font-bold">
+                                    <span style={{ color: 'var(--teal)' }}>P {(item.protein || 0).toFixed(1)}</span>
+                                    <span style={{ color: 'var(--lime)' }}>C {(item.carbs || 0).toFixed(1)}</span>
+                                    <span style={{ color: 'var(--amber)' }}>F {(item.fat || 0).toFixed(1)}</span>
+                                    <span style={{ color: 'var(--violet)' }}>Fib {(item.fiber || 0).toFixed(1)}</span>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+
+            const filteredLib = Object.entries(WORKOUT_LIBRARY).map(([g, list]) => [g, list.filter(e => e.toLowerCase().includes(libQuery.toLowerCase()))]).filter(([, l]) => l.length);
+            const renderTrain = () => {
+                return (
+                    <div className="pop">
+                        <div className="card p-5 mb-4 flex items-center justify-between">
+                            <div>
+                                <div className="text-sm font-bold">Training volume today</div>
+                                <div className="text-xs muted">Sets x reps x weight</div>
+                            </div>
+                            <div className="text-right"><span className="text-3xl font-extrabold">{totalVolume.toLocaleString()}</span><span className="ml-1 text-xs font-bold" style={{ color: 'var(--teal)' }}>lbs</span></div>
+                        </div>
+
+                        <div className="card p-4 mb-4">
+                            <div className="flex items-baseline justify-between mb-3">
+                                <div className="text-sm font-bold">Sets in the last 7 days</div>
+                                <div className="text-[11px] muted">Marker = 10 sets</div>
+                            </div>
+                            <div className="space-y-2">
+                                {MUSCLE_GROUPS.map(g => {
+                                    const n = weeklySets[g]; const pct = Math.min(100, n / 20 * 100);
+                                    return (
+                                        <div key={g} className="flex items-center gap-3 text-xs">
+                                            <span className="w-16 muted">{g}</span>
+                                            <div className="flex-1 h-2 rounded-full relative" style={{ background: 'var(--s3)' }}>
+                                                <div className="h-2 rounded-full" style={{ width: pct + '%', background: n >= 10 ? 'var(--teal)' : 'rgba(34,211,238,.45)', transition: 'width .4s' }}></div>
+                                                <div className="absolute top-[-3px] h-[14px] w-px" style={{ left: '50%', background: 'var(--mut)' }}></div>
+                                            </div>
+                                            <span className="w-6 text-right font-bold">{n}</span>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                            <p className="text-[11px] muted mt-3 leading-relaxed">Meta-analytic evidence links 10 or more weekly sets per muscle with more growth than fewer. See the Science tab.</p>
+                        </div>
+
+                        <Timer />
+
+                        <div className="flex gap-2 mb-4">
+                            <button onClick={() => setShowLibrary(true)} className="btn btn-ghost flex-1 flex items-center justify-center gap-2" style={{ borderStyle: 'dashed' }}><Icon n="plus" size={18} /> Add exercise</button>
+                            {activeRoutine.length === 0 && <button onClick={repeatLastWorkout} className="btn btn-ghost">Repeat last workout</button>}
+                        </div>
+
+                        <div className="space-y-4">
+                            {activeRoutine.map((ex, i) => {
+                                const exLogs = workoutLogs.filter(l => l.exercise === ex.name);
+                                const maxLogged = exLogs.reduce((m, l) => Math.max(m, (l.setIndex ?? -1) + 1), 0);
+                                const setCount = Math.max(3, maxLogged) + (customSets[ex.name] || 0);
+                                const hist = history.h[ex.name];
+                                const group = EX_GROUP[ex.name] || ex.group || '';
+                                const e1 = history.best[ex.name];
+                                return (
+                                    <div key={ex.name + i} className="card p-4 pop">
+                                        <div className="flex justify-between items-start mb-3">
+                                            <div>
+                                                <h3 className="font-extrabold text-sm">{ex.name}</h3>
+                                                <div className="text-[11px] muted mt-0.5">{group}{e1 ? `${group ? ' - ' : ''}best est. 1RM ${Math.round(e1)} lbs` : ''}</div>
+                                            </div>
+                                            <div className="flex gap-2">
+                                                <button onClick={() => setCustomSets(p => ({ ...p, [ex.name]: (p[ex.name] || 0) + 1 }))} className="btn btn-ghost" style={{ padding: '.3rem .7rem', fontSize: '.75rem' }}>+ Set</button>
+                                                <button onClick={() => removeExercise(i)} className="btn btn-danger" style={{ padding: '.3rem .7rem', fontSize: '.75rem' }}>Remove</button>
+                                            </div>
+                                        </div>
+                                        <div className="space-y-2">
+                                            {[...Array(setCount)].map((_, s) => (
+                                                <SetRow key={s} idx={s}
+                                                    existing={exLogs.find(l => l.setIndex === s)}
+                                                    last={hist ? (hist.sets[s] || null) : null}
+                                                    onSave={(idx, reps, wt) => saveEntry(ex.name, ex.group || EX_GROUP[ex.name] || '', idx, reps, wt)}
+                                                    onClear={(idx) => clearEntry(ex.name, idx)} />
+                                            ))}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                        {activeRoutine.length === 0 && <div className="card p-6 text-center text-sm muted mt-2">No exercises yet. Add one from the library or repeat your last workout.</div>}
+                    </div>
+                );
+            };
+
+            const toneColor = { ok: 'var(--lime)', warn: 'var(--amber)', info: 'var(--teal)' };
+            const renderTrends = () => (
+                <div className="pop space-y-4">
+                    <div className="grid grid-cols-3 gap-3 text-center">
+                        <div className="card p-4"><div className="text-3xl font-extrabold" style={{ color: 'var(--teal)' }}>{trends.adherence}%</div><div className="text-[11px] muted mt-1">Calorie adherence</div></div>
+                        <div className="card p-4"><div className="text-3xl font-extrabold" style={{ color: 'var(--violet)' }}>{trends.proteinPct}%</div><div className="text-[11px] muted mt-1">Protein days hit</div></div>
+                        <div className="card p-4"><div className="text-3xl font-extrabold" style={{ color: 'var(--lime)' }}>{trends.streak}<span className="text-sm"> d</span></div><div className="text-[11px] muted mt-1">Current streak</div></div>
+                    </div>
+                    <p className="text-[11px] muted -mt-2 px-1">Adherence counts days within 10% of your calorie target. Protein days hit counts days at 90% of target or more. Streak counts consecutive days with food or training logged.</p>
+
+                    {rateAdvice && (
+                        <div className="card p-4" style={{ borderColor: toneColor[rateAdvice.tone] }}>
+                            <div className="flex items-center justify-between mb-1">
+                                <div className="font-bold text-sm" style={{ color: toneColor[rateAdvice.tone] }}>{rateAdvice.head}</div>
+                                <button onClick={() => setTab('science')} className="chip">Evidence</button>
+                            </div>
+                            <p className="text-xs leading-relaxed muted">{rateAdvice.body}</p>
+                            <p className="text-[11px] muted mt-2">Compares your last 7 days of weigh-ins with the 7 days before.</p>
+                        </div>
+                    )}
+                    {!rateAdvice && (
+                        <div className="card p-4 text-xs muted leading-relaxed">Log at least 3 weigh-ins in each of the last two weeks to see your weekly rate of change and guidance.</div>
+                    )}
+
+                    <div className="seg">
+                        <button className={chartMode === 'weekly' ? 'on' : ''} onClick={() => setChartMode('weekly')}>Weekly averages</button>
+                        <button className={chartMode === 'daily' ? 'on' : ''} onClick={() => setChartMode('daily')}>Daily, 60 days</button>
+                    </div>
+                    <div className="card p-4 relative" style={{ height: 340 }}>
+                        {isChartLoading && <div className="absolute inset-0 z-10 flex items-center justify-center font-bold rounded-2xl" style={{ background: 'rgba(17,26,44,.85)', color: 'var(--lime)' }}>Loading analytics...</div>}
+                        <canvas ref={chartRef} id="trendChart"></canvas>
+                    </div>
+                    {!trends.hasData && !isChartLoading && <div className="card p-6 text-center text-sm muted">Your trends appear here once you have logged food, workouts or weight.</div>}
+                </div>
+            );
+
+            const renderScience = () => (
+                <div className="pop space-y-3">
+                    <div className="card p-4">
+                        <h2 className="font-bold mb-2">How this site uses research</h2>
+                        <p className="text-xs muted leading-relaxed">Every target and tip in the calculator, tracker and drug check traces to the sources below. Diet and lifting trials usually cannot be double-blinded, because participants know what they eat and lift. Where a trial used blinding it is stated; otherwise it is described as open-label. Items with no randomized trial are marked as such instead of being dressed up.</p>
+                        <div className="mt-3 space-y-1.5">
+                            {Object.entries(GRADES).map(([k, g]) => (
+                                <div key={k} className="flex gap-2 text-[11px] leading-relaxed"><span className="font-extrabold w-4" style={{ color: g.color }}>{k}</span><span className="muted"><strong className="text-white">{g.name}.</strong> {g.text}</span></div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {EVIDENCE.map(ev => (
+                        <details key={ev.id} className="card p-4">
+                            <summary className="flex items-start gap-3">
+                                <span className="chev mt-1 muted"><Icon n="chev" size={16} /></span>
+                                <div className="flex-1">
+                                    <div className="flex items-center gap-2 flex-wrap"><span className="font-bold text-sm">{ev.title}</span><GradeBadge g={ev.grade} /></div>
+                                    <div className="text-[11px] muted mt-1">Used for: {ev.usedIn}</div>
+                                </div>
+                            </summary>
+                            <div className="mt-3 pl-7 space-y-3">
+                                <p className="text-xs leading-relaxed">{ev.summary}</p>
+                                {ev.studies.map((s, i) => (
+                                    <div key={i} className="inset p-3 text-xs leading-relaxed">
+                                        <div className="font-bold">{s.cite}</div>
+                                        <div className="muted mt-1"><strong className="text-white">Design:</strong> {s.design}</div>
+                                        <div className="muted mt-1"><strong className="text-white">Finding:</strong> {s.finding}</div>
+                                    </div>
+                                ))}
+                                <p className="text-[11px] leading-relaxed" style={{ color: 'var(--amber)' }}><strong>Limits:</strong> {ev.caveat}</p>
+                            </div>
+                        </details>
+                    ))}
+
+                    <div className="card p-4">
+                        <h3 className="font-bold text-sm mb-2">Safety and scope</h3>
+                        <p className="text-xs muted leading-relaxed">This site gives general wellness estimates and is not medical advice. Talk to a clinician before using calorie targets if you are under 18, pregnant or breastfeeding, have diabetes or take glucose-lowering medicine, have kidney disease, or have a history of disordered eating. If tracking food or weight increases anxiety or restriction, stop and seek support.</p>
+                    </div>
+                </div>
+            );
+
+            const f = (k, v) => { setForm(prev => ({ ...prev, [k]: v })); setFormDirty(true); };
+            const renderYou = () => (
+                <div className="pop space-y-4">
+                    <div className="card p-5">
+                        <h2 className="font-bold mb-4">Profile and goal</h2>
+                        <div className="grid grid-cols-2 gap-3">
+                            <label className="text-xs muted">Height
+                                <div className="flex gap-2 mt-1">
+                                    <input type="number" inputMode="decimal" className="field" value={form.height} onChange={e => f('height', e.target.value)} placeholder={form.heightUnit === 'in' ? '70' : '178'} />
+                                    <select className="field" style={{ width: 80 }} value={form.heightUnit} onChange={e => f('heightUnit', e.target.value)}><option value="in">in</option><option value="cm">cm</option></select>
+                                </div>
+                            </label>
+                            <label className="text-xs muted">Age
+                                <input type="number" inputMode="numeric" className="field mt-1" value={form.age} onChange={e => f('age', e.target.value)} placeholder="30" />
+                            </label>
+                            <label className="text-xs muted col-span-2">Sex used in the energy equation
+                                <select className="field mt-1" value={form.gender} onChange={e => f('gender', e.target.value)}><option value="male">Male</option><option value="female">Female</option></select>
+                            </label>
+                            <label className="text-xs muted col-span-2">Activity
+                                <select className="field mt-1" value={form.activity} onChange={e => f('activity', e.target.value)}>{ACTIVITY_OPTIONS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select>
+                            </label>
+                            <label className="text-xs muted col-span-2">Goal
+                                <select className="field mt-1" value={form.goal} onChange={e => f('goal', e.target.value)}>{GOAL_OPTIONS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select>
+                            </label>
+                            <label className="text-xs muted">Protein (g per kg)
+                                <input type="number" step="0.1" min="1.6" max="2.4" inputMode="decimal" className="field mt-1" value={form.proteinPerKg} onChange={e => f('proteinPerKg', e.target.value)} />
+                            </label>
+                            <label className="text-xs muted">Fat (% of calories)
+                                <input type="number" step="1" min="20" max="40" inputMode="numeric" className="field mt-1" value={form.fatPct} onChange={e => f('fatPct', e.target.value)} />
+                            </label>
+                        </div>
+                        <p className="text-[11px] muted mt-3 leading-relaxed">Protein stays between 1.6 and 2.4 g/kg and fat between 20% and 40%. Carbs fill the rest. Your weight comes from the daily weight box.</p>
+                        <button onClick={saveProfile} disabled={!formDirty && !!profile} className="btn btn-lime w-full mt-4" style={{ opacity: (!formDirty && profile) ? .5 : 1 }}>Save profile</button>
+                    </div>
+
+                    <div className="card p-5">
+                        <h2 className="font-bold mb-3">Your targets</h2>
+                        {!formCalc ? <p className="text-xs muted">Enter a weight for today to see your targets.</p> : (
+                            <div className="text-xs space-y-2">
+                                <div className="flex justify-between"><span className="muted">Resting energy (Mifflin-St Jeor)</span><b>{formCalc.bmr.toLocaleString()} kcal</b></div>
+                                <div className="flex justify-between"><span className="muted">Maintenance estimate</span><b>{formCalc.tdee.toLocaleString()} kcal</b></div>
+                                <div className="flex justify-between"><span className="muted">Goal adjustment</span><b>{formCalc.delta > 0 ? '+' : ''}{formCalc.delta} kcal</b></div>
+                                <div className="flex justify-between text-sm pt-2" style={{ borderTop: '1px solid var(--line)' }}><span className="font-bold">Daily target</span><b style={{ color: 'var(--lime)' }}>{formCalc.targets.calories.toLocaleString()} kcal</b></div>
+                                <div className="grid grid-cols-4 gap-2 text-center pt-1">
+                                    {[['Protein', formCalc.targets.protein, 'var(--teal)'], ['Carbs', formCalc.targets.carbs, 'var(--lime)'], ['Fat', formCalc.targets.fat, 'var(--amber)'], ['Fiber', formCalc.targets.fiber, 'var(--violet)']].map(([l, v, c]) => (
+                                        <div key={l} className="inset p-2"><div className="font-bold" style={{ color: c }}>{l}</div><div className="font-extrabold text-sm">{v} g</div></div>
+                                    ))}
+                                </div>
+                                {formCalc.delta !== 0 && (
+                                    <p className="muted leading-relaxed pt-1">Projected change is roughly {(formCalc.delta * 7 / 3500).toFixed(1)} lb per week at first. It usually slows over time, so trust your measured trend over this estimate.</p>
+                                )}
+                                {formCalc.flags.map((fl, i) => <p key={i} style={{ color: 'var(--amber)' }}>{fl}</p>)}
+                            </div>
+                        )}
+                        <button onClick={() => setTab('science')} className="chip mt-3">See the evidence</button>
+                    </div>
+
+                    <div className="card p-5">
+                        <h2 className="font-bold mb-3">More tools</h2>
+                        <div className="flex gap-2 flex-wrap">
+                            <button onClick={() => go('drugs')} className="btn btn-ghost">Drug check</button>
+                            <button onClick={() => go('workshop')} className="btn btn-ghost">Live workshop survey</button>
+                        </div>
+                    </div>
+
+                    <div className="card p-5">
+                        <h2 className="font-bold mb-3">Your data</h2>
+                        <button onClick={exportMasterReport} className="btn btn-lime w-full">Download master report (PDF)</button>
+                        <p className="text-[11px] muted mt-2 leading-relaxed">Includes every logged day with body weight and training volume, plus weekly averages.</p>
+                        <div className="text-xs muted mt-4 truncate">Signed in as {user.email || 'your account'}</div>
+                        <button onClick={() => window.fb.signOut(window.fb.auth)} className="btn btn-danger w-full mt-3">Sign out</button>
+                    </div>
+                </div>
+            );
+
+            const tabs = [['food', 'Food', 'food'], ['train', 'Train', 'train'], ['trends', 'Trends', 'trends'], ['science', 'Science', 'science'], ['you', 'You', 'you']];
+
+            return (
+                <div className="max-w-2xl mx-auto px-4 pb-28 text-white">
+                    {renderHeader()}
+                    <div className="mt-3">
+                        {tab === 'food' && renderFood()}
+                        {tab === 'train' && renderTrain()}
+                        {tab === 'trends' && renderTrends()}
+                        {tab === 'science' && renderScience()}
+                        {tab === 'you' && renderYou()}
+                    </div>
+
+                    {showLibrary && (
+                        <div className="fixed inset-0 z-[70] p-4 overflow-y-auto" style={{ background: 'rgba(5,9,18,.94)' }} onClick={(e) => { if (e.target === e.currentTarget) setShowLibrary(false); }}>
+                            <div className="max-w-md mx-auto card p-5 pop" style={{ boxShadow: '0 20px 60px rgba(0,0,0,.5)' }}>
+                                <div className="flex justify-between items-center mb-4">
+                                    <h2 className="text-lg font-bold">Exercise library</h2>
+                                    <button onClick={() => setShowLibrary(false)} className="muted hover:text-white" aria-label="Close"><Icon n="x" size={22} /></button>
+                                </div>
+                                <input type="search" className="field mb-4" placeholder="Search exercises" value={libQuery} onChange={e => setLibQuery(e.target.value)} />
+                                {filteredLib.map(([cat, list]) => (
+                                    <div key={cat} className="mb-5">
+                                        <h4 className="text-xs font-bold mb-2" style={{ color: 'var(--teal)' }}>{cat}</h4>
+                                        <div className="grid gap-2">
+                                            {list.map(ex => (
+                                                <button key={ex} onClick={() => addExerciseToRoutine(ex)} className="w-full text-left p-3 inset text-sm font-bold hover:bg-white/10">{ex}</button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))}
+                                {filteredLib.length === 0 && <p className="text-xs muted mb-4">No match. Add it as a custom exercise below.</p>}
+                                <div className="pt-4" style={{ borderTop: '1px solid var(--line)' }}>
+                                    <h4 className="text-xs font-bold mb-2">Custom exercise</h4>
+                                    <div className="flex gap-2">
+                                        <input className="field" placeholder="Name" value={customEx.name} onChange={e => setCustomEx({ ...customEx, name: e.target.value })} />
+                                        <select className="field" style={{ width: 120 }} value={customEx.group} onChange={e => setCustomEx({ ...customEx, group: e.target.value })}>{MUSCLE_GROUPS.concat(['Cardio/Other']).map(g => <option key={g}>{g}</option>)}</select>
+                                    </div>
+                                    <button onClick={() => { if (customEx.name.trim()) { addExerciseToRoutine(customEx.name.trim(), customEx.group); setCustomEx({ name: "", group: "Chest" }); } }} className="btn btn-teal w-full mt-2">Add custom exercise</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {isScanning && (
+                        <div className="fixed inset-0 z-[60] flex flex-col items-center justify-center p-4" style={{ background: 'rgba(5,9,18,.96)' }}>
+                            <div className="card p-6 w-full max-w-sm">
+                                <h3 className="text-center font-bold mb-4">Scan a barcode</h3>
+                                <div id="reader" className="w-full overflow-hidden aspect-square rounded-2xl" style={{ border: '2px solid var(--line)' }}></div>
+                                <button onClick={() => setIsScanning(false)} className="btn btn-danger w-full mt-5">Cancel</button>
+                            </div>
+                        </div>
+                    )}
+
+                    {toast && (
+                        <div role="status" className="fixed left-1/2 -translate-x-1/2 z-[90] px-4 py-3 rounded-xl text-sm font-bold pop" style={{ bottom: 92, background: 'var(--s3)', border: '1px solid var(--line)', maxWidth: '90%' }}>{toast}</div>
+                    )}
+
+                    <nav className="tabbar fixed bottom-0 left-0 right-0 z-40" aria-label="Tracker">
+                        <div className="max-w-2xl mx-auto flex">
+                            {tabs.map(([id, label, icon]) => (
+                                <button key={id} onClick={() => setTab(id)} className={`tab ${tab === id ? 'on' : ''} ${id === 'train' ? 'train' : ''}`} aria-current={tab === id ? 'page' : undefined}>
+                                    <Icon n={icon} size={22} />{label}
+                                </button>
+                            ))}
+                        </div>
+                    </nav>
+                </div>
+            );
+        };
+
+        /* =====================================================================
+           SHELL: navigation, auth state, section switching
+           ===================================================================== */
+        const Shell = () => {
+            const [section, go] = useSection();
+            const [user, setUser] = useState(null);
+            const [authReady, setAuthReady] = useState(false);
+            const [fbFailed, setFbFailed] = useState(false);
+
+            useEffect(() => {
+                let unsub = null;
+                const start = () => {
+                    unsub = window.fb.onAuthStateChanged(window.fb.auth, (u) => { setUser(u); setAuthReady(true); });
+                };
+                if (window.fb) start(); else window.addEventListener('fb-ready', start, { once: true });
+                const timer = setTimeout(() => { if (!window.fb) setFbFailed(true); }, 8000);
+                return () => { if (unsub) unsub(); clearTimeout(timer); window.removeEventListener('fb-ready', start); };
+            }, []);
+
+            if (section === 'tracker') {
+                if (fbFailed && !authReady) return (
+                    <div className="min-h-screen flex items-center justify-center p-6 text-center">
+                        <div className="card p-6 max-w-sm">
+                            <div className="font-bold mb-2">The tracker could not connect</div>
+                            <p className="text-xs muted leading-relaxed mb-4">The sign-in service did not load. Check your connection, turn off any content blocker for this page, and reload.</p>
+                            <button onClick={() => go('home')} className="btn btn-lime">Back to home</button>
+                        </div>
+                    </div>
+                );
+                if (!authReady) return <div className="min-h-screen flex items-center justify-center muted text-sm font-bold pulse">Loading your tracker...</div>;
+                if (!user) return <AuthScreen onBack={() => go('home')} />;
+                return <Tracker user={user} onHome={() => go('home')} go={go} />;
+            }
+
+            const nav = [['home', 'Home'], ['calculator', 'Calculator'], ['tracker', 'Tracker'], ['drugs', 'Drug check'], ['workshop', 'Workshop']];
+            return (
+                <div className={`mx-auto px-4 pb-16 ${section === 'home' ? 'max-w-3xl' : 'max-w-2xl'}`}>
+                    <header className="pt-6 pb-5">
+                        <button onClick={() => go('home')} className="block text-left mb-4" aria-label="John Ruben Solutions home">
+                            <div className="text-xl font-extrabold tracking-tight leading-none">JOHN RUBEN</div>
+                            <div className="text-xs font-bold mt-1" style={{ color: 'var(--lime)', letterSpacing: '.28em' }}>SOLUTIONS</div>
+                        </button>
+                        <nav className="navrow" aria-label="Sections">
+                            {nav.map(([id, label]) => (
+                                <button key={id} onClick={() => go(id)} className={`navpill ${section === id ? 'on' : ''}`} aria-current={section === id ? 'page' : undefined}>{label}</button>
+                            ))}
+                        </nav>
+                    </header>
+                    <main>
+                        {section === 'home' && <Home go={go} />}
+                        {section === 'calculator' && <Calculator go={go} />}
+                        {section === 'drugs' && <DrugCheck go={go} />}
+                        {section === 'workshop' && <Workshop />}
+                    </main>
+                    <Disclaimer />
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<Shell />);
+    </script>
 </body>
 </html>
