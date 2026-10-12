@@ -8,6 +8,9 @@
   <!-- Tailwind -->
   <script src="https://cdn.tailwindcss.com"></script>
 
+  <!-- NEW: Chart.js (UMD build, loaded before the app module) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -69,10 +72,44 @@
       background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
       border: 1px solid #dbeafe;
     }
+
+    /* NEW: scrollable ledger with sticky column headers */
+    .ledger-scroll {
+      max-height: 500px;
+      overflow: auto;
+      border: 1px solid #e2e8f0;
+      border-radius: 0.75rem;
+    }
+    .ledger-scroll thead th {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background-color: #f8fafc;
+      box-shadow: 0 1px 0 #e2e8f0;
+    }
+
+    /* NEW: category dot used in the insights list */
+    .cat-dot { display: inline-block; width: 10px; height: 10px; border-radius: 9999px; flex-shrink: 0; }
   </style>
 </head>
 
 <body class="text-slate-800 h-screen flex overflow-hidden selection:bg-brand-500 selection:text-white">
+
+  <!-- NEW: category presets shared by every Category input (extended at runtime with categories already in use) -->
+  <datalist id="category-presets">
+    <option value="Housing/Rent"></option>
+    <option value="Utilities"></option>
+    <option value="Subscriptions"></option>
+    <option value="Groceries"></option>
+    <option value="Dining"></option>
+    <option value="Transportation"></option>
+    <option value="Miscellaneous"></option>
+    <option value="Insurance"></option>
+    <option value="Healthcare"></option>
+    <option value="Entertainment"></option>
+    <option value="Shopping"></option>
+    <option value="Debt/Loans"></option>
+  </datalist>
 
   <!-- AUTH VIEW -->
   <div id="auth-view" class="fixed inset-0 z-50 bg-slate-900 flex items-center justify-center p-4">
@@ -699,6 +736,13 @@
                 </select>
               </div>
 
+              <!-- NEW: Category (optional; pick a preset or type your own) -->
+              <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">Category</label>
+                <input type="text" id="txn-category" list="category-presets" placeholder="Uncategorized" autocomplete="off"
+                       class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+              </div>
+
               <div id="txn-source-bank-wrap" class="hidden sm:col-span-2 lg:col-span-3">
                 <label class="block text-sm font-medium text-slate-700 mb-1">Pay From (Bank Account)</label>
                 <select id="txn-source-bank"
@@ -722,20 +766,131 @@
               <h3 class="text-lg font-semibold text-slate-900">Transaction Ledger</h3>
               <div class="text-sm text-slate-500" id="txn-ledger-summary"></div>
             </div>
-            <div class="mt-4 overflow-x-auto">
-              <table class="min-w-[760px] w-full text-sm">
+
+            <!-- NEW: search + period + custom date range filters -->
+            <div class="mt-4 p-3 rounded-xl bg-slate-50 border border-slate-200">
+              <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
+                <div class="md:col-span-4">
+                  <label class="block text-xs font-medium text-slate-600 mb-1" for="fin-search">Search ledger</label>
+                  <input type="search" id="fin-search" placeholder="Description, amount, date, category…" autocomplete="off"
+                         class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500 outline-none bg-white">
+                </div>
+                <div class="md:col-span-3">
+                  <label class="block text-xs font-medium text-slate-600 mb-1" for="fin-period">Period</label>
+                  <select id="fin-period"
+                          class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500 outline-none bg-white">
+                    <option value="all">All time</option>
+                    <option value="month">This month</option>
+                    <option value="lastmonth">Last month</option>
+                    <option value="last30">Last 30 days</option>
+                    <option value="period">Current planner period</option>
+                    <option value="prevperiod">Previous planner period</option>
+                    <option value="custom">Custom range</option>
+                  </select>
+                </div>
+                <div class="md:col-span-2">
+                  <label class="block text-xs font-medium text-slate-600 mb-1" for="fin-start">Start date</label>
+                  <input type="date" id="fin-start"
+                         class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500 outline-none bg-white">
+                </div>
+                <div class="md:col-span-2">
+                  <label class="block text-xs font-medium text-slate-600 mb-1" for="fin-end">End date</label>
+                  <input type="date" id="fin-end"
+                         class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500 outline-none bg-white">
+                </div>
+                <div class="md:col-span-1">
+                  <button type="button" id="fin-reset"
+                          class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium py-2 rounded-lg transition-colors">
+                    Reset
+                  </button>
+                </div>
+              </div>
+              <div id="fin-range-hint" class="hidden text-xs text-amber-600 mt-2"></div>
+            </div>
+
+            <!-- NEW: fixed-height scroll container (headers stay pinned via .ledger-scroll CSS) -->
+            <div class="mt-4 ledger-scroll" style="max-height:500px;overflow:auto;">
+              <table class="min-w-[860px] w-full text-sm">
                 <thead>
                   <tr class="bg-slate-50">
                     <th class="text-left px-3 py-2 font-semibold text-slate-600"><button type="button" data-ledger-sort="date" class="inline-flex items-center gap-1 hover:text-slate-900">Date <span data-sort-ind class="text-xs text-slate-400">↕</span></button></th>
                     <th class="text-left px-3 py-2 font-semibold text-slate-600"><button type="button" data-ledger-sort="card" class="inline-flex items-center gap-1 hover:text-slate-900">Card <span data-sort-ind class="text-xs text-slate-400">↕</span></button></th>
                     <th class="text-left px-3 py-2 font-semibold text-slate-600"><button type="button" data-ledger-sort="type" class="inline-flex items-center gap-1 hover:text-slate-900">Type <span data-sort-ind class="text-xs text-slate-400">↕</span></button></th>
                     <th class="text-left px-3 py-2 font-semibold text-slate-600"><button type="button" data-ledger-sort="desc" class="inline-flex items-center gap-1 hover:text-slate-900">Description <span data-sort-ind class="text-xs text-slate-400">↕</span></button></th>
+                    <th class="text-left px-3 py-2 font-semibold text-slate-600"><button type="button" data-ledger-sort="category" class="inline-flex items-center gap-1 hover:text-slate-900">Category <span data-sort-ind class="text-xs text-slate-400">↕</span></button></th>
                     <th class="text-right px-3 py-2 font-semibold text-slate-600"><button type="button" data-ledger-sort="amount" class="inline-flex items-center gap-1 hover:text-slate-900">Amount <span data-sort-ind class="text-xs text-slate-400">↕</span></button></th>
                     <th class="text-right px-3 py-2 font-semibold text-slate-600">Actions</th>
                   </tr>
                 </thead>
                 <tbody id="transactions-table-body"></tbody>
               </table>
+            </div>
+          </div>
+
+          <!-- NEW: SPENDING INSIGHTS (follows the same filters as the ledger above) -->
+          <div id="insights-card" class="mt-4 bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+            <div>
+              <h3 class="text-lg font-semibold text-slate-900">Spending Insights</h3>
+              <p class="text-sm text-slate-500 mt-1">
+                Charts follow the ledger's period, date range, and search. Expenses and bills count as spending, refunds reduce it, and card payoffs are excluded (they only move money).
+              </p>
+            </div>
+
+            <div class="mt-4 grid grid-cols-2 lg:grid-cols-4 gap-3">
+              <div class="bg-slate-50 rounded-xl border border-slate-200 p-4">
+                <div class="text-xs text-slate-500">Total spending</div>
+                <div class="text-lg font-bold text-rose-700" id="fin-stat-total">$0.00</div>
+              </div>
+              <div class="bg-slate-50 rounded-xl border border-slate-200 p-4">
+                <div class="text-xs text-slate-500">Entries counted</div>
+                <div class="text-lg font-bold text-slate-900" id="fin-stat-count">0</div>
+              </div>
+              <div class="bg-slate-50 rounded-xl border border-slate-200 p-4">
+                <div class="text-xs text-slate-500">Top category</div>
+                <div class="text-lg font-bold text-brand-900 truncate" id="fin-stat-top">—</div>
+              </div>
+              <div class="bg-slate-50 rounded-xl border border-slate-200 p-4">
+                <div class="text-xs text-slate-500">Date range</div>
+                <div class="text-sm font-semibold text-slate-900 mt-1" id="fin-stat-range">All time</div>
+              </div>
+            </div>
+
+            <div id="fin-chart-error" class="hidden mt-4 text-sm bg-amber-50 text-amber-700 border border-amber-200 rounded-lg px-3 py-2"></div>
+
+            <div id="fin-empty" class="hidden mt-4 text-center text-sm text-slate-500 py-10 border border-dashed border-slate-300 rounded-xl">
+              No spending to chart for the current filters. Add an expense or widen the date range.
+            </div>
+
+            <div id="fin-charts" class="mt-4 grid grid-cols-1 lg:grid-cols-5 gap-4">
+              <div class="lg:col-span-2 rounded-xl border border-slate-200 p-4">
+                <h4 class="text-sm font-semibold text-slate-900">Spending by category</h4>
+                <div class="mt-3" style="position:relative;height:300px;">
+                  <canvas id="fin-doughnut"></canvas>
+                </div>
+                <div id="fin-cat-list" class="mt-4 space-y-3"></div>
+              </div>
+
+              <div class="lg:col-span-3 rounded-xl border border-slate-200 p-4">
+                <div class="flex items-center justify-between gap-3 flex-wrap">
+                  <h4 class="text-sm font-semibold text-slate-900">Category spending over time</h4>
+                  <div class="flex items-center gap-2">
+                    <select id="fin-trend-group" aria-label="Group trend by"
+                            class="border border-slate-300 rounded-lg px-2 py-1.5 text-xs focus:ring-2 focus:ring-brand-500 outline-none bg-white">
+                      <option value="month">By month</option>
+                      <option value="week">By week</option>
+                      <option value="period">By 14-day planner period</option>
+                    </select>
+                    <select id="fin-trend-type" aria-label="Trend chart style"
+                            class="border border-slate-300 rounded-lg px-2 py-1.5 text-xs focus:ring-2 focus:ring-brand-500 outline-none bg-white">
+                      <option value="bar">Stacked bars</option>
+                      <option value="line">Lines</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="mt-3" style="position:relative;height:380px;">
+                  <canvas id="fin-trend"></canvas>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -826,7 +981,7 @@
                 </div>
                 <div>
                   <label class="block text-sm font-medium text-slate-700 mb-1">Category (optional)</label>
-                  <input type="text" id="bill-category" placeholder="Housing / Debt / Investing"
+                  <input type="text" id="bill-category" list="category-presets" autocomplete="off" placeholder="Housing / Debt / Investing"
                          class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
                 </div>
                 <div>
@@ -1101,6 +1256,29 @@ service cloud.firestore {
         transactionId: null
       }
     };
+
+    // ===== NEW: ledger filters, categories & insights state (kept separate from `ui` / `state`) =====
+    const DEFAULT_CATEGORIES = [
+      "Housing/Rent", "Utilities", "Subscriptions", "Groceries", "Dining", "Transportation",
+      "Miscellaneous", "Insurance", "Healthcare", "Entertainment", "Shopping", "Debt/Loans"
+    ];
+    const UNCATEGORIZED = "Uncategorized";
+    const FIN_PALETTE = [
+      "#0ea5e9", "#10b981", "#f59e0b", "#8b5cf6", "#ef4444", "#14b8a6",
+      "#f97316", "#6366f1", "#ec4899", "#84cc16", "#06b6d4", "#a855f7"
+    ];
+    const fin = {
+      period: "all",      // all | month | lastmonth | last30 | period | prevperiod | custom
+      start: "",          // used when period === "custom"
+      end: "",
+      search: "",
+      trendGroup: "month", // month | week | period
+      trendType: "bar"     // bar | line
+    };
+    let finFiltered = [];        // ledger rows after date + search filters (set by renderTransactionsLedger)
+    let finDoughnut = null;
+    let finTrend = null;
+    let finTrendBuiltType = null;
 
     // ===== Helpers =====
     const $ = (sel) => document.querySelector(sel);
@@ -2026,6 +2204,8 @@ service cloud.firestore {
         cardType, cardId, cardName: card.name, txnType,
         sourceBankAccountId: sourceBankAccountId || null,
         bankAccountId: cardType === "debit" ? (card.bankAccountId || null) : null,
+        // NEW: optional category (payoffs are transfers, so they never carry one)
+        category: txnType === "payoff" ? "" : ($("#txn-category")?.value || "").trim(),
         createdAt: serverTimestamp()
       };
 
@@ -2039,6 +2219,7 @@ service cloud.firestore {
         }
         $("#txn-amount").value = "";
         $("#txn-desc").value = "";
+        $("#txn-category").value = "";
       } catch (err) {
         alert(err?.message || "Failed to save transaction");
       }
@@ -2065,8 +2246,60 @@ service cloud.firestore {
         : `<span class="badge badge-brand">Credit</span>`;
     }
 
-    function renderTransactionsLedger() {
-      const tbody = $("#transactions-table-body");
+    // ===== NEW: Categories, ledger filtering & row model =====
+
+    // Older records (no `category` field) fall back to "Uncategorized".
+    // Case-insensitive match against presets so "groceries" and "Groceries" group together.
+    function categoryLabel(raw) {
+      const c = String(raw ?? "").trim();
+      if (!c) return UNCATEGORIZED;
+      const preset = DEFAULT_CATEGORIES.find(p => p.toLowerCase() === c.toLowerCase());
+      return preset || c;
+    }
+
+    function categoryColor(name) {
+      if (name === UNCATEGORIZED) return "#94a3b8";
+      const idx = DEFAULT_CATEGORIES.indexOf(name);
+      if (idx >= 0) return FIN_PALETTE[idx % FIN_PALETTE.length];
+      let h = 0;
+      for (const ch of name) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+      return FIN_PALETTE[h % FIN_PALETTE.length];
+    }
+
+    // Keep the shared <datalist> = presets + any custom categories already used on transactions/bills.
+    function updateCategoryDatalist() {
+      const dl = $("#category-presets");
+      if (!dl) return;
+      const seen = new Map();
+      DEFAULT_CATEGORIES.forEach(c => seen.set(c.toLowerCase(), c));
+      for (const x of [...(state.transactions || []), ...(state.bills || [])]) {
+        if (x && x.category && String(x.category).trim()) {
+          const label = categoryLabel(x.category);
+          seen.set(label.toLowerCase(), label);
+        }
+      }
+      const html = Array.from(seen.values()).map(c => `<option value="${escapeHtml(c)}"></option>`).join("");
+      if (dl.dataset.sig !== html) {
+        dl.innerHTML = html;
+        dl.dataset.sig = html;
+      }
+    }
+
+    function rowCategoryRaw(r) {
+      return r.kind === "bill" ? (r.occ.category || "") : (r.t.category || "");
+    }
+
+    // How much a ledger row counts as "spending": purchases/bills add, refunds subtract, payoffs are transfers (0).
+    function rowSpend(r) {
+      if (r.kind === "bill") return Number(r.occ.amount) || 0;
+      const a = Number(r.t.amount) || 0;
+      if (r.t.txnType === "expense") return a;
+      if (r.t.txnType === "credit") return -a;
+      return 0;
+    }
+
+    // Builds the full (unfiltered) ledger rows: all transactions + every bill occurrence dated today or earlier.
+    function getLedgerBaseRows() {
       const items = sortByDateAsc(state.transactions, "date").reverse();
 
       // Bills (one-time and every recurring occurrence dated today or earlier) also appear in the ledger.
@@ -2078,6 +2311,148 @@ service cloud.firestore {
           .map(o => ({ kind: "bill", occ: o, date: o.date }));
       }
       const rows = [...items.map(t => ({ kind: "txn", t, date: t.date })), ...billRows];
+      return { items, billRows, rows };
+    }
+
+    function getPlannerAnchor() {
+      const earliest = sortByDateAsc(state.incomes || [], "date")[0]?.date;
+      return earliest ? parseISODateLocal(earliest) : parseISODateLocal(toISODate(new Date()));
+    }
+
+    // Resolves the active period/custom selection to ISO start/end ("" = open ended).
+    function getActiveRange() {
+      const now = new Date();
+      const todayISO = toISODate(now);
+      let start = "", end = "", hint = "";
+
+      switch (fin.period) {
+        case "month":
+          start = toISODate(new Date(now.getFullYear(), now.getMonth(), 1));
+          end = toISODate(new Date(now.getFullYear(), now.getMonth() + 1, 0));
+          break;
+        case "lastmonth":
+          start = toISODate(new Date(now.getFullYear(), now.getMonth() - 1, 1));
+          end = toISODate(new Date(now.getFullYear(), now.getMonth(), 0));
+          break;
+        case "last30":
+          start = toISODate(addDays(parseISODateLocal(todayISO), -29));
+          end = todayISO;
+          break;
+        case "period":
+        case "prevperiod": {
+          // Same 14-day periods the Period Planner uses
+          const periods = buildPeriods();
+          let idx = assignToPeriod(todayISO, periods);
+          if (fin.period === "prevperiod") idx = idx - 1;
+          if (idx >= 0 && periods[idx]) {
+            start = periods[idx].startISO;
+            end = periods[idx].endISO;
+          } else {
+            hint = "No matching planner period was found, so all dates are shown.";
+          }
+          break;
+        }
+        case "custom":
+          start = fin.start || "";
+          end = fin.end || "";
+          if (start && end && start > end) {
+            [start, end] = [end, start];
+            hint = "Start date was after the end date, so the range was swapped.";
+          }
+          break;
+        default:
+          break;
+      }
+      return { start, end, hint };
+    }
+
+    function rowSearchText(r) {
+      let date, desc, card, typeLabel, amount;
+      if (r.kind === "bill") {
+        const o = r.occ;
+        date = o.date; desc = o.name || ""; card = billPayLabel(o); typeLabel = "Bill"; amount = Number(o.amount) || 0;
+      } else {
+        const t = r.t;
+        date = t.date || ""; desc = t.description || ""; card = `${t.cardName || ""} ${t.cardType === "debit" ? "Debit" : "Credit"}`;
+        typeLabel = t.txnType === "credit" ? "Credit Refund" : (t.txnType === "payoff" ? "Payoff" : "Expense");
+        amount = Number(t.amount) || 0;
+      }
+      const cat = r.kind === "txn" && r.t.txnType === "payoff" ? "" : categoryLabel(rowCategoryRaw(r));
+      return [date, desc, cat, card, typeLabel, amount.toFixed(2), String(amount), formatMoney(amount)].join(" | ").toLowerCase();
+    }
+
+    // Pure filter: returns a new array, never mutates state.
+    function applyLedgerFilters(rows) {
+      const { start, end } = getActiveRange();
+      const terms = fin.search.toLowerCase().split(/\s+/).filter(Boolean);
+      return rows.filter(r => {
+        if (start && (!r.date || r.date < start)) return false;
+        if (end && (!r.date || r.date > end)) return false;
+        if (terms.length) {
+          const hay = rowSearchText(r);
+          return terms.every(term => {
+            const stripped = term.replace(/[$,]/g, "");
+            return hay.includes(term) || (stripped && hay.includes(stripped));
+          });
+        }
+        return true;
+      });
+    }
+
+    function ledgerDateBounds(rows) {
+      let min = "", max = "";
+      for (const r of rows) {
+        if (!r.date) continue;
+        if (!min || r.date < min) min = r.date;
+        if (!max || r.date > max) max = r.date;
+      }
+      return { min, max };
+    }
+
+    // Keeps the filter controls in sync with the active selection and bounds the date pickers to the data.
+    function syncFilterControls(allRows) {
+      const pEl = $("#fin-period"), sEl = $("#fin-start"), eEl = $("#fin-end"), hintEl = $("#fin-range-hint");
+      if (!pEl || !sEl || !eEl) return;
+      const bounds = ledgerDateBounds(allRows);
+      const range = getActiveRange();
+
+      if (pEl.value !== fin.period) pEl.value = fin.period;
+      if (fin.period !== "custom") {
+        sEl.value = fin.period === "all" ? "" : range.start;
+        eEl.value = fin.period === "all" ? "" : range.end;
+      }
+
+      sEl.min = bounds.min || "";
+      eEl.min = bounds.min || "";
+      sEl.max = (fin.period === "custom" && eEl.value) ? eEl.value : (bounds.max || "");
+      eEl.max = bounds.max || "";
+
+      if (hintEl) {
+        hintEl.textContent = range.hint;
+        hintEl.classList.toggle("hidden", !range.hint);
+      }
+    }
+
+    function categoryCellHtml(kind, id, raw) {
+      const label = categoryLabel(raw);
+      const color = categoryColor(label);
+      const title = kind === "bill" ? "Edit category (applies to every occurrence of this bill)" : "Edit category";
+      return `
+        <div class="inline-flex items-center gap-1.5">
+          <span class="badge" style="background:${color}1a;color:${color};border:1px solid ${color}55;">${escapeHtml(label)}</span>
+          <button type="button" class="text-slate-400 hover:text-brand-600 text-xs" title="${escapeHtml(title)}"
+                  data-action="edit-cat" data-kind="${kind}" data-id="${escapeHtml(id)}" data-current="${escapeHtml(raw || "")}">✎</button>
+        </div>`;
+    }
+
+    function renderTransactionsLedger() {
+      const tbody = $("#transactions-table-body");
+
+      // Full list first, then the (non-mutating) date + search filters
+      const { items, billRows, rows: allRows } = getLedgerBaseRows();
+      syncFilterControls(allRows);
+      const rows = applyLedgerFilters(allRows);
+      finFiltered = rows.slice();
 
       // Sorting (click any column header; click again to reverse)
       const typeLabel = (r) => r.kind === "bill" ? "Bill"
@@ -2087,6 +2462,7 @@ service cloud.firestore {
         card: (r) => (r.kind === "bill" ? billPayLabel(r.occ) : `${r.t.cardName || ""} ${r.t.cardType || ""}`).toLowerCase(),
         type: (r) => typeLabel(r).toLowerCase(),
         desc: (r) => (r.kind === "bill" ? r.occ.name : r.t.description || "").toLowerCase(),
+        category: (r) => (r.kind === "txn" && r.t.txnType === "payoff" ? "" : categoryLabel(rowCategoryRaw(r))).toLowerCase(),
         amount: (r) => Number(r.kind === "bill" ? r.occ.amount : r.t.amount) || 0
       };
       const { key: sortKey, dir: sortDir } = ui.ledgerSort;
@@ -2107,7 +2483,9 @@ service cloud.firestore {
       });
 
       if (!rows.length) {
-        tbody.innerHTML = `<tr><td colspan="6" class="px-3 py-3 text-center text-slate-500">No transactions logged yet.</td></tr>`;
+        tbody.innerHTML = allRows.length
+          ? `<tr><td colspan="7" class="px-3 py-3 text-center text-slate-500">No entries match the current search and date filters.</td></tr>`
+          : `<tr><td colspan="7" class="px-3 py-3 text-center text-slate-500">No transactions logged yet.</td></tr>`;
       } else {
         tbody.innerHTML = "";
         for (const row of rows) {
@@ -2124,6 +2502,7 @@ service cloud.firestore {
               <td class="px-3 py-2 font-medium text-slate-800">${payLabel ? escapeHtml(payLabel.replace(/ \((Credit|Debit|Bank)\)$/, "")) + " " : ""}${payBadge}</td>
               <td class="px-3 py-2"><span class="badge badge-amber">Bill</span></td>
               <td class="px-3 py-2 text-slate-700">${escapeHtml(o.name)}${o.category ? ` <span class="text-xs text-slate-400">· ${escapeHtml(o.category)}</span>` : ""}${o.recurring ? ` <span class="text-xs text-slate-400">· recurring</span>` : ""}${o.moved ? ` <span class="text-[11px] text-amber-600">(moved from ${escapeHtml(o.originalDate)})</span>` : ""}</td>
+              <td class="px-3 py-2">${categoryCellHtml("bill", o.billId, o.category)}</td>
               <td class="px-3 py-2 text-right font-semibold text-rose-700">${formatMoney(o.amount)}</td>
               <td class="px-3 py-2 text-right">
                 <button class="text-brand-600 hover:underline text-sm" data-action="edit-bill" data-id="${o.billId}">Edit bill</button>
@@ -2134,12 +2513,16 @@ service cloud.firestore {
           }
           const t = row.t;
           const amtClass = t.txnType === "credit" ? "text-emerald-700" : (t.txnType === "payoff" ? "text-amber-700" : "text-rose-700");
+          const catCell = t.txnType === "payoff"
+            ? `<span class="text-slate-400" title="Payoffs are transfers, not spending">—</span>`
+            : categoryCellHtml("txn", t.id, t.category);
           const tr = document.createElement("tr");
           tr.innerHTML = `
             <td class="px-3 py-2 text-slate-700">${escapeHtml(t.date)}</td>
             <td class="px-3 py-2 font-medium text-slate-800">${escapeHtml(t.cardName)} ${cardTypeBadge(t)}</td>
             <td class="px-3 py-2">${txnTypeBadge(t)}</td>
             <td class="px-3 py-2 text-slate-700">${escapeHtml(t.description)}</td>
+            <td class="px-3 py-2">${catCell}</td>
             <td class="px-3 py-2 text-right font-semibold ${amtClass}">${formatMoney(t.amount)}</td>
             <td class="px-3 py-2 text-right">
               <div class="inline-flex items-center gap-2">
@@ -2180,14 +2563,246 @@ service cloud.firestore {
             $("#txn-type").value = t.txnType || "expense";
             updateTxnSourceBankVisibility();
             if (t.sourceBankAccountId) $("#txn-source-bank").value = t.sourceBankAccountId;
+            $("#txn-category").value = t.category || "";
             $("#txn-editing-banner").classList.remove("hidden");
             contentScroll?.scrollTo?.({ top: 0, behavior: "smooth" });
+          });
+        });
+
+        // NEW: inline category editor (transactions edit the entry; bills edit the bill, so all its occurrences follow)
+        tbody.querySelectorAll("[data-action='edit-cat']").forEach(btn => {
+          btn.addEventListener("click", () => {
+            const cell = btn.closest("td");
+            const kind = btn.dataset.kind;
+            const id = btn.dataset.id;
+            const current = btn.dataset.current || "";
+            cell.innerHTML = `
+              <div class="flex items-center gap-1">
+                <input type="text" list="category-presets" value="${escapeHtml(current)}" placeholder="${UNCATEGORIZED}" autocomplete="off"
+                       class="border border-slate-300 rounded-lg px-2 py-1 text-sm w-36 focus:ring-2 focus:ring-brand-500 outline-none" data-cat-input>
+                <button type="button" class="text-emerald-600 hover:underline text-xs" data-cat-save>Save</button>
+                <button type="button" class="text-slate-500 hover:underline text-xs" data-cat-cancel>Cancel</button>
+              </div>`;
+            const input = cell.querySelector("[data-cat-input]");
+            input.focus();
+            input.select();
+            const save = async () => {
+              if (!currentUser) return;
+              const val = input.value.trim();
+              const col = kind === "bill" ? "bills" : "transactions";
+              try {
+                await setDoc(doc(db, "users", currentUser.uid, col, id), { category: val }, { merge: true });
+              } catch (err) {
+                alert(err?.message || "Failed to save category");
+              }
+              renderTransactionsLedger();
+              renderInsights();
+            };
+            cell.querySelector("[data-cat-save]").addEventListener("click", save);
+            cell.querySelector("[data-cat-cancel]").addEventListener("click", () => renderTransactionsLedger());
+            input.addEventListener("keydown", (ev) => {
+              if (ev.key === "Enter") { ev.preventDefault(); save(); }
+              if (ev.key === "Escape") renderTransactionsLedger();
+            });
           });
         });
       }
 
       const summaryEl = $("#txn-ledger-summary");
-      if (summaryEl) summaryEl.textContent = `${items.length} transaction${items.length === 1 ? "" : "s"} logged · ${billRows.length} bill payment${billRows.length === 1 ? "" : "s"} to date.`;
+      if (summaryEl) {
+        const base = `${items.length} transaction${items.length === 1 ? "" : "s"} logged · ${billRows.length} bill payment${billRows.length === 1 ? "" : "s"} to date.`;
+        const filtersActive = !!fin.search.trim() || fin.period !== "all";
+        summaryEl.textContent = filtersActive ? `Showing ${rows.length} of ${allRows.length} entries · ${base}` : base;
+      }
+    }
+
+    // ===== NEW: Spending insights (doughnut + category trend) =====
+    function bucketKey(dateISO, group, anchor) {
+      const d = parseISODateLocal(dateISO);
+      if (group === "month") return monthKey(dateISO);
+      if (group === "week") {
+        const dow = (d.getDay() + 6) % 7; // Monday start
+        return toISODate(addDays(d, -dow));
+      }
+      // 14-day blocks anchored like the Period Planner (earliest income date, or today)
+      const idx = Math.floor(Math.round((d - anchor) / 86400000) / 14);
+      return toISODate(addDays(anchor, idx * 14));
+    }
+
+    function nextBucketKey(key, group) {
+      if (group === "month") {
+        const [y, m] = key.split("-").map(Number);
+        return m === 12 ? `${y + 1}-01` : `${y}-${String(m + 1).padStart(2, "0")}`;
+      }
+      return toISODate(addDays(parseISODateLocal(key), group === "week" ? 7 : 14));
+    }
+
+    function bucketLabels(key, group) {
+      if (group === "month") {
+        const [y, m] = key.split("-").map(Number);
+        const label = new Date(y, m - 1, 1).toLocaleString(undefined, { month: "short", year: "numeric" });
+        return { short: label, full: label };
+      }
+      return {
+        short: key.slice(5),
+        full: group === "week" ? `Week of ${key}` : `Period starting ${key}`
+      };
+    }
+
+    function renderInsights() {
+      const card = $("#insights-card");
+      if (!card || routeData.classList.contains("hidden")) return;
+
+      // Spending items from the currently filtered ledger rows
+      const spendItems = [];
+      for (const r of finFiltered) {
+        const amt = rowSpend(r);
+        if (!amt) continue;
+        spendItems.push({ date: r.date, cat: categoryLabel(rowCategoryRaw(r)), amt });
+      }
+
+      const totals = new Map();
+      for (const s of spendItems) totals.set(s.cat, (totals.get(s.cat) || 0) + s.amt);
+      const ranked = Array.from(totals.entries()).sort((a, b) => b[1] - a[1]);
+      const pie = ranked.filter(([, v]) => v > 0.004);
+      const totalSpend = pie.reduce((s, [, v]) => s + v, 0);
+
+      // Summary stats
+      const range = getActiveRange();
+      $("#fin-stat-total").textContent = formatMoney(totalSpend);
+      $("#fin-stat-count").textContent = String(spendItems.length);
+      $("#fin-stat-top").textContent = pie.length ? pie[0][0] : "—";
+      $("#fin-stat-range").textContent = fin.period === "all"
+        ? "All time"
+        : `${range.start || "…"} → ${range.end || "…"}`;
+
+      // Category list
+      $("#fin-cat-list").innerHTML = pie.map(([name, v]) => {
+        const pct = totalSpend ? (v / totalSpend) * 100 : 0;
+        const c = categoryColor(name);
+        return `
+          <div>
+            <div class="flex items-center justify-between gap-3 text-sm">
+              <span class="inline-flex items-center gap-2 text-slate-700 min-w-0"><span class="cat-dot" style="background:${c};"></span><span class="truncate">${escapeHtml(name)}</span></span>
+              <span class="font-semibold text-slate-800 whitespace-nowrap">${formatMoney(v)} <span class="text-xs font-normal text-slate-400">${pct.toFixed(1)}%</span></span>
+            </div>
+            <div class="util-bar-track mt-1"><div class="util-bar-fill" style="width:${pct.toFixed(1)}%;background-color:${c};"></div></div>
+          </div>`;
+      }).join("");
+
+      const hasData = pie.length > 0;
+      $("#fin-empty").classList.toggle("hidden", hasData);
+      $("#fin-charts").classList.toggle("hidden", !hasData);
+
+      const errEl = $("#fin-chart-error");
+      if (typeof Chart === "undefined") {
+        errEl.textContent = "Charts couldn't load (Chart.js is unavailable). Check your connection and reload; totals above still work.";
+        errEl.classList.remove("hidden");
+        return;
+      }
+      errEl.classList.add("hidden");
+      if (!hasData) return;
+
+      // --- Doughnut ---
+      const pieLabels = pie.map(p => p[0]);
+      const pieData = pie.map(p => Math.round(p[1] * 100) / 100);
+      const pieColors = pie.map(p => categoryColor(p[0]));
+      if (!finDoughnut) {
+        finDoughnut = new Chart($("#fin-doughnut"), {
+          type: "doughnut",
+          data: { labels: pieLabels, datasets: [{ data: pieData, backgroundColor: pieColors, borderColor: "#ffffff", borderWidth: 2 }] },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: "58%",
+            plugins: {
+              legend: { position: "bottom", labels: { boxWidth: 12, font: { family: "Inter" } } },
+              tooltip: {
+                callbacks: {
+                  label: (ctx) => {
+                    const sum = ctx.dataset.data.reduce((a, b) => a + b, 0);
+                    const pct = sum ? (ctx.parsed / sum) * 100 : 0;
+                    return ` ${ctx.label}: ${formatMoney(ctx.parsed)} (${pct.toFixed(1)}%)`;
+                  }
+                }
+              }
+            }
+          }
+        });
+      } else {
+        finDoughnut.data.labels = pieLabels;
+        finDoughnut.data.datasets[0].data = pieData;
+        finDoughnut.data.datasets[0].backgroundColor = pieColors;
+        finDoughnut.update();
+      }
+
+      // --- Category trend ---
+      const group = fin.trendGroup;
+      const anchor = getPlannerAnchor();
+      const perBucket = new Map(); // cat -> Map(bucket -> sum)
+      let minKey = "", maxKey = "";
+      for (const s of spendItems) {
+        if (!s.date) continue;
+        const k = bucketKey(s.date, group, anchor);
+        if (!minKey || k < minKey) minKey = k;
+        if (!maxKey || k > maxKey) maxKey = k;
+        if (!perBucket.has(s.cat)) perBucket.set(s.cat, new Map());
+        const m = perBucket.get(s.cat);
+        m.set(k, (m.get(k) || 0) + s.amt);
+      }
+      const keys = [];
+      if (minKey) {
+        let k = minKey, guard = 0;
+        while (k <= maxKey && guard < 1500) { keys.push(k); k = nextBucketKey(k, group); guard++; }
+      }
+      const shortLabels = keys.map(k => bucketLabels(k, group).short);
+      const fullLabels = keys.map(k => bucketLabels(k, group).full);
+      const isLine = fin.trendType === "line";
+      const datasets = ranked.map(([name]) => {
+        const c = categoryColor(name);
+        const m = perBucket.get(name) || new Map();
+        const data = keys.map(k => Math.round((m.get(k) || 0) * 100) / 100);
+        return isLine
+          ? { label: name, data, borderColor: c, backgroundColor: c, tension: 0.3, pointRadius: 2, fill: false }
+          : { label: name, data, backgroundColor: c, borderWidth: 0 };
+      });
+
+      if (!finTrend || finTrendBuiltType !== fin.trendType) {
+        if (finTrend) finTrend.destroy();
+        finTrendBuiltType = fin.trendType;
+        finTrend = new Chart($("#fin-trend"), {
+          type: isLine ? "line" : "bar",
+          data: { labels: shortLabels, datasets },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: "index", intersect: false },
+            scales: {
+              x: { stacked: !isLine, grid: { display: false } },
+              y: {
+                stacked: !isLine,
+                beginAtZero: true,
+                ticks: { callback: (v) => "$" + Number(v).toLocaleString() }
+              }
+            },
+            plugins: {
+              legend: { position: "bottom", labels: { boxWidth: 12, font: { family: "Inter" } } },
+              tooltip: {
+                filter: (item) => item.parsed.y !== 0,
+                callbacks: {
+                  title: (items) => (items.length ? (finTrend.$fullLabels || [])[items[0].dataIndex] || items[0].label : ""),
+                  label: (ctx) => ` ${ctx.dataset.label}: ${formatMoney(ctx.parsed.y)}`
+                }
+              }
+            }
+          }
+        });
+      } else {
+        finTrend.data.labels = shortLabels;
+        finTrend.data.datasets = datasets;
+        finTrend.update();
+      }
+      finTrend.$fullLabels = fullLabels;
     }
 
     // ===== Generic table sorting (all tables except the Transaction Ledger, which has its own) =====
@@ -2252,6 +2867,64 @@ service cloud.firestore {
         }
         renderTransactionsLedger();
       });
+    });
+
+    // ===== NEW: filter / insight control wiring =====
+    function refreshLedgerAndInsights() {
+      renderTransactionsLedger();
+      renderInsights();
+    }
+
+    $("#fin-search").addEventListener("input", () => {
+      fin.search = $("#fin-search").value;
+      refreshLedgerAndInsights();
+    });
+
+    $("#fin-search").addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && $("#fin-search").value) {
+        $("#fin-search").value = "";
+        fin.search = "";
+        refreshLedgerAndInsights();
+      }
+    });
+
+    $("#fin-period").addEventListener("change", () => {
+      fin.period = $("#fin-period").value;
+      if (fin.period === "custom") {
+        // start from whatever range is currently displayed
+        fin.start = $("#fin-start").value;
+        fin.end = $("#fin-end").value;
+      }
+      refreshLedgerAndInsights();
+    });
+
+    function onFinDateChange() {
+      fin.period = "custom";
+      fin.start = $("#fin-start").value;
+      fin.end = $("#fin-end").value;
+      $("#fin-period").value = "custom";
+      refreshLedgerAndInsights();
+    }
+    $("#fin-start").addEventListener("change", onFinDateChange);
+    $("#fin-end").addEventListener("change", onFinDateChange);
+
+    $("#fin-reset").addEventListener("click", () => {
+      fin.search = "";
+      fin.period = "all";
+      fin.start = "";
+      fin.end = "";
+      $("#fin-search").value = "";
+      refreshLedgerAndInsights();
+    });
+
+    $("#fin-trend-group").addEventListener("change", () => {
+      fin.trendGroup = $("#fin-trend-group").value;
+      renderInsights();
+    });
+
+    $("#fin-trend-type").addEventListener("change", () => {
+      fin.trendType = $("#fin-trend-type").value;
+      renderInsights();
     });
 
     // ===== CRUD: Income =====
@@ -3229,6 +3902,7 @@ service cloud.firestore {
       renderDebitCards();
       renderIncomes();
       renderBills();
+      updateCategoryDatalist();   // NEW
       renderTransactionsLedger();
 
       if (!routeDashboard.classList.contains("hidden")) {
@@ -3238,6 +3912,7 @@ service cloud.firestore {
       if (!routePeriod.classList.contains("hidden")) renderPlanner();
       if (!routeAccounts.classList.contains("hidden")) renderAccountsSummary();
       updateSortIndicators();
+      renderInsights();           // NEW (uses the rows the ledger just filtered)
     }
 
     // ===== Planner controls =====
