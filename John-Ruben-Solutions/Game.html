@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Otto’s Number Playground</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#CDEBFF;--ink:#1F1B4D;--paper:#fff;--sun:#FFC93C;--coral:#FF6B6B;--grape:#A592FF;--mint:#2EC4A6;--dk:#1F1B4D;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#17143F;--ink:#F4F2FF;--paper:#2B2778}}
+:root[data-theme="dark"]{--bg:#17143F;--ink:#F4F2FF;--paper:#2B2778}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:'Fredoka','Trebuchet MS',system-ui,sans-serif;font-size:18px;min-height:100vh}
+#app{max-width:720px;margin:0 auto;padding:12px 14px 40px}
+header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.ic,.pill{border:3px solid var(--ink);background:var(--paper);color:var(--ink);border-radius:16px;font:inherit;font-weight:700;padding:6px 14px;box-shadow:0 4px 0 var(--ink)}
+.ic{font-size:22px;cursor:pointer}
+button{font-family:inherit;cursor:pointer;color:var(--dk)}
+button:active{transform:translateY(3px);box-shadow:0 1px 0 var(--ink)!important}
+button:focus-visible{outline:4px solid var(--grape);outline-offset:2px}
+h2{font-size:28px;margin:6px 0;text-align:center}
+.hero,.row2{display:flex;align-items:center;gap:12px;margin:8px 0}
+#otto{font-size:84px;line-height:1;animation:bob 2.4s ease-in-out infinite}
+#otto.s{font-size:56px}
+@keyframes bob{50%{transform:translateY(-8px) rotate(4deg)}}
+.bubble{flex:1;background:var(--paper);border:3px solid var(--ink);border-radius:20px;padding:10px 14px;font-weight:600}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:14px 0}
+.card{border:3px solid var(--ink);border-radius:24px;box-shadow:0 6px 0 var(--ink);padding:12px;text-align:center;color:var(--dk)}
+.card.add{background:var(--sun)}.card.sub{background:var(--coral)}.card.mul{background:var(--grape)}.card.div{background:var(--mint)}
+.sym{font-size:64px;font-weight:700;line-height:1}
+.card h3{margin:2px 0;font-size:21px}
+.lv{font-size:14px;margin-bottom:8px;font-weight:600}
+.mini{border:3px solid var(--dk);background:#fff;border-radius:14px;font-weight:700;font-size:17px;padding:8px 12px;margin:3px;box-shadow:0 3px 0 var(--dk)}
+.mini.go{background:var(--dk);color:#fff}
+.shelf{background:var(--paper);border:3px solid var(--ink);border-radius:20px;padding:12px;text-align:center}
+.shelf span{font-size:30px;margin:2px}.shelf .lock{opacity:.35}
+.shelf small{display:block;margin-top:4px}
+.big{display:block;width:100%;margin:12px 0 0;padding:14px;font-size:24px;font-weight:700;background:var(--sun);border:3px solid var(--dk);border-radius:20px;box-shadow:0 6px 0 var(--ink)}
+.big.alt{background:var(--mint)}
+.hint{text-align:center;margin:0 0 8px}
+.ctl{display:flex;align-items:center;justify-content:center;gap:10px;margin:6px 0}
+.ctl span{min-width:120px;text-align:right}
+.ctl b{font-size:26px;min-width:34px;text-align:center}
+.ctl button{width:44px;height:44px;font-size:26px;font-weight:700;border-radius:14px;border:3px solid var(--dk);background:var(--sun);box-shadow:0 3px 0 var(--dk)}
+.stage{background:var(--paper);border:3px dashed var(--ink);border-radius:24px;padding:12px;margin:10px 0;display:flex;flex-wrap:wrap;gap:10px;justify-content:center;align-items:center;min-height:110px}
+.stage.dv{flex-direction:column}
+.tray{display:flex;flex-wrap:wrap;gap:2px;justify-content:center;max-width:300px}
+.op{font-size:40px}
+.it{display:inline-block;font-size:34px;line-height:1.1;transition:transform .25s,opacity .35s}
+.tiny .it{font-size:20px}
+.it.hl{transform:scale(1.35) rotate(-8deg);filter:drop-shadow(0 0 6px var(--sun))}
+.it.gone{transform:translateY(-70px) scale(.2);opacity:0}
+.plate{background:color-mix(in srgb,var(--grape) 28%,var(--paper));border:3px solid var(--ink);border-radius:50% / 40%;padding:8px 12px;display:flex;flex-wrap:wrap;justify-content:center;max-width:150px;min-width:70px;transition:transform .2s}
+.plate.on{transform:scale(1.08);background:var(--sun)}
+.plate.row{border-radius:14px;max-width:none;width:100%;padding:2px 8px;flex-wrap:nowrap}
+.plates{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
+.plate i{font-style:normal;font-size:34px;width:100%;text-align:center}
+.slot{display:flex;flex-wrap:wrap;justify-content:center;min-height:30px}
+.cap{text-align:center;font-weight:600;margin:-4px 0 6px}
+.eq{text-align:center;font-size:26px;font-weight:700;margin:6px 0}
+#count{display:inline-block;min-width:60px;background:var(--sun);color:var(--dk);border:3px solid var(--dk);border-radius:16px;padding:0 12px}
+.q{font-size:24px;text-align:center;margin:8px 0}
+.choices{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px}
+.ch{font-size:34px;font-weight:700;padding:14px;border:3px solid var(--dk);border-radius:20px;background:var(--paper);color:var(--ink);box-shadow:0 5px 0 var(--ink);border-color:var(--ink)}
+.ch.right{background:var(--mint);color:var(--dk);animation:pop .5s}
+.ch.wrong{background:var(--coral);color:var(--dk);opacity:.5;animation:shake .4s}
+@keyframes pop{50%{transform:scale(1.15)}}
+@keyframes shake{25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+.link{display:block;margin:14px auto 0;background:none;border:0;font-size:20px;font-weight:600;text-decoration:underline;color:var(--ink)}
+.combo{text-align:center;font-size:22px;font-weight:700;margin-top:6px}
+.prog{display:flex;gap:6px;justify-content:center;margin:4px 0}
+.prog i{width:26px;height:12px;border:2px solid var(--ink);border-radius:8px;background:var(--paper)}
+.prog i.d{background:var(--mint)}.prog i.c{background:var(--sun)}
+.end{text-align:center}.big-emoji{font-size:110px;animation:bob 2s infinite}
+.lvl{font-size:24px;font-weight:700;color:var(--ink)}
+.conf{position:fixed;top:-40px;font-size:28px;pointer-events:none;animation:fall 2s linear forwards;z-index:9}
+@keyframes fall{to{transform:translateY(110vh) rotate(540deg)}}
+.toast{position:fixed;left:50%;top:70px;transform:translateX(-50%);background:var(--sun);color:var(--dk);border:3px solid var(--dk);border-radius:20px;padding:10px 20px;font-weight:700;font-size:22px;z-index:10;animation:pop .6s}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+const $=s=>document.querySelector(s),app=$('#app');
+const r=(a,b)=>a+Math.floor(Math.random()*(b-a+1)),pk=a=>a[r(0,a.length-1)],wait=ms=>new Promise(f=>setTimeout(f,ms));
+const shuf=a=>a.map(x=>[Math.random(),x]).sort((x,y)=>x[0]-y[0]).map(x=>x[1]);
+const OPS={add:{sym:'+',name:'Adding'},sub:{sym:'−',name:'Taking away'},mul:{sym:'×',name:'Groups'},div:{sym:'÷',name:'Sharing'}};
+const E={add:'🍎',sub:'🍪',mul:'🍓',div:'🧁'},FACE=['🐶','🐱','🐸','🐼','🦊','🐰','🐵','🐯','🦁'];
+const STK=['🦄','🚀','🐉','🍩','🦖','🌈','👑','🎸','🐬','🏆','🛸','🍕'];
+let S={stars:0,lv:{add:1,sub:1,mul:1,div:1}};
+try{const x=JSON.parse(localStorage.getItem('otto')||'null');if(x)S=Object.assign(S,x)}catch(e){}
+const save=()=>{try{localStorage.setItem('otto',JSON.stringify(S))}catch(e){}};
+let AC,mute=false,busy=false,G=null,L=null,cur=null;
+function beep(f,d=.12,t='sine',w=0){if(mute)return;try{AC=AC||new(window.AudioContext||window.webkitAudioContext)();const o=AC.createOscillator(),g=AC.createGain(),T=AC.currentTime+w;o.type=t;o.frequency.value=f;g.gain.setValueAtTime(.15,T);g.gain.exponentialRampToValueAtTime(.001,T+d);o.connect(g);g.connect(AC.destination);o.start(T);o.stop(T+d)}catch(e){}}
+const good=()=>[523,659,784,1047].forEach((f,i)=>beep(f,.16,'triangle',i*.09)),bad=()=>beep(200,.25,'sawtooth'),pop=n=>beep(380+(n%12)*45,.09,'triangle');
+function conf(){for(let i=0;i<26;i++){const s=document.createElement('span');s.className='conf';s.textContent=pk(['⭐','🎉','✨','🍬','💜']);s.style.left=r(0,95)+'vw';s.style.animationDelay=Math.random()*.6+'s';document.body.appendChild(s);setTimeout(()=>s.remove(),3000)}}
+function toast(t){const d=document.createElement('div');d.className='toast';d.textContent=t;document.body.appendChild(d);setTimeout(()=>d.remove(),2200)}
+const say=t=>{const s=$('#say');if(s)s.textContent=t};
+const bar=()=>`<header><button class="ic" data-a="home" aria-label="Home">🏠</button><span class="pill">⭐ ${S.stars}</span><button class="ic" data-a="mute" aria-label="Sound">${mute?'🔇':'🔊'}</button></header>`;
+
+/* ---------- visual builders (shared by lessons and games) ---------- */
+const it=(e,n)=>Array.from({length:n},()=>`<span class="it">${e}</span>`).join('');
+const stAdd=(a,b)=>`<div class="stage${a+b>20?' tiny':''}" id="stage"><div class="tray">${it(E.add,a)}</div><b class="op">+</b><div class="tray">${it(E.add,b)}</div></div>`;
+const stSub=(n,k)=>`<div class="stage${n>20?' tiny':''}" id="stage" data-k="${k}"><div class="tray">${it(E.sub,n)}</div></div>`;
+const stMul=(g,p)=>{const big=g*p>30;return `<div class="stage${big?' tiny':''}" id="stage">${Array.from({length:g},()=>`<div class="plate${big?' row':''}">${it(E.mul,p)}</div>`).join('')}</div><div class="cap">${g} ${big?'rows':'plates'}, ${p} in each</div>`};
+const stDiv=(f,e)=>`<div class="stage dv${f*e>20?' tiny':''}" id="stage"><div class="tray pile">${it(E.div,f*e)}</div><div class="plates">${Array.from({length:f},(_,i)=>`<div class="plate"><i>${FACE[i]}</i><span class="slot"></span></div>`).join('')}</div></div>`;
+
+/* ---------- animations that explain the maths ---------- */
+async function run(op){
+ if(busy)return;busy=true;const st=$('#stage'),c=$('#count');if(!st){busy=false;return}
+ const its=[...st.querySelectorAll('.it')];its.forEach(i=>i.classList.remove('hl','gone'));
+ if(op=='add'){let n=0;for(const i of its){i.classList.add('hl');c.textContent=++n;pop(n);await wait(260)}}
+ else if(op=='sub'){const k=+st.dataset.k;for(let i=0;i<k;i++){its[its.length-1-i].classList.add('gone');c.textContent='−'+(i+1);pop(k-i);await wait(380)}await wait(250);its.slice(0,its.length-k).forEach(i=>i.classList.add('hl'));c.textContent=its.length-k;good()}
+ else if(op=='mul'){let n=0;for(const p of st.querySelectorAll('.plate')){p.classList.add('on');for(const i of p.querySelectorAll('.it')){i.classList.add('hl');n++;pop(n);await wait(110)}c.textContent=n;await wait(300);p.classList.remove('on')}}
+ else{const pl=[...st.querySelectorAll('.plate')],f=pl.length,pile=[...st.querySelectorAll('.pile .it')];c.textContent='0';
+  for(let i=0;i<pile.length;i++){pl[i%f].querySelector('.slot').appendChild(pile[i]);pile[i].classList.add('hl');pop(i);if(i%f==f-1)c.textContent=(i+1)/f;await wait(230)}}
+ busy=false}
+
+/* ---------- home ---------- */
+function home(){G=null;L=null;cur=null;const n=Math.min(12,Math.floor(S.stars/10));
+ app.innerHTML=bar()+`<main><div class="hero"><div id="otto">🐙</div><div class="bubble" id="say">Hi, I’m Otto! Pick a number world and let’s play!</div></div>
+ <div class="grid">${Object.entries(OPS).map(([k,o])=>`<section class="card ${k}"><div class="sym">${o.sym}</div><h3>${o.name}</h3><div class="lv">Level ${S.lv[k]} of 3</div><button class="mini" data-a="learn" data-o="${k}">Learn</button><button class="mini go" data-a="play" data-o="${k}">Play ▶</button></section>`).join('')}</div>
+ <div class="shelf"><b>My sticker book</b><div>${STK.map((s,i)=>`<span class="${i<n?'':'lock'}">${i<n?s:'❔'}</span>`).join('')}</div><small>${S.stars%10} of 10 stars to your next sticker</small></div></main>`}
+
+/* ---------- lessons ---------- */
+const LD={
+ add:{t:'Adding: put piles together',i:'Pick two piles. Tap Show me and count them all!',init:{a:3,b:2},lbl:{a:'First pile',b:'Second pile'},lim:{a:[1,9],b:[1,9]},st:v=>stAdd(v.a,v.b),eq:v=>`${v.a} + ${v.b} = `},
+ sub:{t:'Taking away: some go bye-bye',i:'Pick how many cookies, and how many Otto eats.',init:{n:8,k:3},lbl:{n:'Cookies',k:'Otto eats'},lim:{n:[2,12],k:[1,11]},st:v=>stSub(v.n,v.k),eq:v=>`${v.n} − ${v.k} = `},
+ mul:{t:'Groups: same number, again and again',i:'Make plates with the same number on each. Multiplying counts groups fast!',init:{g:3,p:4},lbl:{g:'Plates',p:'On each plate'},lim:{g:[1,6],p:[1,10]},st:v=>stMul(v.g,v.p),eq:v=>`${Array(v.g).fill(v.p).join(' + ')} = ${v.g} × ${v.p} = `},
+ div:{t:'Sharing: fair shares for everyone',i:'Pick friends and how many each should get. Watch Otto share one at a time!',init:{f:3,e:2},lbl:{f:'Friends',e:'Each gets'},lim:{f:[2,5],e:[1,6]},st:v=>stDiv(v.f,v.e),eq:v=>`${v.f*v.e} ÷ ${v.f} = `}};
+function lesson(op){cur=op;L={op,v:{...LD[op].init}};drawLesson()}
+function drawLesson(){const {op,v}=L,D=LD[op];
+ app.innerHTML=bar()+`<main><h2>${D.t}</h2><p class="hint">${D.i}</p>${Object.keys(v).map(k=>`<div class="ctl"><span>${D.lbl[k]}</span><button data-a="ctl" data-k="${k}" data-d="-1" aria-label="less">−</button><b>${v[k]}</b><button data-a="ctl" data-k="${k}" data-d="1" aria-label="more">+</button></div>`).join('')}${D.st(v)}<div class="eq">${D.eq(v)}<span id="count">?</span></div><button class="big" data-a="show">Show me! 👀</button><button class="big alt" data-a="play" data-o="${op}">I’m ready, let’s play ▶</button></main>`}
+
+/* ---------- questions ---------- */
+function opts(ans,extra=[]){const c=shuf([ans+1,ans-1,ans+2,ans-2,...extra].filter(x=>x>=0&&x!==ans));return shuf([ans,...[...new Set(c)].slice(0,3)])}
+function make(op,l){let a,b,q;
+ if(op=='add'){if(l==1){a=r(1,5);b=r(1,5)}else if(l==2){a=r(3,12);b=r(3,20-a)}else{a=r(10,25);b=r(6,40-a)}
+  q={text:`Count them all: ${a} + ${b} = ?`,stage:stAdd(a,b),ans:a+b,opts:opts(a+b,[a+b+10,a+b-10])}}
+ else if(op=='sub'){if(l==1){a=r(3,10);b=r(1,a-1)}else if(l==2){a=r(10,20);b=r(3,a-3)}else{a=r(20,40);b=r(5,a-5)}
+  q={text:`Otto eats ${b} of the ${a} cookies. ${a} − ${b} = ?`,stage:stSub(a,b),ans:a-b,opts:opts(a-b,[a-b+10,a-b-10])}}
+ else if(op=='mul'){if(l==1){a=r(2,5);b=pk([2,5,10])}else if(l==2){a=r(2,6);b=pk([2,3,4,5])}else{a=r(2,9);b=r(2,9)}
+  q={text:`${a} groups of ${b}. ${a} × ${b} = ?`,stage:stMul(a,b),ans:a*b,opts:opts(a*b,[a*b+a,a*b-b,a*b+b])}}
+ else{if(l==1){a=r(2,5);b=r(1,5)}else if(l==2){a=r(2,5);b=r(2,8)}else{a=r(2,9);b=r(2,9)}
+  q={text:`Share ${a*b} treats fairly between ${a} friends. ${a*b} ÷ ${a} = ?`,stage:stDiv(a,b),ans:b,opts:opts(b,[b+a])}}
+ return q}
+const HINT={add:'Let’s count them all together!',sub:'Watch what gets taken away…',mul:'Let’s count group by group!',div:'Watch them get shared one by one…'};
+function play(op){cur=op;G={op,i:0,n:8,ok:0,combo:0,stars:0};next()}
+function next(){if(!G)return;if(G.i>=G.n)return end();G.q=make(G.op,S.lv[G.op]);G.tries=0;G.done=false;G.i++;drawQ()}
+function drawQ(){const q=G.q;
+ app.innerHTML=bar()+`<main><div class="prog">${Array.from({length:G.n},(_,i)=>`<i class="${i<G.i-1?'d':i==G.i-1?'c':''}"></i>`).join('')}</div><div class="row2"><div id="otto" class="s">🐙</div><div class="bubble" id="say">${G.combo>1?'🔥 '+G.combo+' in a row!':pk(['You can do it!','Tap the right number!','Think, then tap!'])}</div></div><h2 class="q">${q.text}</h2>${q.stage}<div class="eq"><span id="count">?</span></div><div class="choices">${q.opts.map(o=>`<button class="ch" data-a="pick" data-v="${o}">${o}</button>`).join('')}</div><button class="link" data-a="show">Show me 👀</button></main>`}
+function pick(btn,v){if(busy||G.done)return;
+ if(v==G.q.ans){G.done=true;btn.classList.add('right');good();conf();
+  if(G.tries==0){G.ok++;G.combo++;const s=G.combo>=3?2:1,b4=Math.floor(S.stars/10);S.stars+=s;G.stars+=s;
+   say(G.combo>=3?`🔥 ${G.combo} in a row! Double stars!`:pk(['Awesome!','Super smart!','Boom! Nailed it!','You rock!']));
+   if(Math.floor(S.stars/10)>b4)setTimeout(()=>toast('New sticker! '+STK[(Math.floor(S.stars/10)-1)%12]),500)}
+  else{G.combo=0;say('You got it! Next time, even faster!')}
+  save();const g=G;setTimeout(()=>{if(G===g)next()},1500)}
+ else{bad();btn.classList.add('wrong');btn.disabled=true;G.tries++;G.combo=0;say(HINT[G.op]);if(G.tries==1)run(G.op)}}
+function end(){const up=G.ok>=7&&S.lv[G.op]<3;if(up)S.lv[G.op]++;save();const g=G;
+ app.innerHTML=bar()+`<main class="end"><div class="big-emoji">${g.ok>=7?'🏆':'🌟'}</div><h2>${g.ok>=7?'Amazing!':'Nice work!'}</h2><p>You got ${g.ok} of ${g.n} on the first try and earned ⭐ ${g.stars}.</p>${up?`<p class="lvl">Level up! Welcome to level ${S.lv[g.op]}!</p>`:''}<button class="big" data-a="play" data-o="${g.op}">Play again</button><button class="big alt" data-a="home">Home</button></main>`;
+ if(g.ok>=5){good();conf()}}
+
+/* ---------- events ---------- */
+app.onclick=e=>{const b=e.target.closest('[data-a]');if(!b)return;const a=b.dataset.a,o=b.dataset.o;
+ if(a=='home'){if(!busy)home()}
+ else if(a=='mute'){mute=!mute;b.textContent=mute?'🔇':'🔊'}
+ else if(a=='learn'){if(!busy)lesson(o)}
+ else if(a=='play'){if(!busy)play(o)}
+ else if(a=='ctl'){if(busy)return;const v=L.v,k=b.dataset.k,lim=LD[L.op].lim[k];v[k]=Math.max(lim[0],Math.min(lim[1],v[k]+ +b.dataset.d));if(L.op=='sub')v.k=Math.min(v.k,v.n-1);pop(v[k]);drawLesson()}
+ else if(a=='show')run(cur);
+ else if(a=='pick')pick(b,+b.dataset.v)};
+home();
+</script>
+</body>
+</html>
