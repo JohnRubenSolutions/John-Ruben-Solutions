@@ -1,14 +1,14 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>FinHub by John Ruben Solutions, LLC — Net Worth, Cards &amp; Bi‑Weekly Planner</title>
+  <title>Ruben's FinHub — Net Worth, Cards &amp; Bi‑Weekly Planner</title>
 
   <!-- Tailwind -->
   <script src="https://cdn.tailwindcss.com"></script>
 
-  <!-- Chart.js (UMD build, loaded before the app module) -->
+  <!-- NEW: Chart.js (UMD build, loaded before the app module) -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 
   <!-- Fonts -->
@@ -18,7 +18,6 @@
 
   <script>
     tailwind.config = {
-      darkMode: 'class',
       theme: {
         extend: {
           fontFamily: { sans: ['Inter', 'sans-serif'] },
@@ -26,10 +25,8 @@
             brand: {
               50: '#f0f9ff',
               100: '#e0f2fe',
-              400: '#38bdf8',
               500: '#0ea5e9',
               600: '#0284c7',
-              700: '#0369a1',
               900: '#0c4a6e',
             }
           }
@@ -39,35 +36,30 @@
   </script>
 
   <style>
-    body {
-      font-family: 'Inter', sans-serif;
-      background-color: #f8fafc;
-      font-variant-numeric: tabular-nums;
-      transition: background-color 0.2s ease, color 0.2s ease;
-    }
+    body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
     .hide-scrollbar::-webkit-scrollbar { display: none; }
     .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     .modal-overlay { backdrop-filter: blur(4px); }
 
     /* Sidebar nav states (desktop) */
     .nav-active {
-      background-color: rgba(14, 165, 233, 0.18);
+      background-color: rgba(14, 165, 233, 0.16);
       color: #ffffff;
-      box-shadow: inset 0 0 0 1px rgba(56, 189, 248, 0.4);
+      box-shadow: inset 0 0 0 1px rgba(14, 165, 233, 0.35);
     }
-    .nav-inactive { color: #94a3b8; }
+    .nav-inactive { color: #cbd5e1; }
     .nav-inactive:hover { background-color: rgba(255, 255, 255, 0.06); color: #ffffff; }
 
     /* Sidebar nav states (mobile) */
     .nav-active-mobile {
-      background-color: rgba(14, 165, 233, 0.2);
+      background-color: rgba(14, 165, 233, 0.18);
       color: #ffffff;
-      box-shadow: inset 0 0 0 1px rgba(56, 189, 248, 0.4);
+      box-shadow: inset 0 0 0 1px rgba(14, 165, 233, 0.35);
     }
     .nav-inactive-mobile { color: #cbd5e1; }
 
     .util-bar-track { background-color: #e2e8f0; border-radius: 9999px; height: 6px; overflow: hidden; }
-    .util-bar-fill { height: 100%; border-radius: 9999px; transition: width 0.3s ease; }
+    .util-bar-fill { height: 100%; border-radius: 9999px; }
 
     .badge { display:inline-block; padding: 0.125rem 0.5rem; border-radius: 9999px; font-size: 0.7rem; font-weight: 600; white-space: nowrap; }
     .badge-rose { background-color:#fff1f2; color:#be123c; border:1px solid #fecdd3; }
@@ -81,7 +73,7 @@
       border: 1px solid #dbeafe;
     }
 
-    /* Scrollable ledger with sticky column headers */
+    /* NEW: scrollable ledger with sticky column headers */
     .ledger-scroll {
       max-height: 500px;
       overflow: auto;
@@ -96,111 +88,14 @@
       box-shadow: 0 1px 0 #e2e8f0;
     }
 
-    /* Category dot used in the insights list */
+    /* NEW: category dot used in the insights list */
     .cat-dot { display: inline-block; width: 10px; height: 10px; border-radius: 9999px; flex-shrink: 0; }
-
-    /* ==========================================================
-       FINHUB EXECUTIVE DARK MODE ENGINE (Default Active)
-       Automatically styles all static & dynamically rendered DOM
-       ========================================================== */
-    html.dark body {
-      background-color: #020617;
-      color: #e2e8f0;
-    }
-    html.dark #app-content-scroll {
-      background-color: #0b1120 !important;
-    }
-    html.dark .bg-white {
-      background-color: #111827 !important;
-    }
-    html.dark .bg-slate-50 {
-      background-color: #1e293b !important;
-    }
-    html.dark .bg-slate-100 {
-      background-color: #1e293b !important;
-    }
-    html.dark .bg-slate-100:hover,
-    html.dark .hover\:bg-slate-200:hover {
-      background-color: #334155 !important;
-    }
-    html.dark .quick-add-panel {
-      background: linear-gradient(180deg, #111827 0%, #0f172a 100%) !important;
-      border-color: rgba(14, 165, 233, 0.3) !important;
-      box-shadow: 0 10px 30px -10px rgba(14, 165, 233, 0.12);
-    }
-    html.dark .border-slate-200,
-    html.dark .border-slate-100,
-    html.dark .border-slate-300 {
-      border-color: #1e293b !important;
-    }
-    html.dark .text-slate-900 { color: #f8fafc !important; }
-    html.dark .text-slate-800 { color: #e2e8f0 !important; }
-    html.dark .text-slate-700 { color: #cbd5e1 !important; }
-    html.dark .text-slate-600 { color: #94a3b8 !important; }
-    html.dark .text-slate-500 { color: #64748b !important; }
-    html.dark .text-brand-900 { color: #38bdf8 !important; }
-    html.dark .text-brand-600 { color: #38bdf8 !important; }
-    html.dark .text-emerald-700 { color: #34d399 !important; }
-    html.dark .text-rose-700 { color: #fb7185 !important; }
-    html.dark .text-amber-700 { color: #fbbf24 !important; }
-
-    /* Dark Mode Form Controls */
-    html.dark input:not([type="checkbox"]),
-    html.dark select {
-      background-color: #0f172a !important;
-      border-color: #334155 !important;
-      color: #f8fafc !important;
-      color-scheme: dark;
-    }
-    html.dark input::placeholder {
-      color: #475569 !important;
-    }
-    html.dark input:focus,
-    html.dark select:focus {
-      border-color: #0ea5e9 !important;
-    }
-
-    /* Dark Mode Tables & Sticky Headers */
-    html.dark .ledger-scroll {
-      border-color: #1e293b !important;
-    }
-    html.dark .ledger-scroll thead th {
-      background-color: #0f172a !important;
-      box-shadow: 0 1px 0 #1e293b !important;
-    }
-    html.dark tbody tr {
-      border-bottom: 1px solid rgba(30, 41, 59, 0.65);
-    }
-    html.dark tbody tr:hover {
-      background-color: rgba(30, 41, 59, 0.4);
-    }
-    html.dark .bg-amber-50\/40 {
-      background-color: rgba(245, 158, 11, 0.08) !important;
-    }
-    html.dark .bg-amber-50 {
-      background-color: rgba(245, 158, 11, 0.14) !important;
-      border-color: rgba(245, 158, 11, 0.35) !important;
-      color: #fbbf24 !important;
-    }
-    html.dark .bg-rose-50 {
-      background-color: rgba(244, 63, 94, 0.14) !important;
-      border-color: rgba(244, 63, 94, 0.35) !important;
-      color: #fb7185 !important;
-    }
-
-    /* Dark Mode Badges & Progress Tracks */
-    html.dark .util-bar-track { background-color: #0f172a !important; }
-    html.dark .badge-rose { background-color: rgba(244, 63, 94, 0.15); color: #fb7185; border-color: rgba(244, 63, 94, 0.35); }
-    html.dark .badge-emerald { background-color: rgba(16, 185, 129, 0.15); color: #34d399; border-color: rgba(16, 185, 129, 0.35); }
-    html.dark .badge-amber { background-color: rgba(245, 158, 11, 0.15); color: #fbbf24; border-color: rgba(245, 158, 11, 0.35); }
-    html.dark .badge-brand { background-color: rgba(14, 165, 233, 0.15); color: #38bdf8; border-color: rgba(14, 165, 233, 0.35); }
-    html.dark .badge-slate { background-color: rgba(148, 163, 184, 0.12); color: #cbd5e1; border-color: rgba(148, 163, 184, 0.25); }
   </style>
 </head>
 
 <body class="text-slate-800 h-screen flex overflow-hidden selection:bg-brand-500 selection:text-white">
 
-  <!-- Category presets shared by every Category input (extended at runtime with categories already in use) -->
+  <!-- NEW: category presets shared by every Category input (extended at runtime with categories already in use) -->
   <datalist id="category-presets">
     <option value="Housing/Rent"></option>
     <option value="Utilities"></option>
@@ -217,19 +112,16 @@
   </datalist>
 
   <!-- AUTH VIEW -->
-  <div id="auth-view" class="fixed inset-0 z-50 bg-slate-950 flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8 relative overflow-hidden border border-slate-200">
-      <div class="absolute top-0 right-0 w-36 h-36 bg-brand-500/10 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none"></div>
+  <div id="auth-view" class="fixed inset-0 z-50 bg-slate-900 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8 relative overflow-hidden">
+      <div class="absolute top-0 right-0 w-32 h-32 bg-brand-100 rounded-full blur-3xl -mr-10 -mt-10"></div>
 
       <div class="text-center mb-8 relative z-10">
-        <div class="w-16 h-16 bg-brand-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-brand-500/30">
+        <div class="w-16 h-16 bg-brand-50 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-brand-100">
           <svg class="w-8 h-8 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
           </svg>
-        </div>
-        <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-brand-500/10 text-brand-400 border border-brand-500/20 mb-2">
-          JOHN RUBEN SOLUTIONS, LLC
         </div>
         <h1 class="text-2xl font-bold text-slate-900">Ruben's FinHub</h1>
         <p class="text-sm text-slate-500 mt-1" id="auth-subtitle">Sign in to access your secure financial vault.</p>
@@ -269,18 +161,15 @@
   <div id="app-view" class="hidden w-full h-full flex flex-col md:flex-row relative">
 
     <!-- Sidebar -->
-    <nav class="w-64 bg-slate-950 text-white flex-shrink-0 hidden md:flex flex-col shadow-2xl z-20 border-r border-slate-800/80">
-      <div class="p-6 border-b border-slate-800/80">
-        <h1 class="text-xl font-bold tracking-tight text-white flex items-center gap-2.5">
-          <span class="w-8 h-8 rounded-lg bg-brand-500/15 border border-brand-500/30 flex items-center justify-center">
-            <svg class="w-5 h-5 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-            </svg>
-          </span>
-          <span>FinHub</span>
+    <nav class="w-64 bg-slate-900 text-white flex-shrink-0 hidden md:flex flex-col shadow-2xl z-20">
+      <div class="p-6 border-b border-slate-800">
+        <h1 class="text-xl font-bold tracking-tight text-white flex items-center gap-2">
+          <svg class="w-6 h-6 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+          Ruben's FinHub
         </h1>
-        <p class="text-[11px] font-medium text-slate-400 mt-1.5 tracking-wide uppercase">John Ruben Solutions, LLC</p>
       </div>
 
       <div class="flex-1 px-4 py-6 space-y-2 overflow-y-auto hide-scrollbar">
@@ -321,20 +210,10 @@
         </button>
       </div>
 
-      <div class="p-6 border-t border-slate-800/80 space-y-4">
-        <!-- Theme Toggle Button -->
-        <button id="theme-toggle-btn" type="button"
-                class="w-full flex items-center justify-between px-3 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-xs font-medium text-slate-300 transition-colors">
-          <span class="flex items-center gap-2">
-            <span id="theme-icon">🌙</span>
-            <span id="theme-label">Dark Mode</span>
-          </span>
-          <span class="text-[10px] px-1.5 py-0.5 rounded bg-brand-500/20 text-brand-400">Switch</span>
-        </button>
-
-        <div class="text-xs text-slate-400">
+      <div class="p-6 border-t border-slate-800 space-y-4">
+        <div class="text-sm text-slate-400">
           Signed in as<br/>
-          <span id="user-email" class="text-slate-200 font-medium truncate block mt-0.5"></span>
+          <span id="user-email" class="text-slate-200 font-medium"></span>
         </div>
         <button id="logout-btn"
                 class="flex items-center gap-2 text-sm text-rose-400 hover:text-rose-300 transition-colors w-full">
@@ -348,19 +227,15 @@
     </nav>
 
     <main class="flex-1 flex flex-col h-full relative w-full overflow-hidden">
-      <header class="md:hidden bg-slate-950 text-white px-4 py-3 flex items-center justify-between z-10 shadow-md border-b border-slate-800">
-        <div>
-          <h1 class="text-lg font-bold flex items-center gap-2">
-            <svg class="w-5 h-5 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-            </svg>
-            FinHub
-          </h1>
-          <div class="text-[10px] text-slate-400">John Ruben Solutions, LLC</div>
-        </div>
+      <header class="md:hidden bg-slate-900 text-white px-4 py-3 flex items-center justify-between z-10 shadow-md">
+        <h1 class="text-lg font-bold flex items-center gap-2">
+          <svg class="w-5 h-5 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+          FinHub
+        </h1>
         <div class="flex items-center gap-2">
-          <button id="mobile-theme-btn" type="button" class="p-2 bg-slate-800 rounded-lg text-xs" title="Toggle theme">🌙</button>
           <button id="mobile-nav-btn" class="p-2 bg-slate-800 rounded-lg">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
@@ -370,7 +245,7 @@
       </header>
 
       <!-- Mobile nav -->
-      <div id="mobile-nav" class="md:hidden hidden bg-slate-950 text-white px-4 py-3 border-b border-slate-800 z-10">
+      <div id="mobile-nav" class="md:hidden hidden bg-slate-900 text-white px-4 py-3 border-b border-slate-800 z-10">
         <div class="space-y-2">
           <button data-route="dashboard" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all nav-inactive-mobile">
             Dashboard
@@ -394,8 +269,7 @@
         <section id="route-dashboard" class="hidden">
           <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
-              <div class="text-xs font-semibold uppercase tracking-wider text-brand-600 mb-0.5">John Ruben Solutions, LLC · Executive Treasury</div>
-              <h2 class="text-2xl font-bold text-slate-900">Daily Net Worth &amp; Financial Health</h2>
+              <h2 class="text-2xl font-bold text-slate-900">Daily Net Worth</h2>
               <p class="text-slate-500 mt-1" id="dashboard-subtitle">Calculates in real-time from your entries.</p>
             </div>
 
@@ -412,45 +286,6 @@
                 <div class="text-xs text-slate-500">Liabilities (incl. cards)</div>
                 <div class="text-lg font-semibold text-rose-700" id="total-liabilities"></div>
               </div>
-            </div>
-          </div>
-
-          <!-- NEW: Financial Analyst Executive Ratios Strip -->
-          <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
-              <div class="flex items-center justify-between">
-                <span class="text-xs text-slate-500">Cash vs. Card Debt Coverage</span>
-                <span id="ratio-cash-badge" class="badge badge-emerald">Healthy</span>
-              </div>
-              <div class="text-xl font-bold text-slate-900 mt-1" id="ratio-cash-coverage">—</div>
-              <div class="text-[11px] text-slate-500 mt-0.5" id="ratio-cash-sub">Liquid bank cash vs. current CC balance</div>
-            </div>
-
-            <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
-              <div class="flex items-center justify-between">
-                <span class="text-xs text-slate-500">Aggregate Credit Utilization</span>
-                <span id="ratio-util-badge" class="badge badge-brand">0%</span>
-              </div>
-              <div class="text-xl font-bold text-slate-900 mt-1" id="ratio-credit-util">0.0%</div>
-              <div class="text-[11px] text-slate-500 mt-0.5">Target &lt; 30% (Optimal &lt; 10%)</div>
-            </div>
-
-            <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
-              <div class="flex items-center justify-between">
-                <span class="text-xs text-slate-500">Current Period Savings Rate</span>
-                <span id="ratio-savings-badge" class="badge badge-slate">Period</span>
-              </div>
-              <div class="text-xl font-bold text-slate-900 mt-1" id="ratio-savings-rate">0.0%</div>
-              <div class="text-[11px] text-slate-500 mt-0.5">(Cash In − Cash Out) ÷ Cash In</div>
-            </div>
-
-            <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
-              <div class="flex items-center justify-between">
-                <span class="text-xs text-slate-500">Total Debt-to-Asset Ratio</span>
-                <span id="ratio-dta-badge" class="badge badge-slate">Leverage</span>
-              </div>
-              <div class="text-xl font-bold text-slate-900 mt-1" id="ratio-debt-to-asset">0.0%</div>
-              <div class="text-[11px] text-slate-500 mt-0.5">Total Liabilities ÷ Total Assets</div>
             </div>
           </div>
 
@@ -502,7 +337,7 @@
                     Bank &amp; card balances are live
                   </div>
                   <div class="mt-3 text-sm text-slate-600">
-                    Income routed to a Bank Account, Debit Card spend, Credit Card spend, Bills, and Payoffs all update the relevant balance the instant you log them (as of today's date — future-dated entries don't count yet).
+                    Income routed to a Bank Account, Debit Card spend, Credit Card spend, and Payoffs all update the relevant balance the instant you log them (as of today's date — future-dated entries don't count yet).
                   </div>
                 </div>
 
@@ -531,7 +366,7 @@
             <div class="flex items-center justify-between gap-3 flex-wrap">
               <div>
                 <h3 class="text-lg font-semibold text-slate-900">Bank &amp; Card Balances</h3>
-                <p class="text-sm text-slate-500 mt-1">Live balances (as of today) from starting amounts, routed income, transactions, bills, and payoffs.</p>
+                <p class="text-sm text-slate-500 mt-1">Live balances (as of today) from starting amounts, routed income, transactions, and payoffs.</p>
               </div>
               <button id="dashboard-view-accounts-btn" type="button"
                       class="text-brand-600 font-semibold hover:underline text-sm whitespace-nowrap">
@@ -679,7 +514,7 @@
                     Save Bank Account
                   </button>
                   <button type="button" id="bank-cancel-btn"
-                          class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium py-2.5 px-4 rounded-lg transition-colors">
+                          class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium py-2.5 rounded-lg transition-colors">
                     Cancel
                   </button>
                 </div>
@@ -704,7 +539,7 @@
               <div class="flex items-center justify-between gap-3">
                 <div>
                   <h3 class="text-lg font-semibold text-slate-900">Credit Cards</h3>
-                  <p class="text-sm text-slate-500 mt-1">Balance owed auto-updates from expenses, bills, credits &amp; payoffs.</p>
+                  <p class="text-sm text-slate-500 mt-1">Balance owed auto-updates from expenses, credits &amp; payoffs.</p>
                 </div>
                 <button class="text-brand-600 font-semibold hover:underline" id="add-credit-card-btn">+ Add</button>
               </div>
@@ -739,7 +574,7 @@
                     Save Credit Card
                   </button>
                   <button type="button" id="credit-card-cancel-btn"
-                          class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium py-2.5 px-4 rounded-lg transition-colors">
+                          class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium py-2.5 rounded-lg transition-colors">
                     Cancel
                   </button>
                 </div>
@@ -794,7 +629,7 @@
                     Save Debit Card
                   </button>
                   <button type="button" id="debit-card-cancel-btn"
-                          class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium py-2.5 px-4 rounded-lg transition-colors">
+                          class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium py-2.5 rounded-lg transition-colors">
                     Cancel
                   </button>
                 </div>
@@ -901,7 +736,7 @@
                 </select>
               </div>
 
-              <!-- Category (optional; pick a preset or type your own) -->
+              <!-- NEW: Category (optional; pick a preset or type your own) -->
               <div>
                 <label class="block text-sm font-medium text-slate-700 mb-1">Category</label>
                 <input type="text" id="txn-category" list="category-presets" placeholder="Uncategorized" autocomplete="off"
@@ -927,18 +762,12 @@
 
           <!-- TRANSACTION LEDGER -->
           <div class="mt-4 bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-            <div class="flex items-center justify-between gap-3 flex-wrap">
+            <div class="flex items-center justify-between gap-3">
               <h3 class="text-lg font-semibold text-slate-900">Transaction Ledger</h3>
-              <div class="flex items-center gap-3">
-                <div class="text-sm text-slate-500" id="txn-ledger-summary"></div>
-                <button type="button" id="export-csv-btn"
-                        class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-300 transition-colors">
-                  ⬇ Export CSV
-                </button>
-              </div>
+              <div class="text-sm text-slate-500" id="txn-ledger-summary"></div>
             </div>
 
-            <!-- Search + period + custom date range filters -->
+            <!-- NEW: search + period + custom date range filters -->
             <div class="mt-4 p-3 rounded-xl bg-slate-50 border border-slate-200">
               <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
                 <div class="md:col-span-4">
@@ -979,7 +808,7 @@
               <div id="fin-range-hint" class="hidden text-xs text-amber-600 mt-2"></div>
             </div>
 
-            <!-- Fixed-height scroll container (headers stay pinned via .ledger-scroll CSS) -->
+            <!-- NEW: fixed-height scroll container (headers stay pinned via .ledger-scroll CSS) -->
             <div class="mt-4 ledger-scroll" style="max-height:500px;overflow:auto;">
               <table class="min-w-[860px] w-full text-sm">
                 <thead>
@@ -998,7 +827,7 @@
             </div>
           </div>
 
-          <!-- SPENDING INSIGHTS (follows the same filters as the ledger above) -->
+          <!-- NEW: SPENDING INSIGHTS (follows the same filters as the ledger above) -->
           <div id="insights-card" class="mt-4 bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
             <div>
               <h3 class="text-lg font-semibold text-slate-900">Spending Insights</h3>
@@ -1134,4 +963,3015 @@
             </div>
 
             <!-- FUTURE BILLS -->
-            <div class="bg-white rounded-
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 lg:col-span-2">
+              <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                <div>
+                  <h3 class="text-lg font-semibold text-slate-900">Future Expense &amp; Bills Planning</h3>
+                  <p class="text-sm text-slate-500 mt-1">
+                    One-time or recurring bills. Recurring bills auto-project into the Period Planner across its horizon. Choose a Credit Card under "Pay With" and the bill shows as card spend (billed later) instead of cash out.
+                  </p>
+                </div>
+              </div>
+
+              <form id="bill-form" class="mt-4 grid grid-cols-1 md:grid-cols-4 xl:grid-cols-7 gap-3 items-end">
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 mb-1">Name</label>
+                  <input type="text" id="bill-name" required placeholder="Rent / Utilities / Insurance"
+                         class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 mb-1">Category (optional)</label>
+                  <input type="text" id="bill-category" list="category-presets" autocomplete="off" placeholder="Housing / Debt / Investing"
+                         class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 mb-1">First Due Date</label>
+                  <input type="date" id="bill-date" required
+                         class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 mb-1">Amount</label>
+                  <input type="number" id="bill-amount" required step="0.01"
+                         class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 mb-1">Pay With</label>
+                  <select id="bill-pay-with"
+                          class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                    <option value="">Not specified (not deducted from a bank)</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="flex items-center gap-2 text-sm font-medium text-slate-700 mb-1">
+                    <input type="checkbox" id="bill-recurring" class="rounded border-slate-300 text-brand-600 focus:ring-brand-500">
+                    Make Recurring
+                  </label>
+                  <select id="bill-recurrence-type" class="hidden w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none mt-1">
+                    <option value="monthly">Monthly (on this due date's day)</option>
+                    <option value="biweekly">Bi-Weekly (every 14 days)</option>
+                  </select>
+                </div>
+                <div>
+                  <button type="submit"
+                          class="w-full bg-brand-600 hover:bg-brand-700 text-white font-medium py-2.5 rounded-lg transition-colors shadow-md">
+                    Save Bill
+                  </button>
+                </div>
+              </form>
+
+              <div class="mt-4 overflow-x-auto">
+                <table class="w-full text-sm">
+                  <thead>
+                    <tr class="bg-slate-50">
+                      <th class="text-left px-3 py-2 font-semibold text-slate-600"><button type="button" data-sort-table="bills" data-sort-key="name" class="inline-flex items-center gap-1 hover:text-slate-900">Name <span data-sort-ind class="text-xs text-slate-400">↕</span></button></th>
+                      <th class="text-left px-3 py-2 font-semibold text-slate-600"><button type="button" data-sort-table="bills" data-sort-key="category" class="inline-flex items-center gap-1 hover:text-slate-900">Category <span data-sort-ind class="text-xs text-slate-400">↕</span></button></th>
+                      <th class="text-left px-3 py-2 font-semibold text-slate-600"><button type="button" data-sort-table="bills" data-sort-key="date" class="inline-flex items-center gap-1 hover:text-slate-900">First Due <span data-sort-ind class="text-xs text-slate-400">↕</span></button></th>
+                      <th class="text-left px-3 py-2 font-semibold text-slate-600"><button type="button" data-sort-table="bills" data-sort-key="recurrence" class="inline-flex items-center gap-1 hover:text-slate-900">Recurrence <span data-sort-ind class="text-xs text-slate-400">↕</span></button></th>
+                      <th class="text-right px-3 py-2 font-semibold text-slate-600"><button type="button" data-sort-table="bills" data-sort-key="amount" class="inline-flex items-center gap-1 hover:text-slate-900">Amount <span data-sort-ind class="text-xs text-slate-400">↕</span></button></th>
+                      <th class="text-right px-3 py-2 font-semibold text-slate-600">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="bills-table-body"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- ASSETS -->
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+              <div class="flex items-center justify-between gap-3">
+                <h3 class="text-lg font-semibold text-slate-900">Other Assets</h3>
+                <button class="text-brand-600 font-semibold hover:underline" id="add-asset-btn">+ Add</button>
+              </div>
+              <p class="text-sm text-slate-500 mt-1">Investments, property, cash not in a tracked bank account, etc.</p>
+
+              <form id="asset-form" class="mt-4 hidden">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Name</label>
+                    <input type="text" id="asset-name" required class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Value</label>
+                    <input type="number" id="asset-value" required step="0.01" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                  </div>
+                </div>
+
+                <div class="mt-3">
+                  <label class="block text-sm font-medium text-slate-700 mb-1">Type (optional)</label>
+                  <input type="text" id="asset-type" placeholder="Savings / Investment / Cash / Other"
+                         class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                </div>
+
+                <div class="flex items-center gap-2 mt-4">
+                  <button type="submit" class="bg-brand-600 hover:bg-brand-700 text-white font-medium py-2.5 rounded-lg transition-colors shadow-md w-full">
+                    Save Asset
+                  </button>
+                  <button type="button" id="asset-cancel-btn"
+                          class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium py-2.5 rounded-lg transition-colors">
+                    Cancel
+                  </button>
+                </div>
+              </form>
+
+              <div class="mt-4 overflow-x-auto">
+                <table class="w-full text-sm">
+                  <thead>
+                    <tr class="bg-slate-50">
+                      <th class="text-left px-3 py-2 font-semibold text-slate-600"><button type="button" data-sort-table="assets" data-sort-key="name" class="inline-flex items-center gap-1 hover:text-slate-900">Name <span data-sort-ind class="text-xs text-slate-400">↕</span></button></th>
+                      <th class="text-right px-3 py-2 font-semibold text-slate-600"><button type="button" data-sort-table="assets" data-sort-key="value" class="inline-flex items-center gap-1 hover:text-slate-900">Value <span data-sort-ind class="text-xs text-slate-400">↕</span></button></th>
+                      <th class="text-right px-3 py-2 font-semibold text-slate-600">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="assets-table-body"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- LIABILITIES -->
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+              <div class="flex items-center justify-between gap-3">
+                <h3 class="text-lg font-semibold text-slate-900">Other Liabilities</h3>
+                <button class="text-brand-600 font-semibold hover:underline" id="add-liability-btn">+ Add</button>
+              </div>
+              <p class="text-sm text-slate-500 mt-1">Loans, mortgages, and debts other than your tracked Credit Cards.</p>
+
+              <form id="liability-form" class="mt-4 hidden">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Name</label>
+                    <input type="text" id="liability-name" required class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Balance</label>
+                    <input type="number" id="liability-value" required step="0.01" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                  </div>
+                </div>
+
+                <div class="mt-3">
+                  <label class="block text-sm font-medium text-slate-700 mb-1">Type (optional)</label>
+                  <input type="text" id="liability-type" placeholder="Loan / Mortgage / Other"
+                         class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                </div>
+
+                <div class="flex items-center gap-2 mt-4">
+                  <button type="submit" class="bg-brand-600 hover:bg-brand-700 text-white font-medium py-2.5 rounded-lg transition-colors shadow-md w-full">
+                    Save Liability
+                  </button>
+                  <button type="button" id="liability-cancel-btn"
+                          class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium py-2.5 rounded-lg transition-colors">
+                    Cancel
+                  </button>
+                </div>
+              </form>
+
+              <div class="mt-4 overflow-x-auto">
+                <table class="w-full text-sm">
+                  <thead>
+                    <tr class="bg-slate-50">
+                      <th class="text-left px-3 py-2 font-semibold text-slate-600"><button type="button" data-sort-table="liabilities" data-sort-key="name" class="inline-flex items-center gap-1 hover:text-slate-900">Name <span data-sort-ind class="text-xs text-slate-400">↕</span></button></th>
+                      <th class="text-right px-3 py-2 font-semibold text-slate-600"><button type="button" data-sort-table="liabilities" data-sort-key="value" class="inline-flex items-center gap-1 hover:text-slate-900">Balance <span data-sort-ind class="text-xs text-slate-400">↕</span></button></th>
+                      <th class="text-right px-3 py-2 font-semibold text-slate-600">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="liabilities-table-body"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- ===========================
+       SECURITY RULES (Paste into Firebase Console)
+       =========================== -->
+  <script type="text/plain" id="firestore-rules">
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isAuthed() { return request.auth != null; }
+    function isOwner(uid) { return isAuthed() && request.auth.uid == uid; }
+
+    // User-isolated document structure:
+    // /users/{uid}/assets/{docId}
+    // /users/{uid}/liabilities/{docId}
+    // /users/{uid}/incomes/{docId}
+    // /users/{uid}/incomeOverrides/{docId}   (per-occurrence edits/skips for recurring incomes)
+    // /users/{uid}/bills/{docId}
+    // /users/{uid}/billOverrides/{docId}     (per-occurrence edits/skips for recurring bills)
+    // /users/{uid}/bankAccounts/{docId}
+    // /users/{uid}/creditCards/{docId}
+    // /users/{uid}/debitCards/{docId}
+    // /users/{uid}/transactions/{docId}      (credit/debit expenses, credits/refunds, payoffs)
+
+    match /users/{uid}/{collection}/{docId} {
+      allow read, write: if isOwner(uid);
+    }
+
+    // Deny everything else by default
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
+  </script>
+
+  <!-- ===========================
+       APP SCRIPT (Firebase v10 modular)
+       =========================== -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import {
+      getAuth,
+      onAuthStateChanged,
+      signInWithEmailAndPassword,
+      createUserWithEmailAndPassword,
+      signOut
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import {
+      getFirestore,
+      collection,
+      doc,
+      addDoc,
+      setDoc,
+      updateDoc,
+      deleteDoc,
+      query,
+      orderBy,
+      onSnapshot,
+      serverTimestamp,
+      getDocs
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    // ===== Firebase Config (as provided) =====
+    const firebaseConfig = {
+      apiKey: "AIzaSyDJDtMrlW7nuOaL62iHbnP8okCJ6sumGTA",
+      authDomain: "ruben-project-ca37a.firebaseapp.com",
+      projectId: "ruben-project-ca37a",
+      storageBucket: "ruben-project-ca37a.firebasestorage.app",
+      messagingSenderId: "785470836410",
+      appId: "1:785470836410:web:db517a1c04beeb52037c83"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    // ===== State =====
+    let currentUser = null;
+    let state = {
+      assets: [],
+      liabilities: [],
+      incomes: [],
+      incomeOverrides: [],
+      bills: [],
+      billOverrides: [],
+      bankAccounts: [],
+      creditCards: [],
+      debitCards: [],
+      transactions: [],
+    };
+
+    let ui = {
+      mode: "signin", // or "register"
+      activeRoute: "data",
+      planner: {
+        horizonDays: 180
+      },
+      expandedBillIds: new Set(),
+      expandedIncomeIds: new Set(),
+      expandedPeriodKeys: new Set(),
+      ledgerSort: { key: "date", dir: "desc" },
+      sorts: {},
+      editing: {
+        assetId: null,
+        liabilityId: null,
+        incomeId: null,
+        billId: null,
+        bankAccountId: null,
+        creditCardId: null,
+        debitCardId: null,
+        transactionId: null
+      }
+    };
+
+    // ===== NEW: ledger filters, categories & insights state (kept separate from `ui` / `state`) =====
+    const DEFAULT_CATEGORIES = [
+      "Housing/Rent", "Utilities", "Subscriptions", "Groceries", "Dining", "Transportation",
+      "Miscellaneous", "Insurance", "Healthcare", "Entertainment", "Shopping", "Debt/Loans"
+    ];
+    const UNCATEGORIZED = "Uncategorized";
+    const FIN_PALETTE = [
+      "#0ea5e9", "#10b981", "#f59e0b", "#8b5cf6", "#ef4444", "#14b8a6",
+      "#f97316", "#6366f1", "#ec4899", "#84cc16", "#06b6d4", "#a855f7"
+    ];
+    const fin = {
+      period: "all",      // all | month | lastmonth | last30 | period | prevperiod | custom
+      start: "",          // used when period === "custom"
+      end: "",
+      search: "",
+      trendGroup: "month", // month | week | period
+      trendType: "bar"     // bar | line
+    };
+    let finFiltered = [];        // ledger rows after date + search filters (set by renderTransactionsLedger)
+    let finDoughnut = null;
+    let finTrend = null;
+    let finTrendBuiltType = null;
+
+    // ===== Helpers =====
+    const $ = (sel) => document.querySelector(sel);
+    const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+    const escapeHtml = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;"
+    }[c]));
+
+    function formatMoney(n) {
+      const v = Number(n ?? 0);
+      return v.toLocaleString(undefined, { style: "currency", currency: "USD" });
+    }
+
+    function toISODate(d) {
+      const dt = new Date(d);
+      const y = dt.getFullYear();
+      const m = String(dt.getMonth() + 1).padStart(2, "0");
+      const day = String(dt.getDate()).padStart(2, "0");
+      return `${y}-${m}-${day}`;
+    }
+
+    function parseISODateLocal(iso) {
+      const [y, m, d] = (iso || "").split("-").map(Number);
+      return new Date(y, (m - 1), d, 0, 0, 0, 0);
+    }
+
+    function addDays(date, days) {
+      const d = new Date(date);
+      d.setDate(d.getDate() + days);
+      return d;
+    }
+
+    function dateBetweenInclusive(date, start, end) {
+      return date >= start && date <= end;
+    }
+
+    function sortByDateAsc(items, dateKey) {
+      return items.slice().sort((a, b) => parseISODateLocal(a[dateKey]) - parseISODateLocal(b[dateKey]));
+    }
+
+    function monthKey(isoDate) {
+      const dt = parseISODateLocal(isoDate);
+      return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}`;
+    }
+
+    function clampedMonthDate(year, monthIdx, day) {
+      const lastDay = new Date(year, monthIdx + 1, 0).getDate();
+      return new Date(year, monthIdx, Math.min(day, lastDay));
+    }
+
+    // ===== DOM: Auth =====
+    const authView = $("#auth-view");
+    const appView = $("#app-view");
+    const authForm = $("#auth-form");
+    const authToggleBtn = $("#auth-toggle-btn");
+    const authToggleText = $("#auth-toggle-text");
+    const authError = $("#auth-error");
+    const authSubtitle = $("#auth-subtitle");
+    const authSubmitBtn = $("#auth-submit-btn");
+
+    function setAuthError(msg) {
+      if (!msg) {
+        authError.classList.add("hidden");
+        authError.textContent = "";
+        return;
+      }
+      authError.classList.remove("hidden");
+      authError.textContent = msg;
+    }
+
+    function setAuthMode(mode) {
+      ui.mode = mode;
+      const isRegister = mode === "register";
+      authSubtitle.textContent = isRegister
+        ? "Create your account to start tracking every penny."
+        : "Sign in to access your secure financial vault.";
+      authSubmitBtn.textContent = isRegister ? "Register" : "Sign In";
+      authToggleText.textContent = isRegister ? "Already have an account?" : "Don't have an account?";
+      authToggleBtn.textContent = isRegister ? "Sign in here" : "Register here";
+      setAuthError("");
+    }
+
+    authToggleBtn.addEventListener("click", () => {
+      setAuthMode(ui.mode === "signin" ? "register" : "signin");
+    });
+
+    authForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      setAuthError("");
+
+      const email = $("#auth-email").value.trim();
+      const password = $("#auth-password").value;
+
+      try {
+        if (ui.mode === "register") {
+          await createUserWithEmailAndPassword(auth, email, password);
+        } else {
+          await signInWithEmailAndPassword(auth, email, password);
+        }
+      } catch (err) {
+        setAuthError(err?.message || "Authentication error. Please try again.");
+      }
+    });
+
+    // ===== DOM: Navigation =====
+    const routeDashboard = $("#route-dashboard");
+    const routePeriod = $("#route-period");
+    const routeAccounts = $("#route-accounts");
+    const routeData = $("#route-data");
+    const contentScroll = $("#app-content-scroll");
+
+    function setRoute(route) {
+      ui.activeRoute = route;
+      routeDashboard.classList.toggle("hidden", route !== "dashboard");
+      routePeriod.classList.toggle("hidden", route !== "period");
+      routeAccounts.classList.toggle("hidden", route !== "accounts");
+      routeData.classList.toggle("hidden", route !== "data");
+
+      $$("[data-route]").forEach((btn) => {
+        const active = btn.dataset.route === route;
+        const inMobile = !!btn.closest("#mobile-nav");
+        btn.className = "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all " +
+          (inMobile
+            ? (active ? "nav-active-mobile" : "nav-inactive-mobile")
+            : (active ? "nav-active" : "nav-inactive"));
+      });
+
+      if (currentUser) refreshAllViews();
+    }
+
+    $$("[data-route]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        setRoute(btn.dataset.route);
+        $("#mobile-nav")?.classList.add("hidden");
+      });
+    });
+
+    $("#mobile-nav-btn").addEventListener("click", () => {
+      $("#mobile-nav").classList.toggle("hidden");
+    });
+
+    $("#dashboard-view-accounts-btn").addEventListener("click", () => {
+      setRoute("accounts");
+    });
+
+    $("#logout-btn").addEventListener("click", async () => {
+      await signOut(auth);
+    });
+
+    // ===== Firestore Collections (user-scoped by UID) =====
+    function userCol(name) {
+      return collection(db, "users", currentUser.uid, name);
+    }
+
+    let unsubscribers = [];
+
+    function clearSubscriptions() {
+      unsubscribers.forEach(fn => { try { fn(); } catch {} });
+      unsubscribers = [];
+    }
+
+    function subscribeAll() {
+      clearSubscriptions();
+
+      const assetQ = query(userCol("assets"), orderBy("createdAt", "desc"));
+      const liabQ = query(userCol("liabilities"), orderBy("createdAt", "desc"));
+      const incomeQ = query(userCol("incomes"), orderBy("date", "desc"));
+      const incomeOverridesQ = query(userCol("incomeOverrides"), orderBy("occurrenceDate", "desc"));
+      const billsQ = query(userCol("bills"), orderBy("date", "desc"));
+      const billOverridesQ = query(userCol("billOverrides"), orderBy("occurrenceDate", "desc"));
+      const bankQ = query(userCol("bankAccounts"), orderBy("createdAt", "desc"));
+      const creditCardQ = query(userCol("creditCards"), orderBy("createdAt", "desc"));
+      const debitCardQ = query(userCol("debitCards"), orderBy("createdAt", "desc"));
+      const txnQ = query(userCol("transactions"), orderBy("date", "desc"));
+
+      unsubscribers.push(onSnapshot(assetQ, (snap) => {
+        state.assets = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        refreshAllViews();
+      }));
+      unsubscribers.push(onSnapshot(liabQ, (snap) => {
+        state.liabilities = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        refreshAllViews();
+      }));
+      unsubscribers.push(onSnapshot(incomeQ, (snap) => {
+        state.incomes = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        refreshAllViews();
+      }));
+      unsubscribers.push(onSnapshot(incomeOverridesQ, (snap) => {
+        state.incomeOverrides = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        refreshAllViews();
+      }));
+      unsubscribers.push(onSnapshot(billsQ, (snap) => {
+        state.bills = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        refreshAllViews();
+      }));
+      unsubscribers.push(onSnapshot(billOverridesQ, (snap) => {
+        state.billOverrides = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        refreshAllViews();
+      }));
+      unsubscribers.push(onSnapshot(bankQ, (snap) => {
+        state.bankAccounts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        refreshAllViews();
+      }));
+      unsubscribers.push(onSnapshot(creditCardQ, (snap) => {
+        state.creditCards = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        refreshAllViews();
+      }));
+      unsubscribers.push(onSnapshot(debitCardQ, (snap) => {
+        state.debitCards = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        refreshAllViews();
+      }));
+      unsubscribers.push(onSnapshot(txnQ, (snap) => {
+        state.transactions = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        refreshAllViews();
+      }));
+    }
+
+    // ===== CRUD: Assets =====
+    function openAssetForm(editing) {
+      $("#asset-form").classList.remove("hidden");
+      if (editing) {
+        $("#asset-name").value = editing.name ?? "";
+        $("#asset-value").value = editing.value ?? "";
+        $("#asset-type").value = editing.type ?? "";
+        ui.editing.assetId = editing.id;
+      } else {
+        $("#asset-form").reset?.();
+        $("#asset-name").value = "";
+        $("#asset-value").value = "";
+        $("#asset-type").value = "";
+        ui.editing.assetId = null;
+      }
+    }
+
+    $("#add-asset-btn").addEventListener("click", () => openAssetForm(null));
+    $("#asset-cancel-btn").addEventListener("click", () => {
+      $("#asset-form").classList.add("hidden");
+      ui.editing.assetId = null;
+    });
+
+    $("#asset-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const name = $("#asset-name").value.trim();
+      const value = Number($("#asset-value").value);
+      const type = $("#asset-type").value.trim();
+      if (!currentUser) return;
+
+      const payload = {
+        name, value: Number.isFinite(value) ? value : 0, type: type || "", createdAt: serverTimestamp()
+      };
+
+      try {
+        if (ui.editing.assetId) {
+          await setDoc(doc(db, "users", currentUser.uid, "assets", ui.editing.assetId), payload, { merge: true });
+        } else {
+          await addDoc(userCol("assets"), payload);
+        }
+        $("#asset-form").classList.add("hidden");
+        ui.editing.assetId = null;
+      } catch (err) {
+        alert(err?.message || "Failed to save asset");
+      }
+    });
+
+    function renderAssets() {
+      const tbody = $("#assets-table-body");
+      tbody.innerHTML = "";
+      const items = applySort("assets", state.assets.slice().sort((a,b) => (b.createdAt?.seconds||0)-(a.createdAt?.seconds||0)));
+      if (!items.length) {
+        tbody.innerHTML = `<tr><td colspan="3" class="px-3 py-3 text-center text-slate-500">No other assets yet.</td></tr>`;
+        return;
+      }
+      for (const a of items) {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td class="px-3 py-2 font-medium text-slate-800">${escapeHtml(a.name)}</td>
+          <td class="px-3 py-2 text-right font-semibold text-emerald-700">${formatMoney(a.value)}</td>
+          <td class="px-3 py-2 text-right">
+            <div class="inline-flex items-center gap-2">
+              <button class="text-brand-600 hover:underline text-sm" data-action="edit" data-id="${a.id}">Edit</button>
+              <button class="text-rose-600 hover:underline text-sm" data-action="del" data-id="${a.id}">Delete</button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      }
+      tbody.querySelectorAll("[data-action='edit']").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const item = state.assets.find(x => x.id === btn.dataset.id);
+          openAssetForm(item);
+        });
+      });
+      tbody.querySelectorAll("[data-action='del']").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          if (!confirm("Delete this asset?")) return;
+          try { await deleteDoc(doc(db, "users", currentUser.uid, "assets", btn.dataset.id)); }
+          catch (err) { alert(err?.message || "Failed to delete asset"); }
+        });
+      });
+    }
+
+    // ===== CRUD: Liabilities =====
+    function openLiabilityForm(editing) {
+      $("#liability-form").classList.remove("hidden");
+      if (editing) {
+        $("#liability-name").value = editing.name ?? "";
+        $("#liability-value").value = editing.value ?? "";
+        $("#liability-type").value = editing.type ?? "";
+        ui.editing.liabilityId = editing.id;
+      } else {
+        $("#liability-form").reset?.();
+        $("#liability-name").value = "";
+        $("#liability-value").value = "";
+        $("#liability-type").value = "";
+        ui.editing.liabilityId = null;
+      }
+    }
+
+    $("#add-liability-btn").addEventListener("click", () => openLiabilityForm(null));
+    $("#liability-cancel-btn").addEventListener("click", () => {
+      $("#liability-form").classList.add("hidden");
+      ui.editing.liabilityId = null;
+    });
+
+    $("#liability-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const name = $("#liability-name").value.trim();
+      const value = Number($("#liability-value").value);
+      const type = $("#liability-type").value.trim();
+      if (!currentUser) return;
+
+      const payload = { name, value: Number.isFinite(value) ? value : 0, type: type || "", createdAt: serverTimestamp() };
+
+      try {
+        if (ui.editing.liabilityId) {
+          await setDoc(doc(db, "users", currentUser.uid, "liabilities", ui.editing.liabilityId), payload, { merge: true });
+        } else {
+          await addDoc(userCol("liabilities"), payload);
+        }
+        $("#liability-form").classList.add("hidden");
+        ui.editing.liabilityId = null;
+      } catch (err) {
+        alert(err?.message || "Failed to save liability");
+      }
+    });
+
+    function renderLiabilities() {
+      const tbody = $("#liabilities-table-body");
+      tbody.innerHTML = "";
+      const items = applySort("liabilities", state.liabilities.slice().sort((a,b) => (b.createdAt?.seconds||0)-(a.createdAt?.seconds||0)));
+      if (!items.length) {
+        tbody.innerHTML = `<tr><td colspan="3" class="px-3 py-3 text-center text-slate-500">No other liabilities yet.</td></tr>`;
+        return;
+      }
+      for (const l of items) {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td class="px-3 py-2 font-medium text-slate-800">${escapeHtml(l.name)}</td>
+          <td class="px-3 py-2 text-right font-semibold text-rose-700">${formatMoney(l.value)}</td>
+          <td class="px-3 py-2 text-right">
+            <div class="inline-flex items-center gap-2">
+              <button class="text-brand-600 hover:underline text-sm" data-action="edit" data-id="${l.id}">Edit</button>
+              <button class="text-rose-600 hover:underline text-sm" data-action="del" data-id="${l.id}">Delete</button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      }
+      tbody.querySelectorAll("[data-action='edit']").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const item = state.liabilities.find(x => x.id === btn.dataset.id);
+          openLiabilityForm(item);
+        });
+      });
+      tbody.querySelectorAll("[data-action='del']").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          if (!confirm("Delete this liability?")) return;
+          try { await deleteDoc(doc(db, "users", currentUser.uid, "liabilities", btn.dataset.id)); }
+          catch (err) { alert(err?.message || "Failed to delete liability"); }
+        });
+      });
+    }
+
+    // ===== CRUD: Bank Accounts =====
+    function openBankForm(editing) {
+      $("#bank-form").classList.remove("hidden");
+      if (editing) {
+        $("#bank-name").value = editing.name ?? "";
+        $("#bank-starting-balance").value = editing.startingBalance ?? 0;
+        $("#bank-notes").value = editing.notes ?? "";
+        ui.editing.bankAccountId = editing.id;
+      } else {
+        $("#bank-form").reset?.();
+        $("#bank-name").value = "";
+        $("#bank-starting-balance").value = 0;
+        $("#bank-notes").value = "";
+        ui.editing.bankAccountId = null;
+      }
+    }
+
+    $("#add-bank-btn").addEventListener("click", () => openBankForm(null));
+    $("#bank-cancel-btn").addEventListener("click", () => {
+      $("#bank-form").classList.add("hidden");
+      ui.editing.bankAccountId = null;
+    });
+
+    $("#bank-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const name = $("#bank-name").value.trim();
+      const startingBalance = Number($("#bank-starting-balance").value);
+      const notes = $("#bank-notes").value.trim();
+      if (!currentUser) return;
+
+      const payload = {
+        name, startingBalance: Number.isFinite(startingBalance) ? startingBalance : 0,
+        notes: notes || "", createdAt: serverTimestamp()
+      };
+
+      try {
+        if (ui.editing.bankAccountId) {
+          await setDoc(doc(db, "users", currentUser.uid, "bankAccounts", ui.editing.bankAccountId), payload, { merge: true });
+        } else {
+          await addDoc(userCol("bankAccounts"), payload);
+        }
+        $("#bank-form").classList.add("hidden");
+        ui.editing.bankAccountId = null;
+      } catch (err) {
+        alert(err?.message || "Failed to save bank account");
+      }
+    });
+
+    // A debit transaction belongs to whichever bank its debit card is linked to NOW.
+    // Falls back to the bank id saved on the transaction (e.g. if the card was deleted).
+    function resolveDebitTxnBankId(t) {
+      const card = (state.debitCards || []).find(c => c.id === t.cardId);
+      return (card && card.bankAccountId) || t.bankAccountId || null;
+    }
+
+    // Which bank account does a bill occurrence come out of? (null = unknown / credit card / unassigned)
+    // payMethod "bank" stores the bank account id in payCardId; "debit" resolves via the card's linked bank.
+    function resolveBillBankId(occ) {
+      if (!occ || !occ.payMethod || !occ.payCardId) return null;
+      if (occ.payMethod === "bank") {
+        return (state.bankAccounts || []).some(b => b.id === occ.payCardId) ? occ.payCardId : null;
+      }
+      if (occ.payMethod === "debit") {
+        const card = (state.debitCards || []).find(c => c.id === occ.payCardId);
+        return (card && card.bankAccountId) || null;
+      }
+      return null;
+    }
+
+    // "As of today" — future-dated incomes/transactions do not inflate the current balance.
+    function computeBankAccountBalance(bank) {
+      const todayISO = toISODate(new Date());
+      let balance = Number(bank.startingBalance || 0);
+
+      // Incomes (one-time + every recurring occurrence dated today or earlier) routed to this bank.
+      // Bills paid from this bank, or from a debit card linked to it, are deducted the same way.
+      const dates = [...(state.incomes || []), ...(state.bills || [])].map(x => x.date).filter(Boolean).sort();
+      if (dates.length) {
+        const from = parseISODateLocal(dates[0]);
+        const to = parseISODateLocal(todayISO);
+        for (const occ of generateIncomeOccurrences(from, to)) {
+          if (occ.bankAccountId === bank.id) balance += Number(occ.amount || 0);
+        }
+        for (const occ of generateBillOccurrences(from, to)) {
+          if (resolveBillBankId(occ) === bank.id) balance -= Number(occ.amount || 0);
+        }
+      }
+      for (const t of state.transactions || []) {
+        if (!t.date || t.date > todayISO) continue;
+        if (t.cardType === "debit" && resolveDebitTxnBankId(t) === bank.id) {
+          const amt = Number(t.amount || 0);
+          if (t.txnType === "expense") balance -= amt;
+          else if (t.txnType === "credit") balance += amt;
+        }
+        if (t.txnType === "payoff" && t.sourceBankAccountId === bank.id) {
+          balance -= Number(t.amount || 0);
+        }
+      }
+      return balance;
+    }
+
+    function renderBankAccounts() {
+      const tbody = $("#banks-table-body");
+      const items = applySort("banks", state.bankAccounts.slice().sort((a,b) => (b.createdAt?.seconds||0)-(a.createdAt?.seconds||0)));
+      if (!items.length) {
+        tbody.innerHTML = `<tr><td colspan="3" class="px-3 py-3 text-center text-slate-500">No bank accounts yet — add one to route income and debit cards.</td></tr>`;
+      } else {
+        tbody.innerHTML = "";
+        for (const b of items) {
+          const balance = computeBankAccountBalance(b);
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td class="px-3 py-2 font-medium text-slate-800">
+              ${escapeHtml(b.name)}
+              ${b.notes ? `<div class="text-xs text-slate-500">${escapeHtml(b.notes)}</div>` : ""}
+            </td>
+            <td class="px-3 py-2 text-right font-semibold ${balance >= 0 ? 'text-emerald-700' : 'text-rose-700'}">${formatMoney(balance)}</td>
+            <td class="px-3 py-2 text-right">
+              <div class="inline-flex items-center gap-2">
+                <button class="text-brand-600 hover:underline text-sm" data-action="edit" data-id="${b.id}">Edit</button>
+                <button class="text-rose-600 hover:underline text-sm" data-action="del" data-id="${b.id}">Delete</button>
+              </div>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        }
+        tbody.querySelectorAll("[data-action='edit']").forEach(btn => {
+          btn.addEventListener("click", () => openBankForm(state.bankAccounts.find(x => x.id === btn.dataset.id)));
+        });
+        tbody.querySelectorAll("[data-action='del']").forEach(btn => {
+          btn.addEventListener("click", async () => {
+            if (!confirm("Delete this bank account? Linked debit cards and routed incomes will remain but stop matching a bank.")) return;
+            try { await deleteDoc(doc(db, "users", currentUser.uid, "bankAccounts", btn.dataset.id)); }
+            catch (err) { alert(err?.message || "Failed to delete bank account"); }
+          });
+        });
+      }
+
+      populateBankAccountSelects();
+      populateBillPayWithOptions();
+      renderAccountsSummary();
+    }
+
+    function populateBankAccountSelects() {
+      const banks = state.bankAccounts.slice().sort((a,b) => (a.name||"").localeCompare(b.name||""));
+      const optsHtml = banks.map(b => `<option value="${b.id}">${escapeHtml(b.name)}</option>`).join("");
+
+      const incomeSel = $("#income-bank-account");
+      if (incomeSel) {
+        const prev = incomeSel.value;
+        incomeSel.innerHTML = `<option value="">— Not tracked in a bank account —</option>` + optsHtml;
+        if (banks.some(b => b.id === prev)) incomeSel.value = prev;
+      }
+
+      const debitCardBankSel = $("#debit-card-bank");
+      if (debitCardBankSel) {
+        const prev = debitCardBankSel.value;
+        debitCardBankSel.innerHTML = `<option value="">Select a bank account…</option>` + optsHtml;
+        if (banks.some(b => b.id === prev)) debitCardBankSel.value = prev;
+      }
+
+      const txnSourceBankSel = $("#txn-source-bank");
+      if (txnSourceBankSel) {
+        const prev = txnSourceBankSel.value;
+        txnSourceBankSel.innerHTML = `<option value="">Select source bank account…</option>` + optsHtml;
+        if (banks.some(b => b.id === prev)) txnSourceBankSel.value = prev;
+      }
+    }
+
+    // ===== CRUD: Credit Cards =====
+    function openCreditCardForm(editing) {
+      $("#credit-card-form").classList.remove("hidden");
+      if (editing) {
+        $("#credit-card-name").value = editing.name ?? "";
+        $("#credit-card-starting-balance").value = editing.startingBalance ?? 0;
+        $("#credit-card-limit").value = editing.creditLimit ?? "";
+        $("#credit-card-notes").value = editing.notes ?? "";
+        ui.editing.creditCardId = editing.id;
+      } else {
+        $("#credit-card-form").reset?.();
+        $("#credit-card-name").value = "";
+        $("#credit-card-starting-balance").value = 0;
+        $("#credit-card-limit").value = "";
+        $("#credit-card-notes").value = "";
+        ui.editing.creditCardId = null;
+      }
+    }
+
+    $("#add-credit-card-btn").addEventListener("click", () => openCreditCardForm(null));
+    $("#credit-card-cancel-btn").addEventListener("click", () => {
+      $("#credit-card-form").classList.add("hidden");
+      ui.editing.creditCardId = null;
+    });
+
+    $("#credit-card-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const name = $("#credit-card-name").value.trim();
+      const startingBalance = Number($("#credit-card-starting-balance").value);
+      const limitRaw = $("#credit-card-limit").value;
+      const creditLimit = limitRaw !== "" ? Number(limitRaw) : null;
+      const notes = $("#credit-card-notes").value.trim();
+      if (!currentUser) return;
+
+      const payload = {
+        name, startingBalance: Number.isFinite(startingBalance) ? startingBalance : 0,
+        creditLimit: (creditLimit !== null && Number.isFinite(creditLimit)) ? creditLimit : null,
+        notes: notes || "", createdAt: serverTimestamp()
+      };
+
+      try {
+        if (ui.editing.creditCardId) {
+          await setDoc(doc(db, "users", currentUser.uid, "creditCards", ui.editing.creditCardId), payload, { merge: true });
+        } else {
+          await addDoc(userCol("creditCards"), payload);
+        }
+        $("#credit-card-form").classList.add("hidden");
+        ui.editing.creditCardId = null;
+      } catch (err) {
+        alert(err?.message || "Failed to save credit card");
+      }
+    });
+
+    // "As of today" — future-dated transactions do not inflate the current balance owed.
+    function computeCreditCardBalance(card) {
+      const todayISO = toISODate(new Date());
+      let balance = Number(card.startingBalance || 0);
+      for (const t of state.transactions || []) {
+        if (t.cardType !== "credit" || t.cardId !== card.id) continue;
+        if (!t.date || t.date > todayISO) continue;
+        const amt = Number(t.amount || 0);
+        if (t.txnType === "expense") balance += amt;
+        else if (t.txnType === "credit") balance -= amt;
+        else if (t.txnType === "payoff") balance -= amt;
+      }
+      return balance;
+    }
+
+    function renderCreditCards() {
+      const tbody = $("#credit-cards-table-body");
+      const items = applySort("credit", state.creditCards.slice().sort((a,b) => (b.createdAt?.seconds||0)-(a.createdAt?.seconds||0)));
+      if (!items.length) {
+        tbody.innerHTML = `<tr><td colspan="3" class="px-3 py-3 text-center text-slate-500">No credit cards yet.</td></tr>`;
+      } else {
+        tbody.innerHTML = "";
+        for (const c of items) {
+          const balance = computeCreditCardBalance(c);
+          const balanceClass = balance > 0 ? "text-rose-700" : (balance < 0 ? "text-emerald-700" : "text-slate-700");
+          let utilHtml = "";
+          if (c.creditLimit) {
+            const pct = Math.max(0, Math.min(100, (balance / c.creditLimit) * 100));
+            const barColor = pct >= 70 ? "#e11d48" : (pct >= 30 ? "#f59e0b" : "#10b981");
+            utilHtml = `
+              <div class="mt-1 util-bar-track"><div class="util-bar-fill" style="width:${pct.toFixed(0)}%;background-color:${barColor};"></div></div>
+              <div class="text-[11px] text-slate-500 mt-0.5">${pct.toFixed(0)}% of ${formatMoney(c.creditLimit)} limit</div>
+            `;
+          }
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td class="px-3 py-2 font-medium text-slate-800">
+              ${escapeHtml(c.name)}
+              ${c.notes ? `<div class="text-xs text-slate-500">${escapeHtml(c.notes)}</div>` : ""}
+            </td>
+            <td class="px-3 py-2 text-right align-top font-semibold ${balanceClass}">
+              ${formatMoney(balance)}
+              ${utilHtml}
+            </td>
+            <td class="px-3 py-2 text-right align-top">
+              <div class="inline-flex items-center gap-2">
+                <button class="text-brand-600 hover:underline text-sm" data-action="edit" data-id="${c.id}">Edit</button>
+                <button class="text-rose-600 hover:underline text-sm" data-action="del" data-id="${c.id}">Delete</button>
+              </div>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        }
+        tbody.querySelectorAll("[data-action='edit']").forEach(btn => {
+          btn.addEventListener("click", () => openCreditCardForm(state.creditCards.find(x => x.id === btn.dataset.id)));
+        });
+        tbody.querySelectorAll("[data-action='del']").forEach(btn => {
+          btn.addEventListener("click", async () => {
+            if (!confirm("Delete this credit card? Linked transactions will remain but stop being matched.")) return;
+            try { await deleteDoc(doc(db, "users", currentUser.uid, "creditCards", btn.dataset.id)); }
+            catch (err) { alert(err?.message || "Failed to delete credit card"); }
+          });
+        });
+      }
+
+      updateTxnCardOptions();
+      populateBillPayWithOptions();
+      renderAccountsSummary();
+    }
+
+    // ===== CRUD: Debit Cards =====
+    function openDebitCardForm(editing) {
+      $("#debit-card-form").classList.remove("hidden");
+      if (editing) {
+        $("#debit-card-name").value = editing.name ?? "";
+        $("#debit-card-notes").value = editing.notes ?? "";
+        ui.editing.debitCardId = editing.id;
+        populateBankAccountSelects();
+        $("#debit-card-bank").value = editing.bankAccountId ?? "";
+      } else {
+        $("#debit-card-form").reset?.();
+        $("#debit-card-name").value = "";
+        $("#debit-card-notes").value = "";
+        ui.editing.debitCardId = null;
+        populateBankAccountSelects();
+        $("#debit-card-bank").value = "";
+      }
+    }
+
+    $("#add-debit-card-btn").addEventListener("click", () => openDebitCardForm(null));
+    $("#debit-card-cancel-btn").addEventListener("click", () => {
+      $("#debit-card-form").classList.add("hidden");
+      ui.editing.debitCardId = null;
+    });
+
+    $("#debit-card-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const name = $("#debit-card-name").value.trim();
+      const bankAccountId = $("#debit-card-bank").value;
+      const notes = $("#debit-card-notes").value.trim();
+      if (!currentUser) return;
+      if (!bankAccountId) { alert("Please link a bank account."); return; }
+
+      const payload = { name, bankAccountId, notes: notes || "", createdAt: serverTimestamp() };
+
+      try {
+        if (ui.editing.debitCardId) {
+          await setDoc(doc(db, "users", currentUser.uid, "debitCards", ui.editing.debitCardId), payload, { merge: true });
+        } else {
+          await addDoc(userCol("debitCards"), payload);
+        }
+        $("#debit-card-form").classList.add("hidden");
+        ui.editing.debitCardId = null;
+      } catch (err) {
+        alert(err?.message || "Failed to save debit card");
+      }
+    });
+
+    function renderDebitCards() {
+      const tbody = $("#debit-cards-table-body");
+      const items = applySort("debit", state.debitCards.slice().sort((a,b) => (b.createdAt?.seconds||0)-(a.createdAt?.seconds||0)));
+      if (!items.length) {
+        tbody.innerHTML = `<tr><td colspan="3" class="px-3 py-3 text-center text-slate-500">No debit cards yet.</td></tr>`;
+      } else {
+        tbody.innerHTML = "";
+        for (const d of items) {
+          const bank = state.bankAccounts.find(b => b.id === d.bankAccountId);
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td class="px-3 py-2 font-medium text-slate-800">
+              ${escapeHtml(d.name)}
+              ${d.notes ? `<div class="text-xs text-slate-500">${escapeHtml(d.notes)}</div>` : ""}
+            </td>
+            <td class="px-3 py-2 text-slate-700">${bank ? escapeHtml(bank.name) : '<span class="text-rose-600">Unlinked bank</span>'}</td>
+            <td class="px-3 py-2 text-right">
+              <div class="inline-flex items-center gap-2">
+                <button class="text-brand-600 hover:underline text-sm" data-action="edit" data-id="${d.id}">Edit</button>
+                <button class="text-rose-600 hover:underline text-sm" data-action="del" data-id="${d.id}">Delete</button>
+              </div>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        }
+        tbody.querySelectorAll("[data-action='edit']").forEach(btn => {
+          btn.addEventListener("click", () => openDebitCardForm(state.debitCards.find(x => x.id === btn.dataset.id)));
+        });
+        tbody.querySelectorAll("[data-action='del']").forEach(btn => {
+          btn.addEventListener("click", async () => {
+            if (!confirm("Delete this debit card? Past transactions will remain.")) return;
+            try { await deleteDoc(doc(db, "users", currentUser.uid, "debitCards", btn.dataset.id)); }
+            catch (err) { alert(err?.message || "Failed to delete debit card"); }
+          });
+        });
+      }
+
+      updateTxnCardOptions();
+      populateBillPayWithOptions();
+    }
+
+    // ===== Accounts Summary (Accounts route + Dashboard mirror) =====
+    function computeAccountsTotals() {
+      const bankTotal = state.bankAccounts.reduce((s, b) => s + computeBankAccountBalance(b), 0);
+      const creditTotal = state.creditCards.reduce((s, c) => s + computeCreditCardBalance(c), 0);
+      const availableCredit = state.creditCards.reduce((s, c) => {
+        if (!c.creditLimit) return s;
+        return s + Math.max(0, c.creditLimit - computeCreditCardBalance(c));
+      }, 0);
+      return { bankTotal, creditTotal, availableCredit };
+    }
+
+    function renderAccountsSummary() {
+      const { bankTotal, creditTotal, availableCredit } = computeAccountsTotals();
+
+      const elBank = $("#accounts-total-bank");
+      const elCredit = $("#accounts-total-credit-debt");
+      const elAvail = $("#accounts-total-available-credit");
+      if (elBank) elBank.textContent = formatMoney(bankTotal);
+      if (elCredit) elCredit.textContent = formatMoney(creditTotal);
+      if (elAvail) elAvail.textContent = formatMoney(availableCredit);
+
+      const dashSummary = $("#dashboard-accounts-summary");
+      if (dashSummary) {
+        dashSummary.innerHTML = `
+          <div class="bg-slate-50 rounded-xl border border-slate-200 p-4">
+            <div class="text-xs text-slate-500">Total in Bank Accounts</div>
+            <div class="text-lg font-bold text-emerald-700">${formatMoney(bankTotal)}</div>
+          </div>
+          <div class="bg-slate-50 rounded-xl border border-slate-200 p-4">
+            <div class="text-xs text-slate-500">Total Credit Card Debt</div>
+            <div class="text-lg font-bold text-rose-700">${formatMoney(creditTotal)}</div>
+          </div>
+          <div class="bg-slate-50 rounded-xl border border-slate-200 p-4">
+            <div class="text-xs text-slate-500">Total Available Credit</div>
+            <div class="text-lg font-bold text-brand-900">${formatMoney(availableCredit)}</div>
+          </div>
+        `;
+      }
+
+      const dashList = $("#dashboard-accounts-list");
+      if (dashList) {
+        const bankItems = state.bankAccounts.map(b => ({ name: b.name, balance: computeBankAccountBalance(b), kind: "bank" }));
+        const cardItems = state.creditCards.map(c => ({ name: c.name, balance: computeCreditCardBalance(c), kind: "credit" }));
+        const combined = [...bankItems, ...cardItems].sort((a,b) => Math.abs(b.balance) - Math.abs(a.balance)).slice(0, 6);
+
+        if (!combined.length) {
+          dashList.innerHTML = `<div class="text-sm text-slate-500">Add a bank account or credit card to see balances here.</div>`;
+        } else {
+          dashList.innerHTML = combined.map(item => `
+            <div class="flex items-center justify-between py-2 border-b border-slate-100 last:border-b-0">
+              <div class="text-sm font-medium text-slate-800">${escapeHtml(item.name)} <span class="badge ${item.kind === 'bank' ? 'badge-emerald' : 'badge-brand'} ml-1">${item.kind === 'bank' ? 'Bank' : 'Credit'}</span></div>
+              <div class="text-sm font-semibold ${item.kind === 'bank' ? (item.balance >= 0 ? 'text-emerald-700' : 'text-rose-700') : (item.balance > 0 ? 'text-rose-700' : 'text-emerald-700')}">${formatMoney(item.balance)}</div>
+            </div>
+          `).join("");
+        }
+      }
+
+      const payoffsBody = $("#recent-payoffs-table-body");
+      if (payoffsBody) {
+        let payoffs = (state.transactions || [])
+          .filter(t => t.txnType === "payoff")
+          .slice()
+          .sort((a,b) => parseISODateLocal(b.date) - parseISODateLocal(a.date))
+          .slice(0, 8);
+        payoffs = applySort("payoffs", payoffs);
+
+        if (!payoffs.length) {
+          payoffsBody.innerHTML = `<tr><td colspan="4" class="px-3 py-3 text-center text-slate-500">No payoffs recorded yet.</td></tr>`;
+        } else {
+          payoffsBody.innerHTML = payoffs.map(p => {
+            const bank = state.bankAccounts.find(b => b.id === p.sourceBankAccountId);
+            return `
+              <tr>
+                <td class="px-3 py-2 font-medium text-slate-800">${escapeHtml(p.cardName || "")}</td>
+                <td class="px-3 py-2 text-slate-700">${escapeHtml(p.date || "")}</td>
+                <td class="px-3 py-2 text-slate-700">${bank ? escapeHtml(bank.name) : "-"}</td>
+                <td class="px-3 py-2 text-right font-semibold text-emerald-700">${formatMoney(p.amount)}</td>
+              </tr>
+            `;
+          }).join("");
+        }
+      }
+    }
+
+    // ===== Quick Add Transaction (Credit/Debit expenses, credits, payoffs) =====
+    function updateTxnCardOptions() {
+      const cardTypeSel = $("#txn-card-type");
+      const select = $("#txn-card-select");
+      if (!cardTypeSel || !select) return;
+
+      const cardType = cardTypeSel.value;
+      const list = (cardType === "debit" ? state.debitCards : state.creditCards)
+        .slice().sort((a,b) => (a.name||"").localeCompare(b.name||""));
+      const prev = select.value;
+      select.innerHTML = `<option value="">Select a card…</option>` + list.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join("");
+      if (list.some(c => c.id === prev)) select.value = prev;
+
+      const hint = $("#txn-card-hint");
+      if (hint) {
+        hint.textContent = list.length ? "" : `No ${cardType === "debit" ? "debit" : "credit"} cards yet — add one on the Accounts & Cards page.`;
+      }
+
+      updateTxnTypeOptions();
+    }
+
+    function updateTxnTypeOptions() {
+      const cardType = $("#txn-card-type").value;
+      const sel = $("#txn-type");
+      const prev = sel.value;
+      if (cardType === "credit") {
+        sel.innerHTML = `
+          <option value="expense">Expense (Purchase)</option>
+          <option value="credit">Statement Credit / Refund</option>
+          <option value="payoff">Card Payoff</option>
+        `;
+      } else {
+        sel.innerHTML = `
+          <option value="expense">Expense (Purchase)</option>
+          <option value="credit">Refund / Credit</option>
+        `;
+      }
+      const validValues = Array.from(sel.options).map(o => o.value);
+      if (validValues.includes(prev)) sel.value = prev;
+      updateTxnSourceBankVisibility();
+    }
+
+    function updateTxnSourceBankVisibility() {
+      const show = $("#txn-card-type").value === "credit" && $("#txn-type").value === "payoff";
+      $("#txn-source-bank-wrap").classList.toggle("hidden", !show);
+      $("#txn-source-bank").required = show;
+    }
+
+    $("#txn-card-type").addEventListener("change", updateTxnCardOptions);
+    $("#txn-type").addEventListener("change", updateTxnSourceBankVisibility);
+
+    $("#txn-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      if (!currentUser) return;
+
+      const cardType = $("#txn-card-type").value === "debit" ? "debit" : "credit";
+      const cardId = $("#txn-card-select").value;
+      const txnType = $("#txn-type").value;
+      const date = $("#txn-date").value;
+      const amount = Number($("#txn-amount").value);
+      const description = $("#txn-desc").value.trim();
+      const sourceBankAccountId = (cardType === "credit" && txnType === "payoff") ? $("#txn-source-bank").value : null;
+
+      if (!cardId) { alert("Please select a card."); return; }
+      const cardList = cardType === "debit" ? state.debitCards : state.creditCards;
+      const card = cardList.find(c => c.id === cardId);
+      if (!card) { alert("Please select a valid card."); return; }
+      if (cardType === "credit" && txnType === "payoff" && !sourceBankAccountId) {
+        alert("Please select the bank account the payoff is coming from.");
+        return;
+      }
+
+      const payload = {
+        date, amount: Number.isFinite(amount) ? amount : 0, description,
+        cardType, cardId, cardName: card.name, txnType,
+        sourceBankAccountId: sourceBankAccountId || null,
+        bankAccountId: cardType === "debit" ? (card.bankAccountId || null) : null,
+        // NEW: optional category (payoffs are transfers, so they never carry one)
+        category: txnType === "payoff" ? "" : ($("#txn-category")?.value || "").trim(),
+        createdAt: serverTimestamp()
+      };
+
+      try {
+        if (ui.editing.transactionId) {
+          await setDoc(doc(db, "users", currentUser.uid, "transactions", ui.editing.transactionId), payload, { merge: true });
+          ui.editing.transactionId = null;
+          $("#txn-editing-banner").classList.add("hidden");
+        } else {
+          await addDoc(userCol("transactions"), payload);
+        }
+        $("#txn-amount").value = "";
+        $("#txn-desc").value = "";
+        $("#txn-category").value = "";
+      } catch (err) {
+        alert(err?.message || "Failed to save transaction");
+      }
+    });
+
+    $("#txn-cancel-edit-btn").addEventListener("click", () => {
+      ui.editing.transactionId = null;
+      $("#txn-form").reset();
+      $("#txn-date").value = toISODate(new Date());
+      updateTxnCardOptions();
+      $("#txn-editing-banner").classList.add("hidden");
+    });
+
+    function txnTypeBadge(t) {
+      if (t.txnType === "expense") return `<span class="badge badge-rose">Expense</span>`;
+      if (t.txnType === "credit") return `<span class="badge badge-emerald">Credit/Refund</span>`;
+      if (t.txnType === "payoff") return `<span class="badge badge-amber">Payoff</span>`;
+      return "";
+    }
+
+    function cardTypeBadge(t) {
+      return t.cardType === "debit"
+        ? `<span class="badge badge-slate">Debit</span>`
+        : `<span class="badge badge-brand">Credit</span>`;
+    }
+
+    // ===== NEW: Categories, ledger filtering & row model =====
+
+    // Older records (no `category` field) fall back to "Uncategorized".
+    // Case-insensitive match against presets so "groceries" and "Groceries" group together.
+    function categoryLabel(raw) {
+      const c = String(raw ?? "").trim();
+      if (!c) return UNCATEGORIZED;
+      const preset = DEFAULT_CATEGORIES.find(p => p.toLowerCase() === c.toLowerCase());
+      return preset || c;
+    }
+
+    function categoryColor(name) {
+      if (name === UNCATEGORIZED) return "#94a3b8";
+      const idx = DEFAULT_CATEGORIES.indexOf(name);
+      if (idx >= 0) return FIN_PALETTE[idx % FIN_PALETTE.length];
+      let h = 0;
+      for (const ch of name) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+      return FIN_PALETTE[h % FIN_PALETTE.length];
+    }
+
+    // Keep the shared <datalist> = presets + any custom categories already used on transactions/bills.
+    function updateCategoryDatalist() {
+      const dl = $("#category-presets");
+      if (!dl) return;
+      const seen = new Map();
+      DEFAULT_CATEGORIES.forEach(c => seen.set(c.toLowerCase(), c));
+      for (const x of [...(state.transactions || []), ...(state.bills || [])]) {
+        if (x && x.category && String(x.category).trim()) {
+          const label = categoryLabel(x.category);
+          seen.set(label.toLowerCase(), label);
+        }
+      }
+      const html = Array.from(seen.values()).map(c => `<option value="${escapeHtml(c)}"></option>`).join("");
+      if (dl.dataset.sig !== html) {
+        dl.innerHTML = html;
+        dl.dataset.sig = html;
+      }
+    }
+
+    function rowCategoryRaw(r) {
+      return r.kind === "bill" ? (r.occ.category || "") : (r.t.category || "");
+    }
+
+    // How much a ledger row counts as "spending": purchases/bills add, refunds subtract, payoffs are transfers (0).
+    function rowSpend(r) {
+      if (r.kind === "bill") return Number(r.occ.amount) || 0;
+      const a = Number(r.t.amount) || 0;
+      if (r.t.txnType === "expense") return a;
+      if (r.t.txnType === "credit") return -a;
+      return 0;
+    }
+
+    // Builds the full (unfiltered) ledger rows: all transactions + every bill occurrence dated today or earlier.
+    function getLedgerBaseRows() {
+      const items = sortByDateAsc(state.transactions, "date").reverse();
+
+      // Bills (one-time and every recurring occurrence dated today or earlier) also appear in the ledger.
+      const todayISO = toISODate(new Date());
+      let billRows = [];
+      const billDates = (state.bills || []).map(b => b.date).filter(Boolean).sort();
+      if (billDates.length) {
+        billRows = generateBillOccurrences(parseISODateLocal(billDates[0]), parseISODateLocal(todayISO))
+          .map(o => ({ kind: "bill", occ: o, date: o.date }));
+      }
+      const rows = [...items.map(t => ({ kind: "txn", t, date: t.date })), ...billRows];
+      return { items, billRows, rows };
+    }
+
+    function getPlannerAnchor() {
+      const earliest = sortByDateAsc(state.incomes || [], "date")[0]?.date;
+      return earliest ? parseISODateLocal(earliest) : parseISODateLocal(toISODate(new Date()));
+    }
+
+    // Resolves the active period/custom selection to ISO start/end ("" = open ended).
+    function getActiveRange() {
+      const now = new Date();
+      const todayISO = toISODate(now);
+      let start = "", end = "", hint = "";
+
+      switch (fin.period) {
+        case "month":
+          start = toISODate(new Date(now.getFullYear(), now.getMonth(), 1));
+          end = toISODate(new Date(now.getFullYear(), now.getMonth() + 1, 0));
+          break;
+        case "lastmonth":
+          start = toISODate(new Date(now.getFullYear(), now.getMonth() - 1, 1));
+          end = toISODate(new Date(now.getFullYear(), now.getMonth(), 0));
+          break;
+        case "last30":
+          start = toISODate(addDays(parseISODateLocal(todayISO), -29));
+          end = todayISO;
+          break;
+        case "period":
+        case "prevperiod": {
+          // Same 14-day periods the Period Planner uses
+          const periods = buildPeriods();
+          let idx = assignToPeriod(todayISO, periods);
+          if (fin.period === "prevperiod") idx = idx - 1;
+          if (idx >= 0 && periods[idx]) {
+            start = periods[idx].startISO;
+            end = periods[idx].endISO;
+          } else {
+            hint = "No matching planner period was found, so all dates are shown.";
+          }
+          break;
+        }
+        case "custom":
+          start = fin.start || "";
+          end = fin.end || "";
+          if (start && end && start > end) {
+            [start, end] = [end, start];
+            hint = "Start date was after the end date, so the range was swapped.";
+          }
+          break;
+        default:
+          break;
+      }
+      return { start, end, hint };
+    }
+
+    function rowSearchText(r) {
+      let date, desc, card, typeLabel, amount;
+      if (r.kind === "bill") {
+        const o = r.occ;
+        date = o.date; desc = o.name || ""; card = billPayLabel(o); typeLabel = "Bill"; amount = Number(o.amount) || 0;
+      } else {
+        const t = r.t;
+        date = t.date || ""; desc = t.description || ""; card = `${t.cardName || ""} ${t.cardType === "debit" ? "Debit" : "Credit"}`;
+        typeLabel = t.txnType === "credit" ? "Credit Refund" : (t.txnType === "payoff" ? "Payoff" : "Expense");
+        amount = Number(t.amount) || 0;
+      }
+      const cat = r.kind === "txn" && r.t.txnType === "payoff" ? "" : categoryLabel(rowCategoryRaw(r));
+      return [date, desc, cat, card, typeLabel, amount.toFixed(2), String(amount), formatMoney(amount)].join(" | ").toLowerCase();
+    }
+
+    // Pure filter: returns a new array, never mutates state.
+    function applyLedgerFilters(rows) {
+      const { start, end } = getActiveRange();
+      const terms = fin.search.toLowerCase().split(/\s+/).filter(Boolean);
+      return rows.filter(r => {
+        if (start && (!r.date || r.date < start)) return false;
+        if (end && (!r.date || r.date > end)) return false;
+        if (terms.length) {
+          const hay = rowSearchText(r);
+          return terms.every(term => {
+            const stripped = term.replace(/[$,]/g, "");
+            return hay.includes(term) || (stripped && hay.includes(stripped));
+          });
+        }
+        return true;
+      });
+    }
+
+    function ledgerDateBounds(rows) {
+      let min = "", max = "";
+      for (const r of rows) {
+        if (!r.date) continue;
+        if (!min || r.date < min) min = r.date;
+        if (!max || r.date > max) max = r.date;
+      }
+      return { min, max };
+    }
+
+    // Keeps the filter controls in sync with the active selection and bounds the date pickers to the data.
+    function syncFilterControls(allRows) {
+      const pEl = $("#fin-period"), sEl = $("#fin-start"), eEl = $("#fin-end"), hintEl = $("#fin-range-hint");
+      if (!pEl || !sEl || !eEl) return;
+      const bounds = ledgerDateBounds(allRows);
+      const range = getActiveRange();
+
+      if (pEl.value !== fin.period) pEl.value = fin.period;
+      if (fin.period !== "custom") {
+        sEl.value = fin.period === "all" ? "" : range.start;
+        eEl.value = fin.period === "all" ? "" : range.end;
+      }
+
+      sEl.min = bounds.min || "";
+      eEl.min = bounds.min || "";
+      sEl.max = (fin.period === "custom" && eEl.value) ? eEl.value : (bounds.max || "");
+      eEl.max = bounds.max || "";
+
+      if (hintEl) {
+        hintEl.textContent = range.hint;
+        hintEl.classList.toggle("hidden", !range.hint);
+      }
+    }
+
+    function categoryCellHtml(kind, id, raw) {
+      const label = categoryLabel(raw);
+      const color = categoryColor(label);
+      const title = kind === "bill" ? "Edit category (applies to every occurrence of this bill)" : "Edit category";
+      return `
+        <div class="inline-flex items-center gap-1.5">
+          <span class="badge" style="background:${color}1a;color:${color};border:1px solid ${color}55;">${escapeHtml(label)}</span>
+          <button type="button" class="text-slate-400 hover:text-brand-600 text-xs" title="${escapeHtml(title)}"
+                  data-action="edit-cat" data-kind="${kind}" data-id="${escapeHtml(id)}" data-current="${escapeHtml(raw || "")}">✎</button>
+        </div>`;
+    }
+
+    function renderTransactionsLedger() {
+      const tbody = $("#transactions-table-body");
+
+      // Full list first, then the (non-mutating) date + search filters
+      const { items, billRows, rows: allRows } = getLedgerBaseRows();
+      syncFilterControls(allRows);
+      const rows = applyLedgerFilters(allRows);
+      finFiltered = rows.slice();
+
+      // Sorting (click any column header; click again to reverse)
+      const typeLabel = (r) => r.kind === "bill" ? "Bill"
+        : (r.t.txnType === "credit" ? "Credit/Refund" : (r.t.txnType === "payoff" ? "Payoff" : "Expense"));
+      const sortVal = {
+        date: (r) => parseISODateLocal(r.date).getTime() || 0,
+        card: (r) => (r.kind === "bill" ? billPayLabel(r.occ) : `${r.t.cardName || ""} ${r.t.cardType || ""}`).toLowerCase(),
+        type: (r) => typeLabel(r).toLowerCase(),
+        desc: (r) => (r.kind === "bill" ? r.occ.name : r.t.description || "").toLowerCase(),
+        category: (r) => (r.kind === "txn" && r.t.txnType === "payoff" ? "" : categoryLabel(rowCategoryRaw(r))).toLowerCase(),
+        amount: (r) => Number(r.kind === "bill" ? r.occ.amount : r.t.amount) || 0
+      };
+      const { key: sortKey, dir: sortDir } = ui.ledgerSort;
+      const getV = sortVal[sortKey] || sortVal.date;
+      const mult = sortDir === "asc" ? 1 : -1;
+      rows.sort((a, b) => {
+        const va = getV(a), vb = getV(b);
+        const c = (typeof va === "string") ? va.localeCompare(vb) : va - vb;
+        return c !== 0 ? c * mult : sortVal.date(b) - sortVal.date(a);
+      });
+      $$("[data-ledger-sort]").forEach(btn => {
+        const ind = btn.querySelector("[data-sort-ind]");
+        const active = btn.dataset.ledgerSort === sortKey;
+        if (ind) {
+          ind.textContent = active ? (sortDir === "asc" ? "▲" : "▼") : "↕";
+          ind.className = "text-xs " + (active ? "text-brand-600" : "text-slate-400");
+        }
+      });
+
+      if (!rows.length) {
+        tbody.innerHTML = allRows.length
+          ? `<tr><td colspan="7" class="px-3 py-3 text-center text-slate-500">No entries match the current search and date filters.</td></tr>`
+          : `<tr><td colspan="7" class="px-3 py-3 text-center text-slate-500">No transactions logged yet.</td></tr>`;
+      } else {
+        tbody.innerHTML = "";
+        for (const row of rows) {
+          if (row.kind === "bill") {
+            const o = row.occ;
+            const payLabel = billPayLabel(o);
+            const payBadge = o.payMethod === "credit" ? `<span class="badge badge-brand">Credit</span>`
+              : (o.payMethod === "debit" ? `<span class="badge badge-slate">Debit</span>`
+              : (o.payMethod === "bank" ? `<span class="badge badge-slate">Bank</span>` : `<span class="badge badge-amber">No payer set</span>`));
+            const billTr = document.createElement("tr");
+            billTr.className = "bg-amber-50/40";
+            billTr.innerHTML = `
+              <td class="px-3 py-2 text-slate-700">${escapeHtml(o.date)}</td>
+              <td class="px-3 py-2 font-medium text-slate-800">${payLabel ? escapeHtml(payLabel.replace(/ \((Credit|Debit|Bank)\)$/, "")) + " " : ""}${payBadge}</td>
+              <td class="px-3 py-2"><span class="badge badge-amber">Bill</span></td>
+              <td class="px-3 py-2 text-slate-700">${escapeHtml(o.name)}${o.category ? ` <span class="text-xs text-slate-400">· ${escapeHtml(o.category)}</span>` : ""}${o.recurring ? ` <span class="text-xs text-slate-400">· recurring</span>` : ""}${o.moved ? ` <span class="text-[11px] text-amber-600">(moved from ${escapeHtml(o.originalDate)})</span>` : ""}</td>
+              <td class="px-3 py-2">${categoryCellHtml("bill", o.billId, o.category)}</td>
+              <td class="px-3 py-2 text-right font-semibold text-rose-700">${formatMoney(o.amount)}</td>
+              <td class="px-3 py-2 text-right">
+                <button class="text-brand-600 hover:underline text-sm" data-action="edit-bill" data-id="${o.billId}">Edit bill</button>
+              </td>
+            `;
+            tbody.appendChild(billTr);
+            continue;
+          }
+          const t = row.t;
+          const amtClass = t.txnType === "credit" ? "text-emerald-700" : (t.txnType === "payoff" ? "text-amber-700" : "text-rose-700");
+          const catCell = t.txnType === "payoff"
+            ? `<span class="text-slate-400" title="Payoffs are transfers, not spending">—</span>`
+            : categoryCellHtml("txn", t.id, t.category);
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td class="px-3 py-2 text-slate-700">${escapeHtml(t.date)}</td>
+            <td class="px-3 py-2 font-medium text-slate-800">${escapeHtml(t.cardName)} ${cardTypeBadge(t)}</td>
+            <td class="px-3 py-2">${txnTypeBadge(t)}</td>
+            <td class="px-3 py-2 text-slate-700">${escapeHtml(t.description)}</td>
+            <td class="px-3 py-2">${catCell}</td>
+            <td class="px-3 py-2 text-right font-semibold ${amtClass}">${formatMoney(t.amount)}</td>
+            <td class="px-3 py-2 text-right">
+              <div class="inline-flex items-center gap-2">
+                <button class="text-brand-600 hover:underline text-sm" data-action="edit" data-id="${t.id}">Edit</button>
+                <button class="text-rose-600 hover:underline text-sm" data-action="del" data-id="${t.id}">Delete</button>
+              </div>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        }
+
+        tbody.querySelectorAll("[data-action='edit-bill']").forEach(btn => {
+          btn.addEventListener("click", () => {
+            const b = state.bills.find(x => x.id === btn.dataset.id);
+            if (b) openBillForm(b);
+          });
+        });
+
+        tbody.querySelectorAll("[data-action='del']").forEach(btn => {
+          btn.addEventListener("click", async () => {
+            if (!confirm("Delete this transaction?")) return;
+            try { await deleteDoc(doc(db, "users", currentUser.uid, "transactions", btn.dataset.id)); }
+            catch (err) { alert(err?.message || "Failed to delete transaction"); }
+          });
+        });
+
+        tbody.querySelectorAll("[data-action='edit']").forEach(btn => {
+          btn.addEventListener("click", () => {
+            const t = state.transactions.find(x => x.id === btn.dataset.id);
+            if (!t) return;
+            ui.editing.transactionId = t.id;
+            $("#txn-date").value = t.date || toISODate(new Date());
+            $("#txn-amount").value = t.amount ?? "";
+            $("#txn-desc").value = t.description || "";
+            $("#txn-card-type").value = t.cardType || "credit";
+            updateTxnCardOptions();
+            $("#txn-card-select").value = t.cardId || "";
+            $("#txn-type").value = t.txnType || "expense";
+            updateTxnSourceBankVisibility();
+            if (t.sourceBankAccountId) $("#txn-source-bank").value = t.sourceBankAccountId;
+            $("#txn-category").value = t.category || "";
+            $("#txn-editing-banner").classList.remove("hidden");
+            contentScroll?.scrollTo?.({ top: 0, behavior: "smooth" });
+          });
+        });
+
+        // NEW: inline category editor (transactions edit the entry; bills edit the bill, so all its occurrences follow)
+        tbody.querySelectorAll("[data-action='edit-cat']").forEach(btn => {
+          btn.addEventListener("click", () => {
+            const cell = btn.closest("td");
+            const kind = btn.dataset.kind;
+            const id = btn.dataset.id;
+            const current = btn.dataset.current || "";
+            cell.innerHTML = `
+              <div class="flex items-center gap-1">
+                <input type="text" list="category-presets" value="${escapeHtml(current)}" placeholder="${UNCATEGORIZED}" autocomplete="off"
+                       class="border border-slate-300 rounded-lg px-2 py-1 text-sm w-36 focus:ring-2 focus:ring-brand-500 outline-none" data-cat-input>
+                <button type="button" class="text-emerald-600 hover:underline text-xs" data-cat-save>Save</button>
+                <button type="button" class="text-slate-500 hover:underline text-xs" data-cat-cancel>Cancel</button>
+              </div>`;
+            const input = cell.querySelector("[data-cat-input]");
+            input.focus();
+            input.select();
+            const save = async () => {
+              if (!currentUser) return;
+              const val = input.value.trim();
+              const col = kind === "bill" ? "bills" : "transactions";
+              try {
+                await setDoc(doc(db, "users", currentUser.uid, col, id), { category: val }, { merge: true });
+              } catch (err) {
+                alert(err?.message || "Failed to save category");
+              }
+              renderTransactionsLedger();
+              renderInsights();
+            };
+            cell.querySelector("[data-cat-save]").addEventListener("click", save);
+            cell.querySelector("[data-cat-cancel]").addEventListener("click", () => renderTransactionsLedger());
+            input.addEventListener("keydown", (ev) => {
+              if (ev.key === "Enter") { ev.preventDefault(); save(); }
+              if (ev.key === "Escape") renderTransactionsLedger();
+            });
+          });
+        });
+      }
+
+      const summaryEl = $("#txn-ledger-summary");
+      if (summaryEl) {
+        const base = `${items.length} transaction${items.length === 1 ? "" : "s"} logged · ${billRows.length} bill payment${billRows.length === 1 ? "" : "s"} to date.`;
+        const filtersActive = !!fin.search.trim() || fin.period !== "all";
+        summaryEl.textContent = filtersActive ? `Showing ${rows.length} of ${allRows.length} entries · ${base}` : base;
+      }
+    }
+
+    // ===== NEW: Spending insights (doughnut + category trend) =====
+    function bucketKey(dateISO, group, anchor) {
+      const d = parseISODateLocal(dateISO);
+      if (group === "month") return monthKey(dateISO);
+      if (group === "week") {
+        const dow = (d.getDay() + 6) % 7; // Monday start
+        return toISODate(addDays(d, -dow));
+      }
+      // 14-day blocks anchored like the Period Planner (earliest income date, or today)
+      const idx = Math.floor(Math.round((d - anchor) / 86400000) / 14);
+      return toISODate(addDays(anchor, idx * 14));
+    }
+
+    function nextBucketKey(key, group) {
+      if (group === "month") {
+        const [y, m] = key.split("-").map(Number);
+        return m === 12 ? `${y + 1}-01` : `${y}-${String(m + 1).padStart(2, "0")}`;
+      }
+      return toISODate(addDays(parseISODateLocal(key), group === "week" ? 7 : 14));
+    }
+
+    function bucketLabels(key, group) {
+      if (group === "month") {
+        const [y, m] = key.split("-").map(Number);
+        const label = new Date(y, m - 1, 1).toLocaleString(undefined, { month: "short", year: "numeric" });
+        return { short: label, full: label };
+      }
+      return {
+        short: key.slice(5),
+        full: group === "week" ? `Week of ${key}` : `Period starting ${key}`
+      };
+    }
+
+    function renderInsights() {
+      const card = $("#insights-card");
+      if (!card || routeData.classList.contains("hidden")) return;
+
+      // Spending items from the currently filtered ledger rows
+      const spendItems = [];
+      for (const r of finFiltered) {
+        const amt = rowSpend(r);
+        if (!amt) continue;
+        spendItems.push({ date: r.date, cat: categoryLabel(rowCategoryRaw(r)), amt });
+      }
+
+      const totals = new Map();
+      for (const s of spendItems) totals.set(s.cat, (totals.get(s.cat) || 0) + s.amt);
+      const ranked = Array.from(totals.entries()).sort((a, b) => b[1] - a[1]);
+      const pie = ranked.filter(([, v]) => v > 0.004);
+      const totalSpend = pie.reduce((s, [, v]) => s + v, 0);
+
+      // Summary stats
+      const range = getActiveRange();
+      $("#fin-stat-total").textContent = formatMoney(totalSpend);
+      $("#fin-stat-count").textContent = String(spendItems.length);
+      $("#fin-stat-top").textContent = pie.length ? pie[0][0] : "—";
+      $("#fin-stat-range").textContent = fin.period === "all"
+        ? "All time"
+        : `${range.start || "…"} → ${range.end || "…"}`;
+
+      // Category list
+      $("#fin-cat-list").innerHTML = pie.map(([name, v]) => {
+        const pct = totalSpend ? (v / totalSpend) * 100 : 0;
+        const c = categoryColor(name);
+        return `
+          <div>
+            <div class="flex items-center justify-between gap-3 text-sm">
+              <span class="inline-flex items-center gap-2 text-slate-700 min-w-0"><span class="cat-dot" style="background:${c};"></span><span class="truncate">${escapeHtml(name)}</span></span>
+              <span class="font-semibold text-slate-800 whitespace-nowrap">${formatMoney(v)} <span class="text-xs font-normal text-slate-400">${pct.toFixed(1)}%</span></span>
+            </div>
+            <div class="util-bar-track mt-1"><div class="util-bar-fill" style="width:${pct.toFixed(1)}%;background-color:${c};"></div></div>
+          </div>`;
+      }).join("");
+
+      const hasData = pie.length > 0;
+      $("#fin-empty").classList.toggle("hidden", hasData);
+      $("#fin-charts").classList.toggle("hidden", !hasData);
+
+      const errEl = $("#fin-chart-error");
+      if (typeof Chart === "undefined") {
+        errEl.textContent = "Charts couldn't load (Chart.js is unavailable). Check your connection and reload; totals above still work.";
+        errEl.classList.remove("hidden");
+        return;
+      }
+      errEl.classList.add("hidden");
+      if (!hasData) return;
+
+      // --- Doughnut ---
+      const pieLabels = pie.map(p => p[0]);
+      const pieData = pie.map(p => Math.round(p[1] * 100) / 100);
+      const pieColors = pie.map(p => categoryColor(p[0]));
+      if (!finDoughnut) {
+        finDoughnut = new Chart($("#fin-doughnut"), {
+          type: "doughnut",
+          data: { labels: pieLabels, datasets: [{ data: pieData, backgroundColor: pieColors, borderColor: "#ffffff", borderWidth: 2 }] },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: "58%",
+            plugins: {
+              legend: { position: "bottom", labels: { boxWidth: 12, font: { family: "Inter" } } },
+              tooltip: {
+                callbacks: {
+                  label: (ctx) => {
+                    const sum = ctx.dataset.data.reduce((a, b) => a + b, 0);
+                    const pct = sum ? (ctx.parsed / sum) * 100 : 0;
+                    return ` ${ctx.label}: ${formatMoney(ctx.parsed)} (${pct.toFixed(1)}%)`;
+                  }
+                }
+              }
+            }
+          }
+        });
+      } else {
+        finDoughnut.data.labels = pieLabels;
+        finDoughnut.data.datasets[0].data = pieData;
+        finDoughnut.data.datasets[0].backgroundColor = pieColors;
+        finDoughnut.update();
+      }
+
+      // --- Category trend ---
+      const group = fin.trendGroup;
+      const anchor = getPlannerAnchor();
+      const perBucket = new Map(); // cat -> Map(bucket -> sum)
+      let minKey = "", maxKey = "";
+      for (const s of spendItems) {
+        if (!s.date) continue;
+        const k = bucketKey(s.date, group, anchor);
+        if (!minKey || k < minKey) minKey = k;
+        if (!maxKey || k > maxKey) maxKey = k;
+        if (!perBucket.has(s.cat)) perBucket.set(s.cat, new Map());
+        const m = perBucket.get(s.cat);
+        m.set(k, (m.get(k) || 0) + s.amt);
+      }
+      const keys = [];
+      if (minKey) {
+        let k = minKey, guard = 0;
+        while (k <= maxKey && guard < 1500) { keys.push(k); k = nextBucketKey(k, group); guard++; }
+      }
+      const shortLabels = keys.map(k => bucketLabels(k, group).short);
+      const fullLabels = keys.map(k => bucketLabels(k, group).full);
+      const isLine = fin.trendType === "line";
+      const datasets = ranked.map(([name]) => {
+        const c = categoryColor(name);
+        const m = perBucket.get(name) || new Map();
+        const data = keys.map(k => Math.round((m.get(k) || 0) * 100) / 100);
+        return isLine
+          ? { label: name, data, borderColor: c, backgroundColor: c, tension: 0.3, pointRadius: 2, fill: false }
+          : { label: name, data, backgroundColor: c, borderWidth: 0 };
+      });
+
+      if (!finTrend || finTrendBuiltType !== fin.trendType) {
+        if (finTrend) finTrend.destroy();
+        finTrendBuiltType = fin.trendType;
+        finTrend = new Chart($("#fin-trend"), {
+          type: isLine ? "line" : "bar",
+          data: { labels: shortLabels, datasets },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: "index", intersect: false },
+            scales: {
+              x: { stacked: !isLine, grid: { display: false } },
+              y: {
+                stacked: !isLine,
+                beginAtZero: true,
+                ticks: { callback: (v) => "$" + Number(v).toLocaleString() }
+              }
+            },
+            plugins: {
+              legend: { position: "bottom", labels: { boxWidth: 12, font: { family: "Inter" } } },
+              tooltip: {
+                filter: (item) => item.parsed.y !== 0,
+                callbacks: {
+                  title: (items) => (items.length ? (finTrend.$fullLabels || [])[items[0].dataIndex] || items[0].label : ""),
+                  label: (ctx) => ` ${ctx.dataset.label}: ${formatMoney(ctx.parsed.y)}`
+                }
+              }
+            }
+          }
+        });
+      } else {
+        finTrend.data.labels = shortLabels;
+        finTrend.data.datasets = datasets;
+        finTrend.update();
+      }
+      finTrend.$fullLabels = fullLabels;
+    }
+
+    // ===== Generic table sorting (all tables except the Transaction Ledger, which has its own) =====
+    const lc = (v) => String(v ?? "").toLowerCase();
+    const bankNameById = (id) => lc((state.bankAccounts || []).find(b => b.id === id)?.name);
+    const recurrenceKey = (x) => !x.isRecurring ? "one-time" : (x.recurrenceType === "biweekly" ? "bi-weekly" : "monthly");
+    const num = (v) => Number(v) || 0;
+    const SORT_GETTERS = {
+      assets: { name: a => lc(a.name), value: a => num(a.value) },
+      liabilities: { name: l => lc(l.name), value: l => num(l.value) },
+      banks: { name: b => lc(b.name), balance: b => computeBankAccountBalance(b) },
+      credit: { name: c => lc(c.name), balance: c => computeCreditCardBalance(c) },
+      debit: { name: d => lc(d.name), bank: d => bankNameById(d.bankAccountId) },
+      payoffs: { card: p => lc(p.cardName), date: p => p.date || "", bank: p => bankNameById(p.sourceBankAccountId), amount: p => num(p.amount) },
+      income: { source: i => lc(i.source), date: i => i.date || "", bank: i => bankNameById(i.bankAccountId), recurrence: recurrenceKey, amount: i => num(i.amount) },
+      bills: { name: b => lc(b.name), category: b => lc(b.category), date: b => b.date || "", recurrence: recurrenceKey, amount: b => num(b.amount) },
+      period: { date: r => r.i, income: r => r.income, expense: r => r.expense, net: r => r.net, carry: r => r.carry }
+    };
+    const DESC_FIRST_KEYS = new Set(["balance", "amount", "value", "income", "expense", "net", "carry", "date"]);
+
+    function applySort(table, items) {
+      const st = ui.sorts[table];
+      const getter = st && SORT_GETTERS[table] && SORT_GETTERS[table][st.key];
+      if (!getter) return items;
+      const mult = st.dir === "asc" ? 1 : -1;
+      return items.slice().sort((a, b) => {
+        const va = getter(a), vb = getter(b);
+        const c = (typeof va === "string") ? va.localeCompare(vb) : va - vb;
+        return c * mult;
+      });
+    }
+
+    function updateSortIndicators() {
+      $$("[data-sort-table]").forEach(btn => {
+        const st = ui.sorts[btn.dataset.sortTable];
+        const active = !!st && st.key === btn.dataset.sortKey;
+        const ind = btn.querySelector("[data-sort-ind]");
+        if (!ind) return;
+        ind.textContent = active ? (st.dir === "asc" ? "▲" : "▼") : "↕";
+        ind.className = "text-xs " + (active ? "text-brand-600" : "text-slate-400");
+      });
+    }
+
+    $$("[data-sort-table]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const table = btn.dataset.sortTable, key = btn.dataset.sortKey;
+        const cur = ui.sorts[table];
+        if (cur && cur.key === key) cur.dir = cur.dir === "asc" ? "desc" : "asc";
+        else ui.sorts[table] = { key, dir: DESC_FIRST_KEYS.has(key) ? "desc" : "asc" };
+        refreshAllViews();
+      });
+    });
+
+    $$("[data-ledger-sort]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const key = btn.dataset.ledgerSort;
+        if (ui.ledgerSort.key === key) {
+          ui.ledgerSort.dir = ui.ledgerSort.dir === "asc" ? "desc" : "asc";
+        } else {
+          // text columns start A→Z; date and amount start high→low
+          ui.ledgerSort = { key, dir: (key === "date" || key === "amount") ? "desc" : "asc" };
+        }
+        renderTransactionsLedger();
+      });
+    });
+
+    // ===== NEW: filter / insight control wiring =====
+    function refreshLedgerAndInsights() {
+      renderTransactionsLedger();
+      renderInsights();
+    }
+
+    $("#fin-search").addEventListener("input", () => {
+      fin.search = $("#fin-search").value;
+      refreshLedgerAndInsights();
+    });
+
+    $("#fin-search").addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && $("#fin-search").value) {
+        $("#fin-search").value = "";
+        fin.search = "";
+        refreshLedgerAndInsights();
+      }
+    });
+
+    $("#fin-period").addEventListener("change", () => {
+      fin.period = $("#fin-period").value;
+      if (fin.period === "custom") {
+        // start from whatever range is currently displayed
+        fin.start = $("#fin-start").value;
+        fin.end = $("#fin-end").value;
+      }
+      refreshLedgerAndInsights();
+    });
+
+    function onFinDateChange() {
+      fin.period = "custom";
+      fin.start = $("#fin-start").value;
+      fin.end = $("#fin-end").value;
+      $("#fin-period").value = "custom";
+      refreshLedgerAndInsights();
+    }
+    $("#fin-start").addEventListener("change", onFinDateChange);
+    $("#fin-end").addEventListener("change", onFinDateChange);
+
+    $("#fin-reset").addEventListener("click", () => {
+      fin.search = "";
+      fin.period = "all";
+      fin.start = "";
+      fin.end = "";
+      $("#fin-search").value = "";
+      refreshLedgerAndInsights();
+    });
+
+    $("#fin-trend-group").addEventListener("change", () => {
+      fin.trendGroup = $("#fin-trend-group").value;
+      renderInsights();
+    });
+
+    $("#fin-trend-type").addEventListener("change", () => {
+      fin.trendType = $("#fin-trend-type").value;
+      renderInsights();
+    });
+
+    // ===== CRUD: Income =====
+    function openIncomeForm(item) {
+      ui.editing.incomeId = item ? item.id : null;
+      $("#income-source").value = item?.source ?? "";
+      $("#income-date").value = item?.date ?? toISODate(new Date());
+      $("#income-amount").value = item?.amount ?? "";
+      populateBankAccountSelects();
+      $("#income-bank-account").value = item?.bankAccountId || "";
+      $("#income-recurring").checked = !!item?.isRecurring;
+      $("#income-recurrence-type").classList.toggle("hidden", !item?.isRecurring);
+      if (item?.isRecurring) $("#income-recurrence-type").value = item.recurrenceType === "biweekly" ? "biweekly" : "monthly";
+      $("#income-source")?.scrollIntoView?.({ behavior: "smooth", block: "center" });
+    }
+
+    $("#income-recurring").addEventListener("change", () => {
+      $("#income-recurrence-type").classList.toggle("hidden", !$("#income-recurring").checked);
+    });
+
+    function renderIncomes() {
+      const tbody = $("#income-table-body");
+      tbody.innerHTML = "";
+      const items = applySort("income", sortByDateAsc(state.incomes, "date").reverse());
+      if (!items.length) {
+        tbody.innerHTML = `<tr><td colspan="6" class="px-3 py-3 text-center text-slate-500">No incomes yet.</td></tr>`;
+        return;
+      }
+      for (const i of items) {
+        const bank = state.bankAccounts.find(b => b.id === i.bankAccountId);
+        const recurLabel = !i.isRecurring
+          ? "One-time"
+          : (i.recurrenceType === "biweekly" ? "Bi-Weekly" : `Monthly (day ${parseISODateLocal(i.date).getDate()})`);
+
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td class="px-3 py-2 font-medium text-slate-800">${escapeHtml(i.source)}</td>
+          <td class="px-3 py-2 text-slate-700">${escapeHtml(i.date)}</td>
+          <td class="px-3 py-2 text-slate-700">${bank ? escapeHtml(bank.name) : '<span class="text-slate-400">Not tracked</span>'}</td>
+          <td class="px-3 py-2">
+            <span class="badge ${i.isRecurring ? "badge-brand" : "badge-slate"}">${recurLabel}</span>
+          </td>
+          <td class="px-3 py-2 text-right font-semibold text-emerald-700">${formatMoney(i.amount)}</td>
+          <td class="px-3 py-2 text-right">
+            <div class="inline-flex items-center gap-2 flex-wrap justify-end">
+              ${i.isRecurring ? `<button class="text-brand-600 hover:underline text-sm" data-action="toggle-income-occ" data-id="${i.id}">Upcoming</button>` : ""}
+              <button class="text-brand-600 hover:underline text-sm" data-action="edit" data-id="${i.id}">Edit</button>
+              <button class="text-rose-600 hover:underline text-sm" data-action="del" data-id="${i.id}">Delete</button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+
+        if (i.isRecurring) {
+          const occRow = document.createElement("tr");
+          occRow.id = `income-occ-row-${i.id}`;
+          occRow.className = ui.expandedIncomeIds.has(i.id) ? "" : "hidden";
+          occRow.innerHTML = `<td colspan="6" class="px-3 py-3 bg-slate-50"><div id="income-occ-content-${i.id}" class="text-sm text-slate-500">Loading…</div></td>`;
+          tbody.appendChild(occRow);
+          if (ui.expandedIncomeIds.has(i.id)) renderIncomeOccurrences(i.id);
+        }
+      }
+
+      tbody.querySelectorAll("[data-action='toggle-income-occ']").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const id = btn.dataset.id;
+          const row = $(`#income-occ-row-${id}`);
+          const willShow = row.classList.contains("hidden");
+          row.classList.toggle("hidden");
+          if (willShow) { ui.expandedIncomeIds.add(id); renderIncomeOccurrences(id); }
+          else { ui.expandedIncomeIds.delete(id); }
+        });
+      });
+      tbody.querySelectorAll("[data-action='del']").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          if (!confirm("Delete this income?")) return;
+          try { await deleteDoc(doc(db, "users", currentUser.uid, "incomes", btn.dataset.id)); }
+          catch (err) { alert(err?.message || "Failed to delete income"); }
+        });
+      });
+      tbody.querySelectorAll("[data-action='edit']").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const item = state.incomes.find(x => x.id === btn.dataset.id);
+          openIncomeForm(item);
+        });
+      });
+    }
+
+    $("#income-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const source = $("#income-source").value.trim();
+      const date = $("#income-date").value;
+      const amount = Number($("#income-amount").value);
+      const bankAccountId = $("#income-bank-account").value || null;
+      const isRecurring = $("#income-recurring").checked;
+      const recurrenceType = isRecurring ? ($("#income-recurrence-type").value === "biweekly" ? "biweekly" : "monthly") : null;
+      if (!currentUser) return;
+
+      const payload = {
+        source, date, amount: Number.isFinite(amount) ? amount : 0,
+        bankAccountId, isRecurring, recurrenceType, createdAt: serverTimestamp()
+      };
+
+      try {
+        if (ui.editing.incomeId) {
+          await setDoc(doc(db, "users", currentUser.uid, "incomes", ui.editing.incomeId), payload, { merge: true });
+          ui.editing.incomeId = null;
+        } else {
+          await addDoc(userCol("incomes"), payload);
+        }
+        $("#income-source").value = "";
+        $("#income-amount").value = "";
+        $("#income-recurring").checked = false;
+        $("#income-recurrence-type").classList.add("hidden");
+      } catch (err) {
+        alert(err?.message || "Failed to save income");
+      }
+    });
+
+    // ===== Recurring Incomes: overrides, occurrence generation (mirrors recurring bills) =====
+    function buildIncomeOverridesMap() {
+      const map = new Map();
+      for (const o of state.incomeOverrides || []) {
+        if (!o.incomeId || !o.occurrenceDate) continue;
+        map.set(`${o.incomeId}__${o.occurrenceDate}`, o);
+      }
+      return map;
+    }
+
+    // Shared recurrence scanner (used by recurring incomes and recurring bills).
+    // Scans a padded window so an occurrence moved (via newDate) into/out of the visible range is still found.
+    const OCC_SCAN_PAD_DAYS = 120;
+
+    function forEachRecurringDate(startDate, recurrenceType, scanStart, scanEnd, cb) {
+      if (recurrenceType === "biweekly") {
+        let cursor = new Date(startDate);
+        if (cursor < scanStart) {
+          const diffDays = Math.floor((scanStart - cursor) / 86400000);
+          cursor = addDays(startDate, Math.floor(diffDays / 14) * 14);
+        }
+        let guard = 0;
+        while (cursor <= scanEnd && guard < 600) {
+          if (cursor >= scanStart) cb(new Date(cursor));
+          cursor = addDays(cursor, 14);
+          guard++;
+        }
+      } else {
+        const day = startDate.getDate();
+        const first = startDate > scanStart ? startDate : scanStart;
+        let cursor = new Date(first.getFullYear(), first.getMonth(), 1);
+        let guard = 0;
+        while (cursor <= scanEnd && guard < 600) {
+          const occ = clampedMonthDate(cursor.getFullYear(), cursor.getMonth(), day);
+          if (occ >= startDate && occ >= scanStart && occ <= scanEnd) cb(occ);
+          cursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
+          guard++;
+        }
+      }
+    }
+
+    function pushIncomeOccurrence(income, dateObj, overridesMap, occurrences, rangeStart, rangeEnd) {
+      const originalDate = toISODate(dateObj);
+      const key = `${income.id}__${originalDate}`;
+      const ov = overridesMap.get(key);
+      if (ov && ov.deleted) return;
+      const effISO = (ov && ov.newDate) ? ov.newDate : originalDate;
+      const eff = parseISODateLocal(effISO);
+      if (eff < rangeStart || eff > rangeEnd) return;
+      const amount = (ov && ov.amount != null && ov.amount !== "") ? Number(ov.amount) : Number(income.amount || 0);
+      occurrences.push({
+        incomeId: income.id, source: income.source, bankAccountId: income.bankAccountId || null,
+        date: effISO, originalDate, moved: effISO !== originalDate,
+        amount, recurring: true, overridden: !!ov, occurrenceKey: key
+      });
+    }
+
+    function generateIncomeOccurrences(rangeStart, rangeEnd) {
+      const overridesMap = buildIncomeOverridesMap();
+      const occurrences = [];
+      const scanStart = addDays(rangeStart, -OCC_SCAN_PAD_DAYS);
+      const scanEnd = addDays(rangeEnd, OCC_SCAN_PAD_DAYS);
+
+      for (const income of state.incomes || []) {
+        if (!income.date) continue;
+        const startDate = parseISODateLocal(income.date);
+
+        if (!income.isRecurring) {
+          if (startDate >= rangeStart && startDate <= rangeEnd) {
+            occurrences.push({
+              incomeId: income.id, source: income.source, bankAccountId: income.bankAccountId || null,
+              date: income.date, originalDate: income.date, moved: false,
+              amount: Number(income.amount || 0),
+              recurring: false, overridden: false, occurrenceKey: null
+            });
+          }
+          continue;
+        }
+
+        forEachRecurringDate(startDate, income.recurrenceType, scanStart, scanEnd, (d) => {
+          pushIncomeOccurrence(income, d, overridesMap, occurrences, rangeStart, rangeEnd);
+        });
+      }
+
+      return occurrences.sort((a, b) => parseISODateLocal(a.date) - parseISODateLocal(b.date));
+    }
+
+    function renderIncomeOccurrences(incomeId) {
+      const income = state.incomes.find(i => i.id === incomeId);
+      const container = $(`#income-occ-content-${incomeId}`);
+      if (!income || !container) return;
+
+      const today = parseISODateLocal(toISODate(new Date()));
+      const horizonEnd = addDays(today, ui.planner.horizonDays || 180);
+      const occurrences = generateIncomeOccurrences(today, horizonEnd).filter(o => o.incomeId === incomeId).slice(0, 12);
+
+      if (!occurrences.length) {
+        container.innerHTML = `<div class="text-slate-500">No upcoming occurrences in the current planner horizon.</div>`;
+        return;
+      }
+
+      container.innerHTML = `
+        <div class="text-xs font-semibold text-slate-600 mb-2">Next occurrences — edit the amount or date, or skip a specific date</div>
+        <div class="space-y-2">
+          ${occurrences.map(o => `
+            <div class="flex items-center justify-between gap-3 bg-white border border-slate-200 rounded-lg px-3 py-2" data-occ-row="${o.occurrenceKey}">
+              <div class="text-sm text-slate-700">
+                ${escapeHtml(o.date)}
+                ${o.moved ? `<span class="text-[11px] text-amber-600 font-medium">(moved from ${escapeHtml(o.originalDate)})</span>` : (o.overridden ? '<span class="text-[11px] text-amber-600 font-medium">(edited)</span>' : "")}
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-sm font-semibold text-emerald-700">${formatMoney(o.amount)}</span>
+                <button class="text-brand-600 hover:underline text-xs" data-occ-action="edit" data-key="${o.occurrenceKey}">Edit</button>
+                <button class="text-rose-600 hover:underline text-xs" data-occ-action="del" data-key="${o.occurrenceKey}" data-date="${o.originalDate}">Skip</button>
+              </div>
+            </div>
+          `).join("")}
+        </div>
+      `;
+
+      container.querySelectorAll("[data-occ-action='edit']").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const row = btn.closest("[data-occ-row]");
+          const key = btn.dataset.key;
+          const occ = occurrences.find(o => o.occurrenceKey === key);
+          const safeKey = key.replace(/[^a-zA-Z0-9]/g, "_");
+          const inputId = `income-occ-input-${safeKey}`;
+          const dateId = `income-occ-date-${safeKey}`;
+          row.innerHTML = `
+            <div class="flex flex-wrap items-center gap-2 w-full">
+              <input type="date" value="${occ.date}" class="border border-slate-300 rounded-lg px-2 py-1 text-sm" id="${dateId}">
+              <span class="flex-1"></span>
+              <input type="number" step="0.01" value="${occ.amount}" class="border border-slate-300 rounded-lg px-2 py-1 text-sm w-28" id="${inputId}">
+              <button class="text-emerald-600 hover:underline text-xs" data-occ-save="${key}">Save</button>
+              <button class="text-slate-500 hover:underline text-xs" data-occ-cancel>Cancel</button>
+            </div>
+          `;
+          row.querySelector("[data-occ-save]").addEventListener("click", async () => {
+            const val = Number($(`#${inputId}`).value);
+            const newDate = $(`#${dateId}`).value;
+            try {
+              await setDoc(doc(db, "users", currentUser.uid, "incomeOverrides", key), {
+                incomeId: incomeId, occurrenceDate: occ.originalDate,
+                amount: Number.isFinite(val) ? val : occ.amount,
+                newDate: (newDate && newDate !== occ.originalDate) ? newDate : null,
+                deleted: false, createdAt: serverTimestamp()
+              }, { merge: true });
+            } catch (err) { alert(err?.message || "Failed to save override"); }
+          });
+          row.querySelector("[data-occ-cancel]").addEventListener("click", () => renderIncomeOccurrences(incomeId));
+        });
+      });
+
+      container.querySelectorAll("[data-occ-action='del']").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          const key = btn.dataset.key;
+          const dateStr = btn.dataset.date;
+          if (!confirm(`Skip the ${dateStr} occurrence of "${income.source}"?`)) return;
+          try {
+            await setDoc(doc(db, "users", currentUser.uid, "incomeOverrides", key), {
+              incomeId: incomeId, occurrenceDate: dateStr, deleted: true, createdAt: serverTimestamp()
+            }, { merge: true });
+          } catch (err) { alert(err?.message || "Failed to skip occurrence"); }
+        });
+      });
+    }
+
+    // ===== Recurring Bills: overrides, occurrence generation =====
+    $("#bill-recurring").addEventListener("change", () => {
+      $("#bill-recurrence-type").classList.toggle("hidden", !$("#bill-recurring").checked);
+    });
+
+    function buildOverridesMap() {
+      const map = new Map();
+      for (const o of state.billOverrides || []) {
+        if (!o.billId || !o.occurrenceDate) continue;
+        map.set(`${o.billId}__${o.occurrenceDate}`, o);
+      }
+      return map;
+    }
+
+    function billPayLabel(obj) {
+      if (!obj || !obj.payMethod || !obj.payCardId) return "";
+      const list = obj.payMethod === "credit" ? state.creditCards : (obj.payMethod === "bank" ? state.bankAccounts : state.debitCards);
+      const card = (list || []).find(c => c.id === obj.payCardId);
+      const kind = obj.payMethod === "credit" ? "Credit" : (obj.payMethod === "bank" ? "Bank" : "Debit");
+      return card ? `${card.name} (${kind})` : `Deleted ${kind.toLowerCase()} card`;
+    }
+
+    function populateBillPayWithOptions() {
+      const sel = $("#bill-pay-with");
+      if (!sel) return;
+      const prev = sel.value;
+      const byName = (a, b) => (a.name || "").localeCompare(b.name || "");
+      const credit = state.creditCards.slice().sort(byName);
+      const debit = state.debitCards.slice().sort(byName);
+      const banks = state.bankAccounts.slice().sort(byName);
+      let html = `<option value="">Not specified (not deducted from a bank)</option>`;
+      if (banks.length) html += `<optgroup label="Bank Accounts (paid directly)">` + banks.map(c => `<option value="bank:${c.id}">${escapeHtml(c.name)}</option>`).join("") + `</optgroup>`;
+      if (credit.length) html += `<optgroup label="Credit Cards">` + credit.map(c => `<option value="credit:${c.id}">${escapeHtml(c.name)}</option>`).join("") + `</optgroup>`;
+      if (debit.length) html += `<optgroup label="Debit Cards">` + debit.map(c => `<option value="debit:${c.id}">${escapeHtml(c.name)}</option>`).join("") + `</optgroup>`;
+      sel.innerHTML = html;
+      if (Array.from(sel.options).some(o => o.value === prev)) sel.value = prev;
+    }
+
+    function pushOccurrence(bill, dateObj, overridesMap, occurrences, rangeStart, rangeEnd) {
+      const originalDate = toISODate(dateObj);
+      const key = `${bill.id}__${originalDate}`;
+      const ov = overridesMap.get(key);
+      if (ov && ov.deleted) return;
+      const effISO = (ov && ov.newDate) ? ov.newDate : originalDate;
+      const eff = parseISODateLocal(effISO);
+      if (eff < rangeStart || eff > rangeEnd) return;
+      const amount = (ov && ov.amount != null && ov.amount !== "") ? Number(ov.amount) : Number(bill.amount || 0);
+      occurrences.push({
+        billId: bill.id, name: bill.name, category: bill.category,
+        payMethod: bill.payMethod || null, payCardId: bill.payCardId || null,
+        date: effISO, originalDate, moved: effISO !== originalDate,
+        amount, recurring: true, overridden: !!ov, occurrenceKey: key
+      });
+    }
+
+    function generateBillOccurrences(rangeStart, rangeEnd) {
+      const overridesMap = buildOverridesMap();
+      const occurrences = [];
+      const scanStart = addDays(rangeStart, -OCC_SCAN_PAD_DAYS);
+      const scanEnd = addDays(rangeEnd, OCC_SCAN_PAD_DAYS);
+
+      for (const bill of state.bills || []) {
+        if (!bill.date) continue;
+        const startDate = parseISODateLocal(bill.date);
+
+        if (!bill.isRecurring) {
+          if (startDate >= rangeStart && startDate <= rangeEnd) {
+            occurrences.push({
+              billId: bill.id, name: bill.name, category: bill.category,
+              payMethod: bill.payMethod || null, payCardId: bill.payCardId || null,
+              date: bill.date, originalDate: bill.date, moved: false,
+              amount: Number(bill.amount || 0),
+              recurring: false, overridden: false, occurrenceKey: null
+            });
+          }
+          continue;
+        }
+
+        forEachRecurringDate(startDate, bill.recurrenceType, scanStart, scanEnd, (d) => {
+          pushOccurrence(bill, d, overridesMap, occurrences, rangeStart, rangeEnd);
+        });
+      }
+
+      return occurrences.sort((a, b) => parseISODateLocal(a.date) - parseISODateLocal(b.date));
+    }
+
+    $("#bill-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const name = $("#bill-name").value.trim();
+      const category = $("#bill-category").value.trim();
+      const date = $("#bill-date").value;
+      const amount = Number($("#bill-amount").value);
+      const isRecurring = $("#bill-recurring").checked;
+      const recurrenceType = isRecurring ? ($("#bill-recurrence-type").value === "biweekly" ? "biweekly" : "monthly") : null;
+      const payWith = $("#bill-pay-with").value;
+      const [pmRaw, pidRaw] = payWith ? payWith.split(":") : ["", ""];
+      const payMethod = ((pmRaw === "credit" || pmRaw === "debit" || pmRaw === "bank") && pidRaw) ? pmRaw : null;
+      const payCardId = payMethod ? pidRaw : null;
+      if (!currentUser) return;
+
+      const payload = {
+        name, category: category || "", date,
+        amount: Number.isFinite(amount) ? amount : 0,
+        isRecurring, recurrenceType,
+        payMethod, payCardId,
+        createdAt: serverTimestamp()
+      };
+
+      try {
+        if (ui.editing.billId) {
+          await setDoc(doc(db, "users", currentUser.uid, "bills", ui.editing.billId), payload, { merge: true });
+          ui.editing.billId = null;
+        } else {
+          await addDoc(userCol("bills"), payload);
+        }
+        $("#bill-name").value = "";
+        $("#bill-category").value = "";
+        $("#bill-amount").value = "";
+        $("#bill-pay-with").value = "";
+        $("#bill-recurring").checked = false;
+        $("#bill-recurrence-type").classList.add("hidden");
+      } catch (err) {
+        alert(err?.message || "Failed to save bill");
+      }
+    });
+
+    function openBillForm(item) {
+      ui.editing.billId = item.id;
+      $("#bill-name").value = item.name ?? "";
+      $("#bill-category").value = item.category ?? "";
+      $("#bill-date").value = item.date ?? toISODate(new Date());
+      $("#bill-amount").value = item.amount ?? "";
+      populateBillPayWithOptions();
+      $("#bill-pay-with").value = (item.payMethod && item.payCardId) ? `${item.payMethod}:${item.payCardId}` : "";
+      $("#bill-recurring").checked = !!item.isRecurring;
+      $("#bill-recurrence-type").classList.toggle("hidden", !item.isRecurring);
+      if (item.isRecurring) $("#bill-recurrence-type").value = item.recurrenceType === "biweekly" ? "biweekly" : "monthly";
+      $("#bill-name")?.scrollIntoView?.({ behavior: "smooth", block: "center" });
+    }
+
+    function renderBills() {
+      const tbody = $("#bills-table-body");
+      tbody.innerHTML = "";
+      const items = applySort("bills", sortByDateAsc(state.bills, "date").reverse());
+
+      if (!items.length) {
+        tbody.innerHTML = `<tr><td colspan="6" class="px-3 py-3 text-center text-slate-500">No future bills yet.</td></tr>`;
+        return;
+      }
+
+      for (const b of items) {
+        const recurLabel = !b.isRecurring
+          ? "One-time"
+          : (b.recurrenceType === "biweekly" ? "Bi-Weekly" : `Monthly (day ${parseISODateLocal(b.date).getDate()})`);
+
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td class="px-3 py-2 font-medium text-slate-800">
+            ${escapeHtml(b.name)}
+            ${billPayLabel(b) ? `<div class="text-xs text-slate-500">Pays via ${escapeHtml(billPayLabel(b))}</div>` : ""}
+          </td>
+          <td class="px-3 py-2 text-slate-700">${escapeHtml(b.category || "-")}</td>
+          <td class="px-3 py-2 text-slate-700">${escapeHtml(b.date)}</td>
+          <td class="px-3 py-2">
+            <span class="badge ${b.isRecurring ? "badge-brand" : "badge-slate"}">${recurLabel}</span>
+          </td>
+          <td class="px-3 py-2 text-right font-semibold text-rose-700">${formatMoney(b.amount)}</td>
+          <td class="px-3 py-2 text-right">
+            <div class="inline-flex items-center gap-2 flex-wrap justify-end">
+              ${b.isRecurring ? `<button class="text-brand-600 hover:underline text-sm" data-action="toggle-occ" data-id="${b.id}">Upcoming</button>` : ""}
+              <button class="text-brand-600 hover:underline text-sm" data-action="edit" data-id="${b.id}">Edit</button>
+              <button class="text-rose-600 hover:underline text-sm" data-action="del" data-id="${b.id}">Delete</button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+
+        if (b.isRecurring) {
+          const occRow = document.createElement("tr");
+          occRow.id = `bill-occ-row-${b.id}`;
+          occRow.className = ui.expandedBillIds.has(b.id) ? "" : "hidden";
+          occRow.innerHTML = `<td colspan="6" class="px-3 py-3 bg-slate-50"><div id="bill-occ-content-${b.id}" class="text-sm text-slate-500">Loading…</div></td>`;
+          tbody.appendChild(occRow);
+          if (ui.expandedBillIds.has(b.id)) renderBillOccurrences(b.id);
+        }
+      }
+
+      tbody.querySelectorAll("[data-action='toggle-occ']").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const id = btn.dataset.id;
+          const row = $(`#bill-occ-row-${id}`);
+          const willShow = row.classList.contains("hidden");
+          row.classList.toggle("hidden");
+          if (willShow) { ui.expandedBillIds.add(id); renderBillOccurrences(id); }
+          else { ui.expandedBillIds.delete(id); }
+        });
+      });
+      tbody.querySelectorAll("[data-action='edit']").forEach(btn => {
+        btn.addEventListener("click", () => openBillForm(state.bills.find(x => x.id === btn.dataset.id)));
+      });
+      tbody.querySelectorAll("[data-action='del']").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          if (!confirm("Delete this bill? This also stops future recurring occurrences.")) return;
+          try { await deleteDoc(doc(db, "users", currentUser.uid, "bills", btn.dataset.id)); }
+          catch (err) { alert(err?.message || "Failed to delete bill"); }
+        });
+      });
+    }
+
+    function renderBillOccurrences(billId) {
+      const bill = state.bills.find(b => b.id === billId);
+      const container = $(`#bill-occ-content-${billId}`);
+      if (!bill || !container) return;
+
+      const today = parseISODateLocal(toISODate(new Date()));
+      const horizonEnd = addDays(today, ui.planner.horizonDays || 180);
+      const occurrences = generateBillOccurrences(today, horizonEnd).filter(o => o.billId === billId).slice(0, 12);
+
+      if (!occurrences.length) {
+        container.innerHTML = `<div class="text-slate-500">No upcoming occurrences in the current planner horizon.</div>`;
+        return;
+      }
+
+      container.innerHTML = `
+        <div class="text-xs font-semibold text-slate-600 mb-2">Next occurrences — edit the amount or date, or skip a specific date</div>
+        <div class="space-y-2">
+          ${occurrences.map(o => `
+            <div class="flex items-center justify-between gap-3 bg-white border border-slate-200 rounded-lg px-3 py-2" data-occ-row="${o.occurrenceKey}">
+              <div class="text-sm text-slate-700">
+                ${escapeHtml(o.date)}
+                ${o.moved ? `<span class="text-[11px] text-amber-600 font-medium">(moved from ${escapeHtml(o.originalDate)})</span>` : (o.overridden ? '<span class="text-[11px] text-amber-600 font-medium">(edited)</span>' : "")}
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-sm font-semibold text-rose-700">${formatMoney(o.amount)}</span>
+                <button class="text-brand-600 hover:underline text-xs" data-occ-action="edit" data-key="${o.occurrenceKey}">Edit</button>
+                <button class="text-rose-600 hover:underline text-xs" data-occ-action="del" data-key="${o.occurrenceKey}" data-date="${o.originalDate}">Skip</button>
+              </div>
+            </div>
+          `).join("")}
+        </div>
+      `;
+
+      container.querySelectorAll("[data-occ-action='edit']").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const row = btn.closest("[data-occ-row]");
+          const key = btn.dataset.key;
+          const occ = occurrences.find(o => o.occurrenceKey === key);
+          const safeKey = key.replace(/[^a-zA-Z0-9]/g, "_");
+          const inputId = `occ-input-${safeKey}`;
+          const dateId = `occ-date-${safeKey}`;
+          row.innerHTML = `
+            <div class="flex flex-wrap items-center gap-2 w-full">
+              <input type="date" value="${occ.date}" class="border border-slate-300 rounded-lg px-2 py-1 text-sm" id="${dateId}">
+              <span class="flex-1"></span>
+              <input type="number" step="0.01" value="${occ.amount}" class="border border-slate-300 rounded-lg px-2 py-1 text-sm w-28" id="${inputId}">
+              <button class="text-emerald-600 hover:underline text-xs" data-occ-save="${key}">Save</button>
+              <button class="text-slate-500 hover:underline text-xs" data-occ-cancel>Cancel</button>
+            </div>
+          `;
+          row.querySelector("[data-occ-save]").addEventListener("click", async () => {
+            const val = Number($(`#${inputId}`).value);
+            const newDate = $(`#${dateId}`).value;
+            try {
+              await setDoc(doc(db, "users", currentUser.uid, "billOverrides", key), {
+                billId: billId, occurrenceDate: occ.originalDate,
+                amount: Number.isFinite(val) ? val : occ.amount,
+                newDate: (newDate && newDate !== occ.originalDate) ? newDate : null,
+                deleted: false, createdAt: serverTimestamp()
+              }, { merge: true });
+            } catch (err) { alert(err?.message || "Failed to save override"); }
+          });
+          row.querySelector("[data-occ-cancel]").addEventListener("click", () => renderBillOccurrences(billId));
+        });
+      });
+
+      container.querySelectorAll("[data-occ-action='del']").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          const key = btn.dataset.key;
+          const dateStr = btn.dataset.date;
+          if (!confirm(`Skip the ${dateStr} occurrence of "${bill.name}"?`)) return;
+          try {
+            await setDoc(doc(db, "users", currentUser.uid, "billOverrides", key), {
+              billId: billId, occurrenceDate: dateStr, deleted: true, createdAt: serverTimestamp()
+            }, { merge: true });
+          } catch (err) { alert(err?.message || "Failed to skip occurrence"); }
+        });
+      });
+    }
+
+    // ===== Planner & Dashboard Calculations =====
+    function buildPeriods() {
+      const incomes = state.incomes || [];
+      const today = parseISODateLocal(toISODate(new Date()));
+
+      let anchorDate = today;
+      if (incomes.length) {
+        const earliest = sortByDateAsc(incomes, "date")[0]?.date;
+        if (earliest) anchorDate = parseISODateLocal(earliest);
+      }
+
+      const horizonDays = ui.planner.horizonDays || 180;
+      const periods = [];
+      const start = anchorDate;
+      const end = addDays(start, horizonDays);
+
+      let cursor = new Date(start);
+      let idx = 1;
+      while (cursor <= end) {
+        const pStart = cursor;
+        const pEnd = addDays(cursor, 13);
+        periods.push({
+          key: `p${idx}`, start: pStart, end: pEnd,
+          startISO: toISODate(pStart), endISO: toISODate(pEnd)
+        });
+        cursor = addDays(cursor, 14);
+        idx++;
+        if (periods.length > 4000) break;
+      }
+      return periods;
+    }
+
+    function assignToPeriod(dateISO, periods) {
+      const d = parseISODateLocal(dateISO);
+      for (let i = 0; i < periods.length; i++) {
+        if (dateBetweenInclusive(d, periods[i].start, periods[i].end)) return i;
+      }
+      return -1;
+    }
+
+    function computePeriodCashFlows(periods) {
+      const periodCashIn = new Array(periods.length).fill(0);
+      const periodCashOut = new Array(periods.length).fill(0);
+      const periodCCSpend = new Array(periods.length).fill(0);
+      const periodItems = periods.map(() => []);
+
+      if (periods.length) {
+        const rangeStart = periods[0].start;
+        const rangeEnd = periods[periods.length - 1].end;
+
+        for (const occ of generateIncomeOccurrences(rangeStart, rangeEnd)) {
+          const idx = assignToPeriod(occ.date, periods);
+          if (idx < 0) continue;
+          const amt = Number(occ.amount || 0);
+          periodCashIn[idx] += amt;
+          periodItems[idx].push({
+            kind: "income", id: occ.incomeId, recurring: occ.recurring, key: occ.occurrenceKey,
+            date: occ.date, originalDate: occ.originalDate,
+            name: occ.source || "Income", sub: occ.recurring ? "Recurring income" : "One-time income",
+            amount: amt, flow: "in"
+          });
+        }
+
+        for (const occ of generateBillOccurrences(rangeStart, rangeEnd)) {
+          const idx = assignToPeriod(occ.date, periods);
+          if (idx < 0) continue;
+          const amt = Number(occ.amount || 0);
+          const onCredit = occ.payMethod === "credit";
+          if (onCredit) periodCCSpend[idx] += amt; else periodCashOut[idx] += amt;
+          const payLabel = billPayLabel(occ);
+          periodItems[idx].push({
+            kind: "bill", id: occ.billId, recurring: occ.recurring, key: occ.occurrenceKey,
+            date: occ.date, originalDate: occ.originalDate,
+            name: occ.name || "Bill",
+            sub: [occ.category, payLabel ? `via ${payLabel}` : "", occ.recurring ? "recurring" : "one-time"].filter(Boolean).join(" · "),
+            amount: amt, flow: onCredit ? "cc" : "out", onCredit
+          });
+        }
+      }
+
+      for (const t of state.transactions || []) {
+        if (!t.date) continue;
+        const idx = assignToPeriod(t.date, periods);
+        if (idx < 0) continue;
+        const amt = Number(t.amount || 0);
+        let flow = null;
+        if (t.cardType === "debit") {
+          if (t.txnType === "expense") { periodCashOut[idx] += amt; flow = "out"; }
+          else if (t.txnType === "credit") { periodCashOut[idx] -= amt; flow = "in"; }
+        } else if (t.cardType === "credit") {
+          if (t.txnType === "payoff") { periodCashOut[idx] += amt; flow = "out"; }
+          else if (t.txnType === "expense") { periodCCSpend[idx] += amt; flow = "cc"; }
+          else if (t.txnType === "credit") { periodCCSpend[idx] -= amt; flow = "cc-refund"; }
+        }
+        if (flow) {
+          periodItems[idx].push({
+            kind: "txn", id: t.id, recurring: false, key: null,
+            date: t.date, originalDate: t.date,
+            name: t.description || "Transaction", sub: t.cardName || "",
+            amount: amt, flow, txnType: t.txnType, cardType: t.cardType
+          });
+        }
+      }
+
+      periodItems.forEach(list => list.sort((a, b) => parseISODateLocal(a.date) - parseISODateLocal(b.date)));
+      return { periodCashIn, periodCashOut, periodCCSpend, periodItems };
+    }
+
+    function computePlanner() {
+      const periods = buildPeriods();
+      const { periodCashIn, periodCashOut, periodCCSpend, periodItems } = computePeriodCashFlows(periods);
+
+      let carry = 0;
+      const rows = [];
+      for (let i = 0; i < periods.length; i++) {
+        const income = periodCashIn[i];
+        const exp = periodCashOut[i];
+        const net = income - exp;
+        carry += net;
+        rows.push({ i, period: periods[i], income, expense: exp, ccSpend: periodCCSpend[i], net, carry, items: periodItems[i] });
+      }
+
+      const today = parseISODateLocal(toISODate(new Date()));
+      const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+      const nextMonthKey = `${nextMonth.getFullYear()}-${String(nextMonth.getMonth() + 1).padStart(2, "0")}`;
+      let carryNextMonth = 0;
+      for (const r of rows) {
+        if (monthKey(r.period.endISO) === nextMonthKey) { carryNextMonth = r.carry; break; }
+      }
+
+      return { periods, rows, carryNextMonth };
+    }
+
+    // Current-period metrics for the Dashboard: pulls straight from the planner rows.
+    function computeCurrentPeriodMetrics() {
+      const { periods, rows } = computePlanner();
+      const todayISO = toISODate(new Date());
+      const idx = assignToPeriod(todayISO, periods);
+      if (idx < 0 || !rows[idx]) {
+        return { carryIn: 0, income: 0, expense: 0, carryOut: 0 };
+      }
+      const r = rows[idx];
+      return {
+        carryIn: r.carry - r.net,
+        income: r.income,
+        expense: r.expense,
+        carryOut: r.carry
+      };
+    }
+
+    // Change the date of one planner line item. Writes to the same Firestore docs Data Entry uses,
+    // so every view updates in real time through the existing snapshot listeners.
+    async function savePlannerItemDate(item, newISO) {
+      if (!currentUser || !item || !newISO) return;
+      if (newISO === item.date) return;
+      try {
+        if (item.kind === "txn") {
+          await setDoc(doc(db, "users", currentUser.uid, "transactions", item.id), { date: newISO }, { merge: true });
+        } else if (item.kind === "income" || item.kind === "bill") {
+          const isIncome = item.kind === "income";
+          if (!item.recurring) {
+            await setDoc(doc(db, "users", currentUser.uid, isIncome ? "incomes" : "bills", item.id), { date: newISO }, { merge: true });
+          } else {
+            await setDoc(doc(db, "users", currentUser.uid, isIncome ? "incomeOverrides" : "billOverrides", item.key), {
+              [isIncome ? "incomeId" : "billId"]: item.id,
+              occurrenceDate: item.originalDate,
+              newDate: newISO !== item.originalDate ? newISO : null,
+              deleted: false,
+              createdAt: serverTimestamp()
+            }, { merge: true });
+          }
+        }
+      } catch (err) {
+        alert(err?.message || "Failed to update date");
+      }
+    }
+
+    function computeDailyNetWorth() {
+      const todayISO = toISODate(new Date());
+
+      const manualAssetsTotal = (state.assets || []).reduce((s, a) => s + Number(a.value || 0), 0);
+      const manualLiabilitiesTotal = (state.liabilities || []).reduce((s, l) => s + Number(l.value || 0), 0);
+      const { bankTotal, creditTotal } = computeAccountsTotals();
+
+      const assetsTotal = manualAssetsTotal + bankTotal;
+      const liabilitiesTotal = manualLiabilitiesTotal + creditTotal;
+
+      const todayDate = parseISODateLocal(todayISO);
+      const unroutedIncomeToday = generateIncomeOccurrences(todayDate, todayDate)
+        .reduce((s, o) => !o.bankAccountId ? s + Number(o.amount || 0) : s, 0);
+      // Bills already deducted from a bank balance must not be subtracted a second time here.
+      const billsToday = generateBillOccurrences(todayDate, todayDate)
+        .reduce((s, o) => resolveBillBankId(o) ? s : s + Number(o.amount || 0), 0);
+
+      const netCashflowAdj = unroutedIncomeToday - billsToday;
+      const netWorth = assetsTotal - liabilitiesTotal + netCashflowAdj;
+
+      return {
+        todayISO, manualAssetsTotal, manualLiabilitiesTotal, bankTotal, creditTotal,
+        assetsTotal, liabilitiesTotal, unroutedIncomeToday, billsToday,
+        netCashflowAdj, netWorth
+      };
+    }
+
+    function renderDashboard() {
+      const d = computeDailyNetWorth();
+
+      $("#today-date").textContent = d.todayISO;
+      $("#total-assets").textContent = formatMoney(d.assetsTotal);
+      $("#total-liabilities").textContent = formatMoney(d.liabilitiesTotal);
+
+      $("#bank-cash-now").textContent = formatMoney(d.bankTotal);
+      $("#bank-cash-now").className = "text-2xl font-bold " + (d.bankTotal >= 0 ? "text-emerald-700" : "text-rose-700");
+      const acctCount = state.bankAccounts.length;
+      $("#bank-cash-sub").textContent = `As of ${d.todayISO} · ${acctCount} account${acctCount === 1 ? "" : "s"}`;
+
+      const pm = computeCurrentPeriodMetrics();
+      $("#period-carry-in").textContent = formatMoney(pm.carryIn);
+      $("#period-carry-in").className = "text-sm font-semibold " + (pm.carryIn >= 0 ? "text-emerald-700" : "text-rose-700");
+      $("#period-income").textContent = formatMoney(pm.income);
+      $("#period-expense").textContent = formatMoney(pm.expense);
+      $("#period-carry-out").textContent = formatMoney(pm.carryOut);
+      $("#period-carry-out").className = "text-sm font-semibold " + (pm.carryOut >= 0 ? "text-emerald-700" : "text-rose-700");
+
+      $("#net-worth").textContent = formatMoney(d.netWorth);
+      $("#net-worth").className = "text-4xl font-extrabold " + (d.netWorth >= 0 ? "text-brand-900" : "text-rose-700");
+
+      renderAccountsSummary();
+    }
+
+    let plannerItemLookup = new Map();
+
+    function plannerItemBadges(it) {
+      if (it.kind === "income") return `<span class="badge badge-emerald">Income</span>`;
+      if (it.kind === "bill") return `<span class="badge badge-amber">Bill</span>` + (it.onCredit ? ` <span class="badge badge-brand">Credit Card</span>` : "");
+      return txnTypeBadge({ txnType: it.txnType }) + " " + cardTypeBadge({ cardType: it.cardType });
+    }
+
+    function plannerItemAmount(it) {
+      switch (it.flow) {
+        case "in": return `<span class="font-semibold text-emerald-700">+${formatMoney(it.amount)}</span>`;
+        case "out": return `<span class="font-semibold text-rose-700">−${formatMoney(it.amount)}</span>`;
+        case "cc": return `<span class="font-semibold text-slate-500" title="Credit card spend — billed later">${formatMoney(it.amount)} <span class="text-[10px] font-normal">CC</span></span>`;
+        default: return `<span class="font-semibold text-slate-500" title="Credit card refund">−${formatMoney(it.amount)} <span class="text-[10px] font-normal">CC</span></span>`;
+      }
+    }
+
+    function renderPlanner() {
+      const planner = computePlanner();
+      const carryNextMonth = planner.carryNextMonth;
+      const rows = applySort("period", planner.rows);
+      $("#carry-forward-next-month").textContent = formatMoney(carryNextMonth);
+
+      const tbody = $("#period-table-body");
+      tbody.innerHTML = "";
+      plannerItemLookup = new Map();
+
+      if (!rows.length) {
+        tbody.innerHTML = `<tr><td colspan="5" class="px-4 py-4 text-center text-slate-500">No periods to display.</td></tr>`;
+        return;
+      }
+
+      const todayISO = toISODate(new Date());
+
+      for (const r of rows) {
+        const tr = document.createElement("tr");
+        const carryClass = r.carry >= 0 ? "text-emerald-700" : "text-rose-700";
+        const netClass = r.net >= 0 ? "text-emerald-700" : "text-rose-700";
+        const expanded = ui.expandedPeriodKeys.has(r.period.startISO);
+        const isCurrent = todayISO >= r.period.startISO && todayISO <= r.period.endISO;
+
+        tr.innerHTML = `
+          <td class="px-4 py-3 font-medium text-slate-800">
+            <div>${escapeHtml(r.period.startISO)} → ${escapeHtml(r.period.endISO)} ${isCurrent ? '<span class="badge badge-brand ml-1">Current</span>' : ""}</div>
+            <div class="text-xs text-slate-500 mt-1">#${r.i + 1}</div>
+            <button type="button" class="text-brand-600 hover:underline text-xs mt-1" data-period-toggle="${r.period.startISO}">${expanded ? "▾" : "▸"} Details (${r.items.length})</button>
+          </td>
+          <td class="px-4 py-3 text-right font-semibold text-emerald-700">${formatMoney(r.income)}</td>
+          <td class="px-4 py-3 text-right font-semibold text-rose-700">
+            ${formatMoney(r.expense)}
+            ${r.ccSpend ? `<div class="text-[11px] text-slate-400 font-normal mt-0.5">+ ${formatMoney(r.ccSpend)} CC spend (billed later)</div>` : ""}
+          </td>
+          <td class="px-4 py-3 text-right font-semibold ${netClass}">${formatMoney(r.net)}</td>
+          <td class="px-4 py-3 text-right font-bold ${carryClass}">${formatMoney(r.carry)}</td>
+        `;
+        tbody.appendChild(tr);
+
+        const detailTr = document.createElement("tr");
+        detailTr.id = `period-detail-${r.period.startISO}`;
+        detailTr.className = expanded ? "" : "hidden";
+
+        const itemsHtml = r.items.length
+          ? r.items.map((it, n) => {
+              const lookupId = `${r.i}-${n}`;
+              plannerItemLookup.set(lookupId, it);
+              return `
+                <div class="flex flex-wrap items-center justify-between gap-3 bg-white border border-slate-200 rounded-lg px-3 py-2">
+                  <div class="min-w-[200px] flex-1">
+                    <div class="text-sm font-medium text-slate-800">${escapeHtml(it.name)} ${plannerItemBadges(it)}</div>
+                    ${it.sub ? `<div class="text-xs text-slate-500 mt-0.5">${escapeHtml(it.sub)}</div>` : ""}
+                  </div>
+                  <div class="text-sm">${plannerItemAmount(it)}</div>
+                  <div class="flex items-center gap-2">
+                    <input type="date" value="${escapeHtml(it.date)}" data-planner-date="${lookupId}"
+                           class="border border-slate-300 rounded-lg px-2 py-1 text-sm">
+                    <button type="button" class="text-emerald-600 hover:underline text-xs font-semibold" data-planner-save="${lookupId}">Save date</button>
+                  </div>
+                </div>`;
+            }).join("")
+          : `<div class="text-sm text-slate-500">No transactions in this period.</div>`;
+
+        detailTr.innerHTML = `<td colspan="5" class="px-4 py-3 bg-slate-50"><div class="space-y-2">${itemsHtml}</div></td>`;
+        tbody.appendChild(detailTr);
+      }
+
+      tbody.querySelectorAll("[data-period-toggle]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const key = btn.dataset.periodToggle;
+          const row = $(`#period-detail-${key}`);
+          const willShow = row.classList.contains("hidden");
+          row.classList.toggle("hidden");
+          if (willShow) ui.expandedPeriodKeys.add(key); else ui.expandedPeriodKeys.delete(key);
+          btn.textContent = btn.textContent.replace(/^[▸▾]/, willShow ? "▾" : "▸");
+        });
+      });
+
+      tbody.querySelectorAll("[data-planner-save]").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          const id = btn.dataset.plannerSave;
+          const item = plannerItemLookup.get(id);
+          const input = tbody.querySelector(`[data-planner-date="${id}"]`);
+          if (!item || !input || !input.value) return;
+          await savePlannerItemDate(item, input.value);
+        });
+      });
+
+      $("#period-summary").textContent = `Showing ${rows.length} periods (${ui.planner.horizonDays} days).`;
+    }
+
+    function renderRecentActivity() {
+      const box = $("#recent-activity");
+      const items = [];
+
+      for (const a of state.assets || []) {
+        items.push({ type: "Asset", date: a.createdAt?.toDate?.()?.toISOString?.() || new Date().toISOString(), text: `Added/Updated asset: ${a.name} (${formatMoney(a.value)})` });
+      }
+      for (const l of state.liabilities || []) {
+        items.push({ type: "Liability", date: l.createdAt?.toDate?.()?.toISOString?.() || new Date().toISOString(), text: `Added/Updated liability: ${l.name} (${formatMoney(l.value)})` });
+      }
+      for (const i of state.incomes || []) {
+        items.push({ type: "Income", date: i.date || "", text: `Income: ${i.source} on ${i.date} (${formatMoney(i.amount)})${i.isRecurring ? " — recurring" : ""}` });
+      }
+      for (const b of state.bills || []) {
+        items.push({ type: "Bill", date: b.date || "", text: `Bill: ${b.name} (${b.category || "—"}) on ${b.date} (${formatMoney(b.amount)})${b.isRecurring ? " — recurring" : ""}` });
+      }
+      for (const t of state.transactions || []) {
+        const label = t.txnType === "payoff" ? "Payoff" : (t.txnType === "credit" ? "Credit/Refund" : "Expense");
+        items.push({ type: label, date: t.date || "", text: `${t.cardName} (${t.cardType === "debit" ? "Debit" : "Credit"}) — ${t.description} on ${t.date} (${formatMoney(t.amount)})` });
+      }
+      for (const b of state.bankAccounts || []) {
+        items.push({ type: "Bank Account", date: b.createdAt?.toDate?.()?.toISOString?.() || new Date().toISOString(), text: `Added/Updated bank account: ${b.name}` });
+      }
+      for (const c of state.creditCards || []) {
+        items.push({ type: "Credit Card", date: c.createdAt?.toDate?.()?.toISOString?.() || new Date().toISOString(), text: `Added/Updated credit card: ${c.name}` });
+      }
+      for (const d2 of state.debitCards || []) {
+        items.push({ type: "Debit Card", date: d2.createdAt?.toDate?.()?.toISOString?.() || new Date().toISOString(), text: `Added/Updated debit card: ${d2.name}` });
+      }
+
+      items.sort((x, y) => {
+        const dx = parseISODateLocal((x.date || "").slice(0,10) || toISODate(new Date())).getTime();
+        const dy = parseISODateLocal((y.date || "").slice(0,10) || toISODate(new Date())).getTime();
+        return dy - dx;
+      });
+
+      const top = items.slice(0, 6);
+      box.innerHTML = "";
+      if (!top.length) {
+        box.innerHTML = `<div class="text-sm text-slate-500">Add your first entry to see activity here.</div>`;
+        return;
+      }
+      for (const it of top) {
+        const div = document.createElement("div");
+        div.className = "flex items-start justify-between gap-3 bg-slate-50 border border-slate-200 rounded-xl p-3";
+        div.innerHTML = `
+          <div>
+            <div class="text-sm font-semibold text-slate-900">${escapeHtml(it.type)}</div>
+            <div class="text-xs text-slate-600 mt-1">${escapeHtml(it.text)}</div>
+          </div>
+        `;
+        box.appendChild(div);
+      }
+    }
+
+    function refreshAllViews() {
+      renderAssets();
+      renderLiabilities();
+      renderBankAccounts();
+      renderCreditCards();
+      renderDebitCards();
+      renderIncomes();
+      renderBills();
+      updateCategoryDatalist();   // NEW
+      renderTransactionsLedger();
+
+      if (!routeDashboard.classList.contains("hidden")) {
+        renderDashboard();
+        renderRecentActivity();
+      }
+      if (!routePeriod.classList.contains("hidden")) renderPlanner();
+      if (!routeAccounts.classList.contains("hidden")) renderAccountsSummary();
+      updateSortIndicators();
+      renderInsights();           // NEW (uses the rows the ledger just filtered)
+    }
+
+    // ===== Planner controls =====
+    $("#planner-horizon-days").addEventListener("input", () => {
+      ui.planner.horizonDays = Number($("#planner-horizon-days").value || 180);
+    });
+
+    $("#recalc-planner-btn").addEventListener("click", () => {
+      ui.planner.horizonDays = Number($("#planner-horizon-days").value || 180);
+      renderPlanner();
+    });
+
+    // ===== Auth state boot =====
+    setAuthMode("signin");
+    updateTxnCardOptions();
+
+    onAuthStateChanged(auth, (user) => {
+      currentUser = user || null;
+
+      if (!currentUser) {
+        appView.classList.add("hidden");
+        authView.classList.remove("hidden");
+        clearSubscriptions();
+        state = {
+          assets: [], liabilities: [], incomes: [], incomeOverrides: [], bills: [], billOverrides: [],
+          bankAccounts: [], creditCards: [], debitCards: [], transactions: []
+        };
+        ui.expandedBillIds = new Set();
+        ui.expandedIncomeIds = new Set();
+        ui.expandedPeriodKeys = new Set();
+        setRoute("data");
+        return;
+      }
+
+      authView.classList.add("hidden");
+      appView.classList.remove("hidden");
+      $("#user-email").textContent = currentUser.email || "(user)";
+
+      // Default landing page is Data Entry, per workflow priority.
+      setRoute("data");
+
+      const todayISO = toISODate(new Date());
+      $("#income-date").value = todayISO;
+      $("#bill-date").value = todayISO;
+      $("#txn-date").value = todayISO;
+
+      ui.planner.horizonDays = Number($("#planner-horizon-days").value || 180);
+      subscribeAll();
+      refreshAllViews();
+    });
+
+    // Initial render preview (before auth)
+    $("#planner-horizon-days").value = "180";
+  </script>
+
+  <!-- Optional: quick copy helper (not required) -->
+  <script>
+    // Nothing here intentionally: all app JS is in module for scoped correctness.
+  </script>
+
+</body>
+</html>
