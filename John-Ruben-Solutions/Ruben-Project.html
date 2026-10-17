@@ -14,7 +14,7 @@
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 
   <script>
     tailwind.config = {
@@ -90,7 +90,45 @@
 
     /* NEW: category dot used in the insights list */
     .cat-dot { display: inline-block; width: 10px; height: 10px; border-radius: 9999px; flex-shrink: 0; }
-  </style>
+  :root { color-scheme: dark; }
+    body { background: radial-gradient(1100px 560px at 8% -8%, rgba(14,165,233,.14), transparent), #060a12 !important; color: #e2e8f0; font-variant-numeric: tabular-nums; }
+    #app-content-scroll { background: transparent !important; }
+    .bg-white { background: rgba(15,23,42,.72) !important; backdrop-filter: blur(12px); }
+    .bg-slate-50, .bg-slate-100 { background: rgba(30,41,59,.55) !important; }
+    .bg-amber-50\/40 { background: rgba(245,158,11,.08) !important; }
+    .bg-amber-50 { background: rgba(245,158,11,.12) !important; }
+    .bg-rose-50 { background: rgba(244,63,94,.12) !important; }
+    .border-slate-100, .border-slate-200, .border-slate-300 { border-color: rgba(148,163,184,.18) !important; }
+    .border-amber-200 { border-color: rgba(245,158,11,.35) !important; }
+    .bg-white.rounded-2xl, .quick-add-panel { box-shadow: 0 0 0 1px rgba(56,189,248,.08), 0 10px 30px rgba(0,0,0,.35); }
+    .quick-add-panel { background: linear-gradient(180deg, rgba(15,23,42,.85), rgba(8,47,73,.45)) !important; border: 1px solid rgba(56,189,248,.25); }
+    .text-slate-900, .text-slate-800 { color: #f1f5f9 !important; }
+    .text-slate-700, .text-slate-600 { color: #cbd5e1 !important; }
+    .text-slate-500 { color: #94a3b8 !important; }
+    .text-slate-400 { color: #64748b !important; }
+    .text-emerald-700, .text-emerald-600 { color: #34d399 !important; }
+    .text-rose-700, .text-rose-600 { color: #fb7185 !important; }
+    .text-brand-900 { color: #7dd3fc !important; }
+    .text-brand-600 { color: #38bdf8 !important; }
+    .text-amber-700, .text-amber-600 { color: #fbbf24 !important; }
+    input, select, input.bg-white, select.bg-white { background: rgba(2,6,23,.65) !important; color: #e2e8f0 !important; }
+    input::placeholder { color: #64748b; }
+    .hover\:bg-slate-200:hover { background: rgba(71,85,105,.6) !important; }
+    .ledger-scroll thead th { background: #0f172a !important; box-shadow: 0 1px 0 rgba(148,163,184,.2); }
+    .util-bar-track { background: rgba(148,163,184,.2); }
+    .badge-rose { background: rgba(244,63,94,.15); color: #fb7185; border-color: rgba(244,63,94,.35); }
+    .badge-emerald { background: rgba(16,185,129,.15); color: #34d399; border-color: rgba(16,185,129,.35); }
+    .badge-amber { background: rgba(245,158,11,.15); color: #fbbf24; border-color: rgba(245,158,11,.35); }
+    .badge-brand { background: rgba(14,165,233,.15); color: #38bdf8; border-color: rgba(14,165,233,.35); }
+    .badge-slate { background: rgba(148,163,184,.15); color: #cbd5e1; border-color: rgba(148,163,184,.3); }
+    #net-worth, #bank-cash-now, td.text-right { font-family: 'JetBrains Mono', 'Inter', monospace; }
+    .nav-active { box-shadow: inset 0 0 0 1px rgba(14,165,233,.5), 0 0 18px rgba(14,165,233,.2); }
+    *::-webkit-scrollbar { width: 10px; height: 10px; }
+    *::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 9999px; border: 2px solid #060a12; }
+    *::-webkit-scrollbar-track { background: transparent; }
+    .jrs-badge { display: inline-block; margin-top: .35rem; padding: .1rem .55rem; border-radius: 9999px; font-size: .65rem; font-weight: 600; letter-spacing: .04em; color: #7dd3fc; background: rgba(14,165,233,.12); border: 1px solid rgba(14,165,233,.35); }
+  
+</style>
 </head>
 
 <body class="text-slate-800 h-screen flex overflow-hidden selection:bg-brand-500 selection:text-white">
@@ -123,7 +161,7 @@
               d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
           </svg>
         </div>
-        <h1 class="text-2xl font-bold text-slate-900">Ruben's FinHub</h1>
+        <h1 class="text-2xl font-bold text-slate-900">Ruben's FinHub</h1><span class="jrs-badge">John Ruben Solutions, LLC</span>
         <p class="text-sm text-slate-500 mt-1" id="auth-subtitle">Sign in to access your secure financial vault.</p>
       </div>
 
@@ -172,6 +210,7 @@
         </h1>
       </div>
 
+      <div class="px-6 pt-3"><span class="jrs-badge">John Ruben Solutions, LLC</span></div>
       <div class="flex-1 px-4 py-6 space-y-2 overflow-y-auto hide-scrollbar">
         <button data-route="dashboard" id="nav-dashboard"
                 class="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all nav-inactive">
@@ -236,6 +275,7 @@
           FinHub
         </h1>
         <div class="flex items-center gap-2">
+          <span class="jrs-badge">John Ruben Solutions, LLC</span>
           <button id="mobile-nav-btn" class="p-2 bg-slate-800 rounded-lg">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
@@ -904,7 +944,9 @@
                 </div>
               </div>
 
-              <form id="income-form" class="mt-4 grid grid-cols-1 md:grid-cols-6 gap-3 items-end">
+              <div id="income-editing-banner" class="hidden mt-4 text-sm bg-amber-50 text-amber-700 border border-amber-200 rounded-lg px-3 py-1.5 inline-flex items-center gap-2">Editing an income <button type="button" id="income-cancel-edit-btn" class="font-semibold underline">Cancel</button></div>
+              
+<form id="income-form" class="mt-4 grid grid-cols-1 md:grid-cols-6 gap-3 items-end">
                 <div>
                   <label class="block text-sm font-medium text-slate-700 mb-1">Income Source</label>
                   <input type="text" id="income-source" required placeholder="Salary / Bonus / Other"
@@ -973,7 +1015,9 @@
                 </div>
               </div>
 
-              <form id="bill-form" class="mt-4 grid grid-cols-1 md:grid-cols-4 xl:grid-cols-7 gap-3 items-end">
+              <div id="bill-editing-banner" class="hidden mt-4 text-sm bg-amber-50 text-amber-700 border border-amber-200 rounded-lg px-3 py-1.5 inline-flex items-center gap-2">Editing a bill <button type="button" id="bill-cancel-edit-btn" class="font-semibold underline">Cancel</button></div>
+              
+<form id="bill-form" class="mt-4 grid grid-cols-1 md:grid-cols-4 xl:grid-cols-7 gap-3 items-end">
                 <div>
                   <label class="block text-sm font-medium text-slate-700 mb-1">Name</label>
                   <input type="text" id="bill-name" required placeholder="Rent / Utilities / Insurance"
@@ -1002,6 +1046,14 @@
                   </select>
                 </div>
                 <div>
+                  <label class="block text-sm font-medium text-slate-700 mb-1">Pays off credit card?</label>
+                  <select id="bill-payoff-card"
+                          class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                    <option value="">No — regular bill</option>
+                  </select>
+                </div>
+                
+<div>
                   <label class="flex items-center gap-2 text-sm font-medium text-slate-700 mb-1">
                     <input type="checkbox" id="bill-recurring" class="rounded border-slate-300 text-brand-600 focus:ring-brand-500">
                     Make Recurring
@@ -1218,6 +1270,16 @@ service cloud.firestore {
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
+    if (typeof Chart !== "undefined") {
+      Chart.defaults.color = "#94a3b8";
+      Chart.defaults.borderColor = "rgba(148,163,184,.15)";
+      Chart.defaults.font.family = "Inter, sans-serif";
+      const tt = Chart.defaults.plugins.tooltip;
+      tt.backgroundColor = "#0f172a"; tt.borderColor = "rgba(56,189,248,.35)"; tt.borderWidth = 1;
+      tt.titleColor = "#f1f5f9"; tt.bodyColor = "#cbd5e1";
+      Chart.defaults.plugins.legend.labels.color = "#cbd5e1";
+    }
+
 
     // ===== State =====
     let currentUser = null;
@@ -1532,6 +1594,7 @@ service cloud.firestore {
 
       try {
         if (ui.editing.assetId) {
+          delete payload.createdAt;
           await setDoc(doc(db, "users", currentUser.uid, "assets", ui.editing.assetId), payload, { merge: true });
         } else {
           await addDoc(userCol("assets"), payload);
@@ -1614,6 +1677,7 @@ service cloud.firestore {
 
       try {
         if (ui.editing.liabilityId) {
+          delete payload.createdAt;
           await setDoc(doc(db, "users", currentUser.uid, "liabilities", ui.editing.liabilityId), payload, { merge: true });
         } else {
           await addDoc(userCol("liabilities"), payload);
@@ -1699,6 +1763,7 @@ service cloud.firestore {
 
       try {
         if (ui.editing.bankAccountId) {
+          delete payload.createdAt;
           await setDoc(doc(db, "users", currentUser.uid, "bankAccounts", ui.editing.bankAccountId), payload, { merge: true });
         } else {
           await addDoc(userCol("bankAccounts"), payload);
@@ -1873,6 +1938,7 @@ service cloud.firestore {
 
       try {
         if (ui.editing.creditCardId) {
+          delete payload.createdAt;
           await setDoc(doc(db, "users", currentUser.uid, "creditCards", ui.editing.creditCardId), payload, { merge: true });
         } else {
           await addDoc(userCol("creditCards"), payload);
@@ -1893,8 +1959,15 @@ service cloud.firestore {
         if (!t.date || t.date > todayISO) continue;
         const amt = Number(t.amount || 0);
         if (t.txnType === "expense") balance += amt;
-        else if (t.txnType === "credit") balance -= amt;
-        else if (t.txnType === "payoff") balance -= amt;
+        else if (t.txnType === "credit" || t.txnType === "payoff") balance -= amt;
+      }
+      // Bills paid with this card (+) and bills that pay this card off (-), dated today or earlier
+      const billDates = (state.bills || []).map(b => b.date).filter(Boolean).sort();
+      if (billDates.length) {
+        for (const occ of generateBillOccurrences(parseISODateLocal(billDates[0]), parseISODateLocal(todayISO))) {
+          if (occ.payMethod === "credit" && occ.payCardId === card.id) balance += Number(occ.amount || 0);
+          if (occ.payoffCardId === card.id) balance -= Number(occ.amount || 0);   // bill that pays this card off
+        }
       }
       return balance;
     }
@@ -1991,6 +2064,7 @@ service cloud.firestore {
 
       try {
         if (ui.editing.debitCardId) {
+          delete payload.createdAt;
           await setDoc(doc(db, "users", currentUser.uid, "debitCards", ui.editing.debitCardId), payload, { merge: true });
         } else {
           await addDoc(userCol("debitCards"), payload);
@@ -2211,6 +2285,7 @@ service cloud.firestore {
 
       try {
         if (ui.editing.transactionId) {
+          delete payload.createdAt;
           await setDoc(doc(db, "users", currentUser.uid, "transactions", ui.editing.transactionId), payload, { merge: true });
           ui.editing.transactionId = null;
           $("#txn-editing-banner").classList.add("hidden");
@@ -2291,7 +2366,7 @@ service cloud.firestore {
 
     // How much a ledger row counts as "spending": purchases/bills add, refunds subtract, payoffs are transfers (0).
     function rowSpend(r) {
-      if (r.kind === "bill") return Number(r.occ.amount) || 0;
+      if (r.kind === "bill") return r.occ.payoffCardId ? 0 : (Number(r.occ.amount) || 0);
       const a = Number(r.t.amount) || 0;
       if (r.t.txnType === "expense") return a;
       if (r.t.txnType === "credit") return -a;
@@ -2710,7 +2785,7 @@ service cloud.firestore {
       if (!finDoughnut) {
         finDoughnut = new Chart($("#fin-doughnut"), {
           type: "doughnut",
-          data: { labels: pieLabels, datasets: [{ data: pieData, backgroundColor: pieColors, borderColor: "#ffffff", borderWidth: 2 }] },
+          data: { labels: pieLabels, datasets: [{ data: pieData, backgroundColor: pieColors, borderColor: "#0f172a", borderWidth: 2 }] },
           options: {
             responsive: true,
             maintainAspectRatio: false,
@@ -2929,7 +3004,7 @@ service cloud.firestore {
 
     // ===== CRUD: Income =====
     function openIncomeForm(item) {
-      ui.editing.incomeId = item ? item.id : null;
+      ui.editing.incomeId = item ? item.id : null; setEditBanner("#income-editing-banner", !!item);
       $("#income-source").value = item?.source ?? "";
       $("#income-date").value = item?.date ?? toISODate(new Date());
       $("#income-amount").value = item?.amount ?? "";
@@ -3030,6 +3105,7 @@ service cloud.firestore {
 
       try {
         if (ui.editing.incomeId) {
+          delete payload.createdAt;
           await setDoc(doc(db, "users", currentUser.uid, "incomes", ui.editing.incomeId), payload, { merge: true });
           ui.editing.incomeId = null;
         } else {
@@ -3038,7 +3114,7 @@ service cloud.firestore {
         $("#income-source").value = "";
         $("#income-amount").value = "";
         $("#income-recurring").checked = false;
-        $("#income-recurrence-type").classList.add("hidden");
+        $("#income-recurrence-type").classList.add("hidden"); setEditBanner("#income-editing-banner", false);
       } catch (err) {
         alert(err?.message || "Failed to save income");
       }
@@ -3260,7 +3336,7 @@ service cloud.firestore {
       const amount = (ov && ov.amount != null && ov.amount !== "") ? Number(ov.amount) : Number(bill.amount || 0);
       occurrences.push({
         billId: bill.id, name: bill.name, category: bill.category,
-        payMethod: bill.payMethod || null, payCardId: bill.payCardId || null,
+        payMethod: bill.payMethod || null, payCardId: bill.payCardId || null, payoffCardId: bill.payoffCardId || null,
         date: effISO, originalDate, moved: effISO !== originalDate,
         amount, recurring: true, overridden: !!ov, occurrenceKey: key
       });
@@ -3280,7 +3356,7 @@ service cloud.firestore {
           if (startDate >= rangeStart && startDate <= rangeEnd) {
             occurrences.push({
               billId: bill.id, name: bill.name, category: bill.category,
-              payMethod: bill.payMethod || null, payCardId: bill.payCardId || null,
+              payMethod: bill.payMethod || null, payCardId: bill.payCardId || null, payoffCardId: bill.payoffCardId || null,
               date: bill.date, originalDate: bill.date, moved: false,
               amount: Number(bill.amount || 0),
               recurring: false, overridden: false, occurrenceKey: null
@@ -3316,11 +3392,13 @@ service cloud.firestore {
         amount: Number.isFinite(amount) ? amount : 0,
         isRecurring, recurrenceType,
         payMethod, payCardId,
+        payoffCardId: ($("#bill-payoff-card")?.value || null),
         createdAt: serverTimestamp()
       };
 
       try {
         if (ui.editing.billId) {
+          delete payload.createdAt;
           await setDoc(doc(db, "users", currentUser.uid, "bills", ui.editing.billId), payload, { merge: true });
           ui.editing.billId = null;
         } else {
@@ -3329,23 +3407,23 @@ service cloud.firestore {
         $("#bill-name").value = "";
         $("#bill-category").value = "";
         $("#bill-amount").value = "";
-        $("#bill-pay-with").value = "";
+        $("#bill-pay-with").value = ""; if ($("#bill-payoff-card")) $("#bill-payoff-card").value = "";
         $("#bill-recurring").checked = false;
-        $("#bill-recurrence-type").classList.add("hidden");
+        $("#bill-recurrence-type").classList.add("hidden"); setEditBanner("#bill-editing-banner", false);
       } catch (err) {
         alert(err?.message || "Failed to save bill");
       }
     });
 
     function openBillForm(item) {
-      ui.editing.billId = item.id;
+      ui.editing.billId = item.id; setEditBanner("#bill-editing-banner", true);
       $("#bill-name").value = item.name ?? "";
       $("#bill-category").value = item.category ?? "";
       $("#bill-date").value = item.date ?? toISODate(new Date());
       $("#bill-amount").value = item.amount ?? "";
       populateBillPayWithOptions();
       $("#bill-pay-with").value = (item.payMethod && item.payCardId) ? `${item.payMethod}:${item.payCardId}` : "";
-      $("#bill-recurring").checked = !!item.isRecurring;
+      $("#bill-recurring").checked = !!item.isRecurring; if ($("#bill-payoff-card")) $("#bill-payoff-card").value = item.payoffCardId || "";
       $("#bill-recurrence-type").classList.toggle("hidden", !item.isRecurring);
       if (item.isRecurring) $("#bill-recurrence-type").value = item.recurrenceType === "biweekly" ? "biweekly" : "monthly";
       $("#bill-name")?.scrollIntoView?.({ behavior: "smooth", block: "center" });
@@ -3371,6 +3449,8 @@ service cloud.firestore {
           <td class="px-3 py-2 font-medium text-slate-800">
             ${escapeHtml(b.name)}
             ${billPayLabel(b) ? `<div class="text-xs text-slate-500">Pays via ${escapeHtml(billPayLabel(b))}</div>` : ""}
+            ${b.payoffCardId ? `<div class="text-xs text-emerald-600">Pays off ${escapeHtml((state.creditCards.find(c => c.id === b.payoffCardId) || {}).name || "card")}</div>` : ""}
+
           </td>
           <td class="px-3 py-2 text-slate-700">${escapeHtml(b.category || "-")}</td>
           <td class="px-3 py-2 text-slate-700">${escapeHtml(b.date)}</td>
@@ -3504,30 +3584,25 @@ service cloud.firestore {
     function buildPeriods() {
       const incomes = state.incomes || [];
       const today = parseISODateLocal(toISODate(new Date()));
-
       let anchorDate = today;
       if (incomes.length) {
         const earliest = sortByDateAsc(incomes, "date")[0]?.date;
         if (earliest) anchorDate = parseISODateLocal(earliest);
       }
-
       const horizonDays = ui.planner.horizonDays || 180;
+      let first = anchorDate;
+      if (today > anchorDate) {
+        const n = Math.floor(Math.round((today - anchorDate) / 86400000) / 14);
+        first = addDays(anchorDate, Math.max(0, n - 1) * 14); // period just before today's
+      }
+      const end = addDays(today, horizonDays);
       const periods = [];
-      const start = anchorDate;
-      const end = addDays(start, horizonDays);
-
-      let cursor = new Date(start);
-      let idx = 1;
-      while (cursor <= end) {
-        const pStart = cursor;
+      let cursor = new Date(first), idx = 1;
+      while (cursor <= end && periods.length <= 4000) {
         const pEnd = addDays(cursor, 13);
-        periods.push({
-          key: `p${idx}`, start: pStart, end: pEnd,
-          startISO: toISODate(pStart), endISO: toISODate(pEnd)
-        });
+        periods.push({ key: "p" + idx, start: new Date(cursor), end: pEnd, startISO: toISODate(cursor), endISO: toISODate(pEnd) });
         cursor = addDays(cursor, 14);
         idx++;
-        if (periods.length > 4000) break;
       }
       return periods;
     }
@@ -3688,13 +3763,20 @@ service cloud.firestore {
       const liabilitiesTotal = manualLiabilitiesTotal + creditTotal;
 
       const todayDate = parseISODateLocal(todayISO);
-      const unroutedIncomeToday = generateIncomeOccurrences(todayDate, todayDate)
-        .reduce((s, o) => !o.bankAccountId ? s + Number(o.amount || 0) : s, 0);
-      // Bills already deducted from a bank balance must not be subtracted a second time here.
-      const billsToday = generateBillOccurrences(todayDate, todayDate)
-        .reduce((s, o) => resolveBillBankId(o) ? s : s + Number(o.amount || 0), 0);
+      const incStart = (state.incomes || []).map(i => i.date).filter(Boolean).sort()[0];
+      const billStart = (state.bills || []).map(b => b.date).filter(Boolean).sort()[0];
+      const unroutedIncomeToday = incStart
+        ? generateIncomeOccurrences(parseISODateLocal(incStart), todayDate)
+            .reduce((s, o) => !o.bankAccountId ? s + Number(o.amount || 0) : s, 0)
+        : 0;
+      // Bank/debit bills are already in bank balances; credit bills are in card balances.
+      const billsToday = billStart
+        ? generateBillOccurrences(parseISODateLocal(billStart), todayDate)
+            .reduce((s, o) => (resolveBillBankId(o) || o.payMethod === "credit") ? s : s + Number(o.amount || 0), 0)
+        : 0;
 
-      const netCashflowAdj = unroutedIncomeToday - billsToday;
+      
+const netCashflowAdj = unroutedIncomeToday - billsToday;
       const netWorth = assetsTotal - liabilitiesTotal + netCashflowAdj;
 
       return {
@@ -3902,7 +3984,7 @@ service cloud.firestore {
       renderDebitCards();
       renderIncomes();
       renderBills();
-      updateCategoryDatalist();   // NEW
+      updateCategoryDatalist(); populatePayoffCardOptions();   // NEW
       renderTransactionsLedger();
 
       if (!routeDashboard.classList.contains("hidden")) {
@@ -3915,7 +3997,36 @@ service cloud.firestore {
       renderInsights();           // NEW (uses the rows the ledger just filtered)
     }
 
-    // ===== Planner controls =====
+    // ===== Edit banners (Income / Bills) =====
+    function setEditBanner(sel, on) { const el = $(sel); if (el) el.classList.toggle("hidden", !on); }
+    $("#income-cancel-edit-btn").addEventListener("click", () => {
+      ui.editing.incomeId = null;
+      $("#income-source").value = ""; $("#income-amount").value = "";
+      $("#income-recurring").checked = false; $("#income-recurrence-type").classList.add("hidden");
+      setEditBanner("#income-editing-banner", false);
+    });
+    $("#bill-cancel-edit-btn").addEventListener("click", () => {
+      ui.editing.billId = null;
+      $("#bill-name").value = ""; $("#bill-category").value = ""; $("#bill-amount").value = "";
+      $("#bill-pay-with").value = ""; $("#bill-recurring").checked = false;
+      $("#bill-recurrence-type").classList.add("hidden");
+      setEditBanner("#bill-editing-banner", false);
+    });
+
+    
+// ===== Bill that pays off a credit card =====
+    function populatePayoffCardOptions() {
+      const sel = $("#bill-payoff-card");
+      if (!sel) return;
+      const prev = sel.value;
+      sel.innerHTML = '<option value="">No — regular bill</option>' +
+        state.creditCards.slice().sort((a, b) => (a.name || "").localeCompare(b.name || ""))
+          .map(c => '<option value="' + c.id + '">' + escapeHtml(c.name) + '</option>').join("");
+      if (state.creditCards.some(c => c.id === prev)) sel.value = prev;
+    }
+
+    
+// ===== Planner controls =====
     $("#planner-horizon-days").addEventListener("input", () => {
       ui.planner.horizonDays = Number($("#planner-horizon-days").value || 180);
     });
