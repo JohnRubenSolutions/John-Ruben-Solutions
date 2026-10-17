@@ -935,7 +935,42 @@
           </div>
 
           <div class="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <!-- INCOME -->
+            <!-- BUDGETS -->
+            <div id="budget-card" class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 lg:col-span-2">
+              <div class="flex items-start justify-between gap-3 flex-wrap">
+                <div>
+                  <h3 class="text-lg font-semibold text-slate-900">Budgets by Category</h3>
+                  <p class="text-sm text-slate-500 mt-1">Monthly budgets for the categories you already use. Set a fixed dollar amount or a percentage of that month's expected income. Spending counts expenses and bills, minus refunds; card payoffs are excluded.</p>
+                </div>
+                <div>
+                  <label class="block text-xs font-medium text-slate-600 mb-1" for="bud-month">Month</label>
+                  <input type="month" id="bud-month" class="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500 outline-none">
+                </div>
+              </div>
+              <div class="mt-4 grid grid-cols-2 lg:grid-cols-4 gap-3">
+                <div class="bg-slate-50 rounded-xl border border-slate-200 p-4"><div class="text-xs text-slate-500">Expected income</div><div class="text-lg font-bold text-emerald-700" id="bud-income">$0.00</div></div>
+                <div class="bg-slate-50 rounded-xl border border-slate-200 p-4"><div class="text-xs text-slate-500">Total budgeted</div><div class="text-lg font-bold text-slate-900" id="bud-total-budget">$0.00</div><div class="text-[11px] text-slate-400" id="bud-pct-income"></div></div>
+                <div class="bg-slate-50 rounded-xl border border-slate-200 p-4"><div class="text-xs text-slate-500">Spent (budgeted categories)</div><div class="text-lg font-bold text-rose-700" id="bud-total-actual">$0.00</div></div>
+                <div class="bg-slate-50 rounded-xl border border-slate-200 p-4"><div class="text-xs text-slate-500">Remaining</div><div class="text-lg font-bold" id="bud-total-left">$0.00</div></div>
+              </div>
+              <div class="mt-4 overflow-x-auto">
+                <table class="min-w-[860px] w-full text-sm">
+                  <thead><tr class="bg-slate-50">
+                    <th class="text-left px-3 py-2 font-semibold text-slate-600"><button type="button" data-bud-sort="cat" class="inline-flex items-center gap-1 hover:text-slate-900">Category <span data-sort-ind class="text-xs text-slate-400">↕</span></button></th>
+                    <th class="text-left px-3 py-2 font-semibold text-slate-600"><button type="button" data-bud-sort="budget" class="inline-flex items-center gap-1 hover:text-slate-900">Budget <span data-sort-ind class="text-xs text-slate-400">↕</span></button></th>
+                    <th class="text-right px-3 py-2 font-semibold text-slate-600"><button type="button" data-bud-sort="amt" class="inline-flex items-center gap-1 hover:text-slate-900">Budget ($) <span data-sort-ind class="text-xs text-slate-400">↕</span></button></th>
+                    <th class="text-right px-3 py-2 font-semibold text-slate-600"><button type="button" data-bud-sort="spent" class="inline-flex items-center gap-1 hover:text-slate-900">Spent <span data-sort-ind class="text-xs text-slate-400">↕</span></button></th>
+                    <th class="text-left px-3 py-2 font-semibold text-slate-600"><button type="button" data-bud-sort="progress" class="inline-flex items-center gap-1 hover:text-slate-900">Progress <span data-sort-ind class="text-xs text-slate-400">↕</span></button></th>
+                    <th class="text-right px-3 py-2 font-semibold text-slate-600"><button type="button" data-bud-sort="left" class="inline-flex items-center gap-1 hover:text-slate-900">Left / Over <span data-sort-ind class="text-xs text-slate-400">↕</span></button></th>
+                    <th class="text-right px-3 py-2 font-semibold text-slate-600">Actions</th>
+                  </tr></thead>
+                  <tbody id="bud-body"></tbody>
+                </table>
+              </div>
+            </div>
+
+            
+<!-- INCOME -->
             <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 lg:col-span-2">
               <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                 <div>
@@ -1515,6 +1550,11 @@ service cloud.firestore {
       const creditCardQ = query(userCol("creditCards"), orderBy("createdAt", "desc"));
       const debitCardQ = query(userCol("debitCards"), orderBy("createdAt", "desc"));
       const txnQ = query(userCol("transactions"), orderBy("date", "desc"));
+      unsubscribers.push(onSnapshot(userCol("budgets"), (snap) => {
+        state.budgets = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        refreshAllViews();
+      }));
+
 
       unsubscribers.push(onSnapshot(assetQ, (snap) => {
         state.assets = snap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -3995,6 +4035,7 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
       if (!routeAccounts.classList.contains("hidden")) renderAccountsSummary();
       updateSortIndicators();
       renderInsights();           // NEW (uses the rows the ledger just filtered)
+      renderBudgets();
     }
 
     // ===== Edit banners (Income / Bills) =====
@@ -4024,6 +4065,148 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
           .map(c => '<option value="' + c.id + '">' + escapeHtml(c.name) + '</option>').join("");
       if (state.creditCards.some(c => c.id === prev)) sel.value = prev;
     }
+
+    
+// ===== Budgets (monthly, only categories already in use) =====
+    let budCats = [];
+    const budSlug = (c) => String(c).toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "") || "category";
+
+    let budSort = { key: "cat", dir: "asc" };
+    function renderBudgets() {
+      const card = $("#budget-card");
+      if (!card || routeData.classList.contains("hidden")) return;
+
+      // sortable headers (click a header; click again to reverse)
+      const head = card.querySelector("thead");
+      head.onclick = (e) => {
+        const btn = e.target.closest("[data-bud-sort]");
+        if (!btn) return;
+        const k = btn.dataset.budSort;
+        budSort = budSort.key === k
+          ? { key: k, dir: budSort.dir === "asc" ? "desc" : "asc" }
+          : { key: k, dir: k === "cat" ? "asc" : "desc" };
+        if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+        renderBudgets();
+      };
+      $$("[data-bud-sort]").forEach(btn => {
+        const ind = btn.querySelector("[data-sort-ind]");
+        const on = btn.dataset.budSort === budSort.key;
+        if (ind) { ind.textContent = on ? (budSort.dir === "asc" ? "▲" : "▼") : "↕"; ind.className = "text-xs " + (on ? "text-brand-600" : "text-slate-400"); }
+      });
+
+      const ae = document.activeElement;
+      if (ae && ae.tagName === "INPUT" && ae.id !== "bud-month" && card.contains(ae)) return; // don't wipe typing
+
+      const monthEl = $("#bud-month");
+      if (!monthEl.value) monthEl.value = toISODate(new Date()).slice(0, 7);
+      const ym = monthEl.value;
+      const [y, mo] = ym.split("-").map(Number);
+      const monthIncome = generateIncomeOccurrences(new Date(y, mo - 1, 1), new Date(y, mo, 0))
+        .reduce((s, o) => s + Number(o.amount || 0), 0);
+
+      const actual = new Map(), used = new Set();
+      for (const r of getLedgerBaseRows().rows) {
+        const amt = rowSpend(r);
+        if (!amt) continue;
+        const cat = categoryLabel(rowCategoryRaw(r));
+        if (cat === UNCATEGORIZED) continue;
+        used.add(cat);
+        if ((r.date || "").slice(0, 7) === ym) actual.set(cat, (actual.get(cat) || 0) + amt);
+      }
+      const budgets = new Map();
+      for (const b of state.budgets || []) { const c = categoryLabel(b.category); budgets.set(c, b); used.add(c); }
+
+      let totBudget = 0, totActual = 0;
+      const rows = Array.from(used).map(cat => {
+        const b = budgets.get(cat);
+        const mode = b && b.mode === "percent" ? "percent" : "amount";
+        const val = b ? (Number(b.value) || 0) : 0;
+        const budgetAmt = !b ? 0 : (mode === "percent" ? monthIncome * val / 100 : val);
+        const act = actual.get(cat) || 0;
+        const has = !!b && budgetAmt > 0;
+        if (has) { totBudget += budgetAmt; totActual += act; }
+        return { cat, b, mode, val, budgetAmt, act, has, pct: budgetAmt > 0 ? (act / budgetAmt) * 100 : 0, left: budgetAmt - act };
+      });
+
+      // sort (rows without a budget always fall to the bottom of budget-based columns)
+      const sv = {
+        cat: r => r.cat.toLowerCase(),
+        budget: r => r.b ? (r.mode === "percent" ? 1e9 : 0) + r.val : null,
+        amt: r => r.has ? r.budgetAmt : null,
+        spent: r => r.act,
+        progress: r => r.has ? r.pct : null,
+        left: r => r.has ? r.left : null
+      };
+      const g = sv[budSort.key] || sv.cat, mult = budSort.dir === "asc" ? 1 : -1;
+      rows.sort((a, b) => {
+        const va = g(a), vb = g(b);
+        if (va === null && vb === null) return a.cat.localeCompare(b.cat);
+        if (va === null) return 1;
+        if (vb === null) return -1;
+        const c = typeof va === "string" ? va.localeCompare(vb) : va - vb;
+        return c !== 0 ? c * mult : a.cat.localeCompare(b.cat);
+      });
+      budCats = rows.map(r => r.cat);
+
+      const tbody = $("#bud-body");
+      if (!rows.length) {
+        tbody.innerHTML = '<tr><td colspan="7" class="px-3 py-4 text-center text-slate-500">No categories in use yet. Tag expenses or bills with a category, then set budgets here.</td></tr>';
+      } else {
+        tbody.innerHTML = rows.map((r, i) => {
+          const color = r.pct > 100 ? "#e11d48" : (r.pct >= 80 ? "#f59e0b" : "#10b981");
+          const c = categoryColor(r.cat);
+          return `<tr>
+            <td class="px-3 py-2 font-medium text-slate-800"><span class="inline-flex items-center gap-2"><span class="cat-dot" style="background:${c};"></span>${escapeHtml(r.cat)}</span></td>
+            <td class="px-3 py-2"><div class="flex items-center gap-1">
+              <select data-bud-mode="${i}" class="border border-slate-300 rounded-lg px-2 py-1.5 text-sm outline-none">
+                <option value="amount"${r.mode === "amount" ? " selected" : ""}>$ / month</option>
+                <option value="percent"${r.mode === "percent" ? " selected" : ""}>% of income</option>
+              </select>
+              <input type="number" min="0" step="0.01" data-bud-val="${i}" value="${r.b ? r.val : ""}" placeholder="0" class="border border-slate-300 rounded-lg px-2 py-1.5 text-sm w-24 outline-none">
+            </div></td>
+            <td class="px-3 py-2 text-right">${r.b ? formatMoney(r.budgetAmt) : "—"}</td>
+            <td class="px-3 py-2 text-right font-semibold text-rose-700">${formatMoney(r.act)}</td>
+            <td class="px-3 py-2" style="min-width:150px">${r.has
+              ? `<div class="util-bar-track"><div class="util-bar-fill" style="width:${Math.min(100, r.pct).toFixed(0)}%;background-color:${color};"></div></div><div class="text-[11px] text-slate-500 mt-0.5">${r.pct.toFixed(0)}% used</div>`
+              : '<span class="text-xs text-slate-400">No budget set</span>'}</td>
+            <td class="px-3 py-2 text-right font-semibold ${r.left >= 0 ? "text-emerald-700" : "text-rose-700"}">${r.has ? (r.left >= 0 ? formatMoney(r.left) + " left" : formatMoney(-r.left) + " over") : "—"}</td>
+            <td class="px-3 py-2 text-right"><div class="inline-flex items-center gap-2">
+              <button type="button" class="text-brand-600 hover:underline text-sm" data-bud-save="${i}">Save</button>
+              ${r.b ? `<button type="button" class="text-rose-600 hover:underline text-sm" data-bud-del="${i}">Remove</button>` : ""}
+            </div></td>
+          </tr>`;
+        }).join("");
+      }
+
+      const totLeft = totBudget - totActual;
+      $("#bud-income").textContent = formatMoney(monthIncome);
+      $("#bud-total-budget").textContent = formatMoney(totBudget);
+      $("#bud-pct-income").textContent = monthIncome > 0 && totBudget > 0 ? ((totBudget / monthIncome) * 100).toFixed(0) + "% of income" : "";
+      $("#bud-total-actual").textContent = formatMoney(totActual);
+      $("#bud-total-left").textContent = formatMoney(totLeft);
+      $("#bud-total-left").className = "text-lg font-bold " + (totLeft >= 0 ? "text-emerald-700" : "text-rose-700");
+
+      tbody.querySelectorAll("[data-bud-save]").forEach(btn => btn.addEventListener("click", async () => {
+        if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+        const i = Number(btn.dataset.budSave), cat = budCats[i];
+        const raw = tbody.querySelector('[data-bud-val="' + i + '"]').value;
+        const mode = tbody.querySelector('[data-bud-mode="' + i + '"]').value;
+        const value = Number(raw);
+        if (raw === "" || !Number.isFinite(value) || value < 0) { alert("Enter a budget of 0 or more."); return; }
+        if (mode === "percent" && value > 100) { alert("A percentage can't be over 100."); return; }
+        try {
+          await setDoc(doc(db, "users", currentUser.uid, "budgets", budSlug(cat)),
+            { category: cat, mode, value, updatedAt: serverTimestamp() }, { merge: true });
+        } catch (err) { alert(err?.message || "Failed to save budget"); }
+      }));
+      tbody.querySelectorAll("[data-bud-del]").forEach(btn => btn.addEventListener("click", async () => {
+        const cat = budCats[Number(btn.dataset.budDel)];
+        if (!confirm('Remove the budget for "' + cat + '"?')) return;
+        try { await deleteDoc(doc(db, "users", currentUser.uid, "budgets", budSlug(cat))); }
+        catch (err) { alert(err?.message || "Failed to remove budget"); }
+      }));
+    }
+    $("#bud-month").addEventListener("change", renderBudgets);
 
     
 // ===== Planner controls =====
