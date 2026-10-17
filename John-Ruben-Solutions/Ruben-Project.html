@@ -401,7 +401,15 @@
             </div>
           </div>
 
-          <!-- Accounts & Cards summary widget -->
+          <!-- KPIs -->
+          <div class="mt-4 bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+            <h3 class="text-lg font-semibold text-slate-900">Key Metrics</h3>
+            <p class="text-sm text-slate-500 mt-1">Green = on track, amber = watch, red = needs attention. Rolling 90 days unless noted. Categories named like investing, savings, retirement, 401k, Roth, IRA or brokerage count as savings, not spending.</p>
+            <div id="kpi-grid" class="mt-4 grid grid-cols-2 lg:grid-cols-4 gap-3"></div>
+          </div>
+
+          
+<!-- Accounts & Cards summary widget -->
           <div class="mt-4 bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
             <div class="flex items-center justify-between gap-3 flex-wrap">
               <div>
@@ -4029,7 +4037,7 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
 
       if (!routeDashboard.classList.contains("hidden")) {
         renderDashboard();
-        renderRecentActivity();
+        renderRecentActivity(); renderKpis();
       }
       if (!routePeriod.classList.contains("hidden")) renderPlanner();
       if (!routeAccounts.classList.contains("hidden")) renderAccountsSummary();
@@ -4207,6 +4215,122 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
       }));
     }
     $("#bud-month").addEventListener("change", renderBudgets);
+
+    
+// ===== Key metrics (Dashboard) =====
+    const KPI_SAVE_RX = /invest|saving|retire|401|roth|\bira\b|brokerage/i;
+
+    function renderKpis() {
+      const box = $("#kpi-grid");
+      if (!box) return;
+      const t0 = parseISODateLocal(toISODate(new Date()));
+      const todayISO = toISODate(t0);
+      const winStart = addDays(t0, -89), winStartISO = toISODate(winStart);
+      const rows = getLedgerBaseRows().rows;
+      const isSave = (r) => KPI_SAVE_RX.test(categoryLabel(rowCategoryRaw(r)));
+      const sum = (arr) => arr.reduce((s, o) => s + Number(o.amount || 0), 0);
+      const P = (x) => (x * 100).toFixed(0) + "%";
+
+      // How many days of data exist (max 90) so short histories don't flatter the averages
+      const dates = [...(state.transactions || []), ...(state.incomes || []), ...(state.bills || [])].map(x => x.date).filter(Boolean).sort();
+      const effDays = dates.length ? Math.max(14, Math.min(90, Math.round((t0 - parseISODateLocal(dates[0])) / 86400000) + 1)) : 90;
+
+      let spend90 = 0, invest90 = 0;
+      for (const r of rows) {
+        if (!r.date || r.date < winStartISO || r.date > todayISO) continue;
+        const a = rowSpend(r);
+        if (!a) continue;
+        if (isSave(r)) invest90 += a; else spend90 += a;
+      }
+      const income90 = sum(generateIncomeOccurrences(winStart, t0));
+
+      // This month vs last month (to the same day)
+      const y = t0.getFullYear(), m = t0.getMonth(), day = t0.getDate();
+      const mStart = new Date(y, m, 1), mEnd = new Date(y, m + 1, 0);
+      const ym = toISODate(mStart).slice(0, 7), prevYm = toISODate(new Date(y, m - 1, 1)).slice(0, 7);
+      const monthIncome = sum(generateIncomeOccurrences(mStart, mEnd));
+      const monthCat = new Map();
+      let mtd = 0, prevMtd = 0;
+      for (const r of rows) {
+        if (!r.date) continue;
+        const a = rowSpend(r);
+        if (!a) continue;
+        const rm = r.date.slice(0, 7);
+        if (rm === ym) {
+          const c = categoryLabel(rowCategoryRaw(r));
+          monthCat.set(c, (monthCat.get(c) || 0) + a);
+          if (!isSave(r)) mtd += a;
+        } else if (rm === prevYm && Number(r.date.slice(8, 10)) <= day && !isSave(r)) {
+          prevMtd += a;
+        }
+      }
+
+      // Budget pace
+      let bTot = 0, bSpent = 0;
+      for (const b of state.budgets || []) {
+        const v = Number(b.value) || 0;
+        const amt = b.mode === "percent" ? monthIncome * v / 100 : v;
+        if (amt > 0) { bTot += amt; bSpent += monthCat.get(categoryLabel(b.category)) || 0; }
+      }
+      const elapsed = day / mEnd.getDate();
+
+      // Fixed costs (recurring bills, excluding card payoffs and investing)
+      const fixed = sum(generateBillOccurrences(mStart, mEnd)
+        .filter(o => o.recurring && !o.payoffCardId && !KPI_SAVE_RX.test(categoryLabel(o.category))));
+
+      // Cards, cash, net worth
+      let cardBal = 0, cardLim = 0;
+      for (const c of state.creditCards || []) {
+        if (!c.creditLimit) continue;
+        cardBal += Math.max(0, computeCreditCardBalance(c));
+        cardLim += Number(c.creditLimit) || 0;
+      }
+      const bank = computeAccountsTotals().bankTotal;
+      const monthlySpend = spend90 / (effDays / 30.4);
+      const nw = computeDailyNetWorth();
+
+      const hi = (v, g, w) => v >= g ? "good" : (v >= w ? "warn" : "bad");   // higher is better
+      const lo = (v, g, w) => v <= g ? "good" : (v <= w ? "warn" : "bad");   // lower is better
+      const save = income90 > 0 ? (income90 - spend90) / income90 : null;
+      const inv = income90 > 0 ? invest90 / income90 : null;
+      const util = cardLim > 0 ? cardBal / cardLim : null;
+      const runway = monthlySpend > 0 ? bank / monthlySpend : null;
+      const fix = monthIncome > 0 ? fixed / monthIncome : null;
+      const dta = nw.assetsTotal > 0 ? nw.liabilitiesTotal / nw.assetsTotal : null;
+      const vsPrev = prevMtd > 0 ? (mtd - prevMtd) / prevMtd : null;
+      const pace = bTot > 0 ? bSpent / bTot : null;
+
+      const tiles = [
+        { label: "Savings rate", value: save === null ? "—" : P(save), status: save === null ? null : hi(save, 0.2, 0.1),
+          sub: save === null ? "Needs income entries" : "Income kept after spending (investing counts as saved). Target 20%+" },
+        { label: "Investing rate", value: inv === null ? "—" : P(inv), status: inv === null ? null : hi(inv, 0.15, 0.05),
+          sub: formatMoney(invest90) + " invested, last 90 days. Target 15%+" },
+        { label: "Budget pace (this month)", value: pace === null ? "—" : P(pace) + " used",
+          status: pace === null ? null : (pace <= elapsed ? "good" : (pace <= elapsed + 0.1 ? "warn" : "bad")),
+          sub: pace === null ? "Set budgets to track pace" : P(elapsed) + " of the month gone · " + formatMoney(bSpent) + " of " + formatMoney(bTot) },
+        { label: "Spending vs last month", value: vsPrev === null ? "—" : (vsPrev > 0 ? "+" : "") + P(vsPrev),
+          status: vsPrev === null ? null : lo(vsPrev, 0, 0.1),
+          sub: formatMoney(mtd) + " so far vs " + formatMoney(prevMtd) + " by this day last month" },
+        { label: "Fixed-cost ratio", value: fix === null ? "—" : P(fix), status: fix === null ? null : lo(fix, 0.5, 0.65),
+          sub: formatMoney(fixed) + " recurring bills this month. Target under 50% of income" },
+        { label: "Credit utilization", value: util === null ? "—" : P(util), status: util === null ? null : lo(util, 0.3, 0.5),
+          sub: util === null ? "Add credit limits to your cards" : formatMoney(cardBal) + " of " + formatMoney(cardLim) + ". Target under 30%" },
+        { label: "Cash runway", value: runway === null ? "—" : runway.toFixed(1) + " mo", status: runway === null ? null : hi(runway, 6, 3),
+          sub: "Bank cash ÷ average monthly spending. Target 3–6+ months" },
+        { label: "Debt-to-assets", value: dta === null ? "—" : P(dta), status: dta === null ? null : lo(dta, 0.3, 0.6),
+          sub: formatMoney(nw.liabilitiesTotal) + " owed vs " + formatMoney(nw.assetsTotal) + " owned" }
+      ];
+      const dot = { good: "#10b981", warn: "#f59e0b", bad: "#e11d48" };
+      box.innerHTML = tiles.map(t => `
+        <div class="bg-slate-50 rounded-xl border border-slate-200 p-4">
+          <div class="flex items-center justify-between gap-2">
+            <div class="text-xs text-slate-500">${escapeHtml(t.label)}</div>
+            <span style="display:inline-block;width:10px;height:10px;border-radius:9999px;background:${dot[t.status] || "#64748b"};"></span>
+          </div>
+          <div class="text-xl font-bold text-slate-900 mt-1">${escapeHtml(t.value)}</div>
+          <div class="text-[11px] text-slate-400 mt-1">${escapeHtml(t.sub)}</div>
+        </div>`).join("");
+    }
 
     
 // ===== Planner controls =====
