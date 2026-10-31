@@ -128,6 +128,34 @@
     *::-webkit-scrollbar-track { background: transparent; }
     .jrs-badge { display: inline-block; margin-top: .35rem; padding: .1rem .55rem; border-radius: 9999px; font-size: .65rem; font-weight: 600; letter-spacing: .04em; color: #7dd3fc; background: rgba(14,165,233,.12); border: 1px solid rgba(14,165,233,.35); }
   
+
+    /* ===== Planned Card Payoffs: grouped by card + mobile stacked cards ===== */
+    #pp-table tr.pp-group-row > td { padding: 0 !important; }
+    #pp-table tr.pp-group-row { border-top: 1px solid rgba(148,163,184,.25); }
+    .pp-group-btn { display: flex; align-items: center; gap: .65rem; width: 100%; text-align: left; padding: .7rem .75rem; cursor: pointer; background: transparent; }
+    .pp-group-btn:hover { background: rgba(148,163,184,.08); }
+    .pp-chev { display: inline-block; transition: transform .15s ease; font-size: .65rem; width: .8rem; text-align: center; }
+    .pp-group-btn[aria-expanded="true"] .pp-chev { transform: rotate(90deg); }
+    #pp-table td.pp-cardcell { color: #94a3b8; }
+    @media (max-width: 767px) {
+      #planned-payoffs-card { padding: .85rem !important; }
+      #pp-table, #pp-table tbody { display: block; width: 100%; min-width: 0 !important; }
+      #pp-table thead { display: none; }
+      #pp-table tr { display: block; }
+      #pp-table tr.pp-group-row { margin-top: .6rem; border: 1px solid rgba(148,163,184,.35); border-radius: 12px; overflow: hidden; }
+      #pp-table tr.pp-group-row > td { display: block; }
+      #pp-table tr.pp-row { border: 1px solid rgba(148,163,184,.3); border-radius: 12px; margin: .4rem 0 .4rem .6rem; padding: .35rem .75rem; }
+      #pp-table tr.pp-row > td { display: flex; justify-content: space-between; align-items: center; gap: .75rem; padding: .3rem 0 !important; text-align: right !important; border: 0; }
+      #pp-table tr.pp-row > td::before { content: attr(data-label); font-size: .68rem; text-transform: uppercase; letter-spacing: .04em; opacity: .6; text-align: left; flex: 0 0 auto; font-family: 'Inter', sans-serif; }
+      #pp-table tr.pp-row > td.pp-cardcell { display: none; }
+      #pp-table tr.pp-row > td.pp-actions { display: block; padding-top: .55rem !important; }
+      #pp-table tr.pp-row > td.pp-actions::before { display: none; }
+      #pp-table .pp-actions > div { display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem; width: 100%; }
+      .pp-btn { border: 1px solid currentColor; border-radius: .6rem; padding: .6rem .5rem; text-align: center; font-size: .875rem; line-height: 1.1; text-decoration: none !important; }
+      .pp-btn-wide { grid-column: 1 / -1; font-weight: 600; }
+      #pp-table input, #pp-table select { width: 100% !important; min-width: 0; font-size: 16px; }
+      #pp-table tr.pp-row > td:empty { display: none; }
+    }
 </style>
 </head>
 
@@ -466,7 +494,7 @@
 
                 <div class="text-xs text-slate-500 leading-relaxed">
                   Periods are built as 14-day blocks anchored from the earliest income date (or today if none).
-                  Recurring bills and recurring incomes are auto-projected across this horizon.
+                  Recurring bills and recurring incomes are auto-projected across this horizon (stopping at their end date, if one is set).
                   Carry-forward rolls to the next period, then into subsequent months.
                 </div>
               </div>
@@ -693,6 +721,46 @@
                     </tr>
                   </thead>
                   <tbody id="debit-cards-table-body"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- PLANNED CARD PAYOFFS -->
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 lg:col-span-2" id="planned-payoffs-card">
+              <h3 class="text-lg font-semibold text-slate-900">Planned Card Payoffs</h3>
+              <p class="text-sm text-slate-500 mt-1">Projected monthly from each card's payment due date (planned a few business days early). The statement date is only used to work out how much is owed. "Interest charged" cards pay the full statement balance; 0% APR cards pay the fixed amount you set. Edit the amount, date or bank for any month, skip a month, or log it as paid. These feed the Period Planner and reduce the month's income in Budgets.</p>
+              <div id="planned-payoffs-note" class="text-xs text-amber-600 mt-2"></div>
+              <div class="md:hidden mt-3 flex items-center gap-2">
+                <label class="text-xs text-slate-500 shrink-0" for="pp-sort-select">Sort by</label>
+                <select id="pp-sort-select" class="flex-1 min-w-0 border border-slate-300 rounded-lg px-3 py-2 text-sm">
+                  <option value="">Next payoff (default)</option>
+                  <option value="card">Card</option>
+                  <option value="closes">Statement closes</option>
+                  <option value="due">Due date</option>
+                  <option value="paydate">Pay on</option>
+                  <option value="bank">Pay from</option>
+                  <option value="stmt">Statement balance</option>
+                  <option value="amount">Planned payoff</option>
+                  <option value="check">Bill check</option>
+                </select>
+                <button type="button" id="pp-sort-dir" class="border border-slate-300 rounded-lg px-3 py-2 text-sm" aria-label="Toggle sort direction">▲</button>
+              </div>
+              <div class="mt-4 md:overflow-x-auto">
+                <table id="pp-table" class="w-full text-sm md:min-w-[1100px]">
+                  <thead>
+                    <tr class="bg-slate-50">
+                      <th class="text-left px-3 py-2 font-semibold text-slate-600"><button type="button" data-sort-table="planned" data-sort-key="card" class="inline-flex items-center gap-1 hover:text-slate-900">Card <span data-sort-ind class="text-xs text-slate-400">↕</span></button></th>
+                      <th class="text-left px-3 py-2 font-semibold text-slate-600"><button type="button" data-sort-table="planned" data-sort-key="closes" class="inline-flex items-center gap-1 hover:text-slate-900">Statement closes <span data-sort-ind class="text-xs text-slate-400">↕</span></button></th>
+                      <th class="text-left px-3 py-2 font-semibold text-slate-600"><button type="button" data-sort-table="planned" data-sort-key="due" class="inline-flex items-center gap-1 hover:text-slate-900">Due date <span data-sort-ind class="text-xs text-slate-400">↕</span></button></th>
+                      <th class="text-left px-3 py-2 font-semibold text-slate-600"><button type="button" data-sort-table="planned" data-sort-key="paydate" class="inline-flex items-center gap-1 hover:text-slate-900">Pay on <span data-sort-ind class="text-xs text-slate-400">↕</span></button></th>
+                      <th class="text-left px-3 py-2 font-semibold text-slate-600"><button type="button" data-sort-table="planned" data-sort-key="bank" class="inline-flex items-center gap-1 hover:text-slate-900">Pay from <span data-sort-ind class="text-xs text-slate-400">↕</span></button></th>
+                      <th class="text-right px-3 py-2 font-semibold text-slate-600"><button type="button" data-sort-table="planned" data-sort-key="stmt" class="inline-flex items-center gap-1 hover:text-slate-900">Statement balance <span data-sort-ind class="text-xs text-slate-400">↕</span></button></th>
+                      <th class="text-right px-3 py-2 font-semibold text-slate-600"><button type="button" data-sort-table="planned" data-sort-key="amount" class="inline-flex items-center gap-1 hover:text-slate-900">Planned payoff <span data-sort-ind class="text-xs text-slate-400">↕</span></button></th>
+                      <th class="text-left px-3 py-2 font-semibold text-slate-600"><button type="button" data-sort-table="planned" data-sort-key="check" class="inline-flex items-center gap-1 hover:text-slate-900">Bill check <span data-sort-ind class="text-xs text-slate-400">↕</span></button></th>
+                      <th class="text-right px-3 py-2 font-semibold text-slate-600">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="planned-payoffs-body"></tbody>
                 </table>
               </div>
             </div>
@@ -955,7 +1023,7 @@
                 </div>
               </div>
               <div class="mt-4 grid grid-cols-2 lg:grid-cols-4 gap-3">
-                <div class="bg-slate-50 rounded-xl border border-slate-200 p-4"><div class="text-xs text-slate-500">Expected income</div><div class="text-lg font-bold text-emerald-700" id="bud-income">$0.00</div></div>
+                <div class="bg-slate-50 rounded-xl border border-slate-200 p-4"><div class="text-xs text-slate-500">Expected income</div><div class="text-lg font-bold text-emerald-700" id="bud-income">$0.00</div><div class="text-[11px] text-slate-400" id="bud-income-after"></div></div>
                 <div class="bg-slate-50 rounded-xl border border-slate-200 p-4"><div class="text-xs text-slate-500">Total budgeted</div><div class="text-lg font-bold text-slate-900" id="bud-total-budget">$0.00</div><div class="text-[11px] text-slate-400" id="bud-pct-income"></div></div>
                 <div class="bg-slate-50 rounded-xl border border-slate-200 p-4"><div class="text-xs text-slate-500">Spent (budgeted categories)</div><div class="text-lg font-bold text-rose-700" id="bud-total-actual">$0.00</div></div>
                 <div class="bg-slate-50 rounded-xl border border-slate-200 p-4"><div class="text-xs text-slate-500">Remaining</div><div class="text-lg font-bold" id="bud-total-left">$0.00</div></div>
@@ -1020,6 +1088,12 @@
                     <option value="monthly">Monthly (on this date's day)</option>
                     <option value="biweekly">Bi-Weekly (every 14 days)</option>
                   </select>
+                  <div id="income-end-wrap" class="hidden mt-2">
+                    <label class="block text-xs font-medium text-slate-600 mb-1" for="income-end-date">Ends on (optional)</label>
+                    <input type="date" id="income-end-date"
+                           class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                    <p class="text-[11px] text-slate-500 mt-1">Last date this income can occur. Leave blank to keep repeating.</p>
+                  </div>
                 </div>
                 <div class="flex items-end">
                   <button type="submit"
@@ -1104,6 +1178,12 @@
                     <option value="monthly">Monthly (on this due date's day)</option>
                     <option value="biweekly">Bi-Weekly (every 14 days)</option>
                   </select>
+                  <div id="bill-end-wrap" class="hidden mt-2">
+                    <label class="block text-xs font-medium text-slate-600 mb-1" for="bill-end-date">Ends on (optional)</label>
+                    <input type="date" id="bill-end-date"
+                           class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                    <p class="text-[11px] text-slate-500 mt-1">Last date this bill can occur. Leave blank to keep repeating.</p>
+                  </div>
                 </div>
                 <div>
                   <button type="submit"
@@ -1557,6 +1637,10 @@ service cloud.firestore {
       const creditCardQ = query(userCol("creditCards"), orderBy("createdAt", "desc"));
       const debitCardQ = query(userCol("debitCards"), orderBy("createdAt", "desc"));
       const txnQ = query(userCol("transactions"), orderBy("date", "desc"));
+      unsubscribers.push(onSnapshot(userCol("payoffOverrides"), (snap) => {
+        state.payoffOverrides = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        refreshAllViews();
+      }));
       unsubscribers.push(onSnapshot(userCol("budgets"), (snap) => {
         state.budgets = snap.docs.map(d => ({ id: d.id, ...d.data() }));
         refreshAllViews();
@@ -1951,6 +2035,7 @@ service cloud.firestore {
         $("#credit-card-starting-balance").value = editing.startingBalance ?? 0;
         $("#credit-card-limit").value = editing.creditLimit ?? "";
         $("#credit-card-notes").value = editing.notes ?? "";
+        fillCardPlanFields(editing);
         ui.editing.creditCardId = editing.id;
       } else {
         $("#credit-card-form").reset?.();
@@ -1958,6 +2043,7 @@ service cloud.firestore {
         $("#credit-card-starting-balance").value = 0;
         $("#credit-card-limit").value = "";
         $("#credit-card-notes").value = "";
+        fillCardPlanFields(null);
         ui.editing.creditCardId = null;
       }
     }
@@ -1976,10 +2062,14 @@ service cloud.firestore {
       const creditLimit = limitRaw !== "" ? Number(limitRaw) : null;
       const notes = $("#credit-card-notes").value.trim();
       if (!currentUser) return;
+      const planCheck = readCardPlanFields();
+      if (planCheck.interestMode && !planCheck.dueDay) { alert("A payoff plan needs the payment due day (1–28). Enter it, or set Interest to \"No payoff plan\"."); return; }
+      if (planCheck.interestMode && planCheck.statementRule === "day" && !planCheck.statementDay) { alert("Enter the statement closing day, or choose a different statement rule."); return; }
 
       const payload = {
         name, startingBalance: Number.isFinite(startingBalance) ? startingBalance : 0,
         creditLimit: (creditLimit !== null && Number.isFinite(creditLimit)) ? creditLimit : null,
+        ...readCardPlanFields(),
         notes: notes || "", createdAt: serverTimestamp()
       };
 
@@ -2043,6 +2133,7 @@ service cloud.firestore {
             <td class="px-3 py-2 font-medium text-slate-800">
               ${escapeHtml(c.name)}
               ${c.notes ? `<div class="text-xs text-slate-500">${escapeHtml(c.notes)}</div>` : ""}
+              ${cardPlanSummaryHtml(c)}
             </td>
             <td class="px-3 py-2 text-right align-top font-semibold ${balanceClass}">
               ${formatMoney(balance)}
@@ -2941,9 +3032,10 @@ service cloud.firestore {
       payoffs: { card: p => lc(p.cardName), date: p => p.date || "", bank: p => bankNameById(p.sourceBankAccountId), amount: p => num(p.amount) },
       income: { source: i => lc(i.source), date: i => i.date || "", bank: i => bankNameById(i.bankAccountId), recurrence: recurrenceKey, amount: i => num(i.amount) },
       bills: { name: b => lc(b.name), category: b => lc(b.category), date: b => b.date || "", recurrence: recurrenceKey, amount: b => num(b.amount) },
+      planned: { card: p => lc(p.cardName), closes: p => p.statementDate || "", due: p => p.dueDate || "", check: p => (p.billDiff == null ? 9999 : Math.abs(p.billDiff)), paydate: p => p.date || "", bank: p => bankNameById(p.bankId), stmt: p => num(p.stmtBal), amount: p => p.skipped ? 0 : num(p.amount) },
       period: { date: r => r.i, income: r => r.income, expense: r => r.expense, net: r => r.net, carry: r => r.carry }
     };
-    const DESC_FIRST_KEYS = new Set(["balance", "amount", "value", "income", "expense", "net", "carry", "date"]);
+    const DESC_FIRST_KEYS = new Set(["balance", "amount", "value", "income", "expense", "net", "carry", "date", "stmt"]);
 
     function applySort(table, items) {
       const st = ui.sorts[table];
@@ -3059,12 +3151,15 @@ service cloud.firestore {
       $("#income-bank-account").value = item?.bankAccountId || "";
       $("#income-recurring").checked = !!item?.isRecurring;
       $("#income-recurrence-type").classList.toggle("hidden", !item?.isRecurring);
+      $("#income-end-wrap").classList.toggle("hidden", !item?.isRecurring);
+      $("#income-end-date").value = (item?.isRecurring && item?.endDate) ? item.endDate : "";
       if (item?.isRecurring) $("#income-recurrence-type").value = item.recurrenceType === "biweekly" ? "biweekly" : "monthly";
       $("#income-source")?.scrollIntoView?.({ behavior: "smooth", block: "center" });
     }
 
     $("#income-recurring").addEventListener("change", () => {
       $("#income-recurrence-type").classList.toggle("hidden", !$("#income-recurring").checked);
+      $("#income-end-wrap").classList.toggle("hidden", !$("#income-recurring").checked);
     });
 
     function renderIncomes() {
@@ -3079,7 +3174,7 @@ service cloud.firestore {
         const bank = state.bankAccounts.find(b => b.id === i.bankAccountId);
         const recurLabel = !i.isRecurring
           ? "One-time"
-          : (i.recurrenceType === "biweekly" ? "Bi-Weekly" : `Monthly (day ${parseISODateLocal(i.date).getDate()})`);
+          : ((i.recurrenceType === "biweekly" ? "Bi-Weekly" : `Monthly (day ${parseISODateLocal(i.date).getDate()})`) + (i.endDate ? ` · ends ${escapeHtml(i.endDate)}` : ""));
 
         const tr = document.createElement("tr");
         tr.innerHTML = `
@@ -3092,7 +3187,7 @@ service cloud.firestore {
           <td class="px-3 py-2 text-right font-semibold text-emerald-700">${formatMoney(i.amount)}</td>
           <td class="px-3 py-2 text-right">
             <div class="inline-flex items-center gap-2 flex-wrap justify-end">
-              ${i.isRecurring ? `<button class="text-brand-600 hover:underline text-sm" data-action="toggle-income-occ" data-id="${i.id}">Upcoming</button>` : ""}
+              ${i.isRecurring ? `<button class="text-brand-600 hover:underline text-sm" data-action="toggle-income-occ" data-id="${i.id}">Occurrences</button>` : ""}
               <button class="text-brand-600 hover:underline text-sm" data-action="edit" data-id="${i.id}">Edit</button>
               <button class="text-rose-600 hover:underline text-sm" data-action="del" data-id="${i.id}">Delete</button>
             </div>
@@ -3143,11 +3238,13 @@ service cloud.firestore {
       const bankAccountId = $("#income-bank-account").value || null;
       const isRecurring = $("#income-recurring").checked;
       const recurrenceType = isRecurring ? ($("#income-recurrence-type").value === "biweekly" ? "biweekly" : "monthly") : null;
+      const endDate = isRecurring ? ($("#income-end-date").value || null) : null;
       if (!currentUser) return;
+      if (endDate && endDate < date) { alert("The end date can't be before the income's start date."); return; }
 
       const payload = {
         source, date, amount: Number.isFinite(amount) ? amount : 0,
-        bankAccountId, isRecurring, recurrenceType, createdAt: serverTimestamp()
+        bankAccountId, isRecurring, recurrenceType, endDate, createdAt: serverTimestamp()
       };
 
       try {
@@ -3162,6 +3259,7 @@ service cloud.firestore {
         $("#income-amount").value = "";
         $("#income-recurring").checked = false;
         $("#income-recurrence-type").classList.add("hidden"); setEditBanner("#income-editing-banner", false);
+        $("#income-end-wrap").classList.add("hidden"); $("#income-end-date").value = "";
       } catch (err) {
         alert(err?.message || "Failed to save income");
       }
@@ -3181,7 +3279,9 @@ service cloud.firestore {
     // Scans a padded window so an occurrence moved (via newDate) into/out of the visible range is still found.
     const OCC_SCAN_PAD_DAYS = 120;
 
-    function forEachRecurringDate(startDate, recurrenceType, scanStart, scanEnd, cb) {
+    // endDate (optional Date): the last date the series may occur; later scheduled dates are not generated.
+    function forEachRecurringDate(startDate, recurrenceType, scanStart, scanEndRaw, cb, endDate) {
+      const scanEnd = (endDate && endDate < scanEndRaw) ? endDate : scanEndRaw;
       if (recurrenceType === "biweekly") {
         let cursor = new Date(startDate);
         if (cursor < scanStart) {
@@ -3248,20 +3348,28 @@ service cloud.firestore {
 
         forEachRecurringDate(startDate, income.recurrenceType, scanStart, scanEnd, (d) => {
           pushIncomeOccurrence(income, d, overridesMap, occurrences, rangeStart, rangeEnd);
-        });
+        }, income.endDate ? parseISODateLocal(income.endDate) : null);
       }
 
       return occurrences.sort((a, b) => parseISODateLocal(a.date) - parseISODateLocal(b.date));
     }
 
     function renderIncomeOccurrences(incomeId) {
+      renderIncomeOccurrencesCore(incomeId);
+      decorateIncomeOccurrences(incomeId);
+    }
+
+    function renderIncomeOccurrencesCore(incomeId) {
       const income = state.incomes.find(i => i.id === incomeId);
       const container = $(`#income-occ-content-${incomeId}`);
       if (!income || !container) return;
 
       const today = parseISODateLocal(toISODate(new Date()));
       const horizonEnd = addDays(today, ui.planner.horizonDays || 180);
-      const occurrences = generateIncomeOccurrences(today, horizonEnd).filter(o => o.incomeId === incomeId).slice(0, 12);
+      const occMode = ((ui.incomeOccMode || {})[incomeId] === "past") ? "past" : "upcoming";
+      const occurrences = occMode === "past"
+        ? generateIncomeOccurrences(parseISODateLocal(income.date), addDays(today, -1)).filter(o => o.incomeId === incomeId).reverse()
+        : generateIncomeOccurrences(today, horizonEnd).filter(o => o.incomeId === incomeId).slice(0, 12);
 
       if (!occurrences.length) {
         container.innerHTML = `<div class="text-slate-500">No upcoming occurrences in the current planner horizon.</div>`;
@@ -3337,6 +3445,7 @@ service cloud.firestore {
     // ===== Recurring Bills: overrides, occurrence generation =====
     $("#bill-recurring").addEventListener("change", () => {
       $("#bill-recurrence-type").classList.toggle("hidden", !$("#bill-recurring").checked);
+      $("#bill-end-wrap").classList.toggle("hidden", !$("#bill-recurring").checked);
     });
 
     function buildOverridesMap() {
@@ -3414,7 +3523,7 @@ service cloud.firestore {
 
         forEachRecurringDate(startDate, bill.recurrenceType, scanStart, scanEnd, (d) => {
           pushOccurrence(bill, d, overridesMap, occurrences, rangeStart, rangeEnd);
-        });
+        }, bill.endDate ? parseISODateLocal(bill.endDate) : null);
       }
 
       return occurrences.sort((a, b) => parseISODateLocal(a.date) - parseISODateLocal(b.date));
@@ -3428,6 +3537,8 @@ service cloud.firestore {
       const amount = Number($("#bill-amount").value);
       const isRecurring = $("#bill-recurring").checked;
       const recurrenceType = isRecurring ? ($("#bill-recurrence-type").value === "biweekly" ? "biweekly" : "monthly") : null;
+      const endDate = isRecurring ? ($("#bill-end-date").value || null) : null;
+      if (endDate && endDate < date) { alert("The end date can't be before the bill's first due date."); return; }
       const payWith = $("#bill-pay-with").value;
       const [pmRaw, pidRaw] = payWith ? payWith.split(":") : ["", ""];
       const payMethod = ((pmRaw === "credit" || pmRaw === "debit" || pmRaw === "bank") && pidRaw) ? pmRaw : null;
@@ -3437,7 +3548,7 @@ service cloud.firestore {
       const payload = {
         name, category: category || "", date,
         amount: Number.isFinite(amount) ? amount : 0,
-        isRecurring, recurrenceType,
+        isRecurring, recurrenceType, endDate,
         payMethod, payCardId,
         payoffCardId: ($("#bill-payoff-card")?.value || null),
         createdAt: serverTimestamp()
@@ -3457,6 +3568,7 @@ service cloud.firestore {
         $("#bill-pay-with").value = ""; if ($("#bill-payoff-card")) $("#bill-payoff-card").value = "";
         $("#bill-recurring").checked = false;
         $("#bill-recurrence-type").classList.add("hidden"); setEditBanner("#bill-editing-banner", false);
+        $("#bill-end-wrap").classList.add("hidden"); $("#bill-end-date").value = "";
       } catch (err) {
         alert(err?.message || "Failed to save bill");
       }
@@ -3472,6 +3584,8 @@ service cloud.firestore {
       $("#bill-pay-with").value = (item.payMethod && item.payCardId) ? `${item.payMethod}:${item.payCardId}` : "";
       $("#bill-recurring").checked = !!item.isRecurring; if ($("#bill-payoff-card")) $("#bill-payoff-card").value = item.payoffCardId || "";
       $("#bill-recurrence-type").classList.toggle("hidden", !item.isRecurring);
+      $("#bill-end-wrap").classList.toggle("hidden", !item.isRecurring);
+      $("#bill-end-date").value = (item.isRecurring && item.endDate) ? item.endDate : "";
       if (item.isRecurring) $("#bill-recurrence-type").value = item.recurrenceType === "biweekly" ? "biweekly" : "monthly";
       $("#bill-name")?.scrollIntoView?.({ behavior: "smooth", block: "center" });
     }
@@ -3489,7 +3603,7 @@ service cloud.firestore {
       for (const b of items) {
         const recurLabel = !b.isRecurring
           ? "One-time"
-          : (b.recurrenceType === "biweekly" ? "Bi-Weekly" : `Monthly (day ${parseISODateLocal(b.date).getDate()})`);
+          : ((b.recurrenceType === "biweekly" ? "Bi-Weekly" : `Monthly (day ${parseISODateLocal(b.date).getDate()})`) + (b.endDate ? ` · ends ${escapeHtml(b.endDate)}` : ""));
 
         const tr = document.createElement("tr");
         tr.innerHTML = `
@@ -3685,7 +3799,7 @@ service cloud.firestore {
           });
         }
 
-        for (const occ of generateBillOccurrences(rangeStart, rangeEnd)) {
+        for (const occ of generateBillOccurrences(rangeStart, rangeEnd).filter(plannedPayoffBillFilter)) {
           const idx = assignToPeriod(occ.date, periods);
           if (idx < 0) continue;
           const amt = Number(occ.amount || 0);
@@ -3726,6 +3840,21 @@ service cloud.firestore {
         }
       }
 
+      if (periods.length) {
+        for (const pp of getPlannedPayoffs(periods[0].start, periods[periods.length - 1].end)) {
+          const idx = assignToPeriod(pp.date, periods);
+          if (idx < 0) continue;
+          periodCashOut[idx] += pp.amount;
+          const ppBank = (state.bankAccounts || []).find(b => b.id === pp.bankId);
+          periodItems[idx].push({
+            kind: "payoffplan", id: pp.cardId, recurring: true, key: pp.key,
+            date: pp.date, originalDate: pp.originalDate, statementDate: pp.statementDate, dueDate: pp.dueDate,
+            name: `Planned payoff — ${pp.cardName}`,
+            sub: `Due ${pp.dueDate} · statement ${pp.statementDate} · ${pp.mode === "full" ? "pay in full" : "0% APR fixed amount"}${ppBank ? ` · from ${ppBank.name}` : ""}`,
+            amount: pp.amount, flow: "out", txnType: "payoff", cardType: "credit"
+          });
+        }
+      }
       periodItems.forEach(list => list.sort((a, b) => parseISODateLocal(a.date) - parseISODateLocal(b.date)));
       return { periodCashIn, periodCashOut, periodCCSpend, periodItems };
     }
@@ -3778,7 +3907,13 @@ service cloud.firestore {
       if (!currentUser || !item || !newISO) return;
       if (newISO === item.date) return;
       try {
-        if (item.kind === "txn") {
+        if (item.kind === "payoffplan") {
+          await setDoc(doc(db, "users", currentUser.uid, "payoffOverrides", item.key), {
+            cardId: item.id, statementDate: item.statementDate, dueDate: item.dueDate,
+            newDate: newISO !== item.originalDate ? newISO : null,
+            deleted: false, updatedAt: serverTimestamp()
+          }, { merge: true });
+        } else if (item.kind === "txn") {
           await setDoc(doc(db, "users", currentUser.uid, "transactions", item.id), { date: newISO }, { merge: true });
         } else if (item.kind === "income" || item.kind === "bill") {
           const isIncome = item.kind === "income";
@@ -4039,7 +4174,7 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
         renderRecentActivity(); renderKpis();
       }
       if (!routePeriod.classList.contains("hidden")) renderPlanner();
-      if (!routeAccounts.classList.contains("hidden")) renderAccountsSummary();
+      if (!routeAccounts.classList.contains("hidden")) { renderAccountsSummary(); renderPlannedPayoffs(); }
       updateSortIndicators();
       renderInsights();           // NEW (uses the rows the ledger just filtered)
       renderBudgets();
@@ -4051,6 +4186,7 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
       ui.editing.incomeId = null;
       $("#income-source").value = ""; $("#income-amount").value = "";
       $("#income-recurring").checked = false; $("#income-recurrence-type").classList.add("hidden");
+      $("#income-end-wrap").classList.add("hidden"); $("#income-end-date").value = "";
       setEditBanner("#income-editing-banner", false);
     });
     $("#bill-cancel-edit-btn").addEventListener("click", () => {
@@ -4058,6 +4194,7 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
       $("#bill-name").value = ""; $("#bill-category").value = ""; $("#bill-amount").value = "";
       $("#bill-pay-with").value = ""; $("#bill-recurring").checked = false;
       $("#bill-recurrence-type").classList.add("hidden");
+      $("#bill-end-wrap").classList.add("hidden"); $("#bill-end-date").value = "";
       setEditBanner("#bill-editing-banner", false);
     });
 
@@ -4187,6 +4324,11 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
 
       const totLeft = totBudget - totActual;
       $("#bud-income").textContent = formatMoney(monthIncome);
+      const payoffsInMonth = monthPayoffTotal(y, mo);
+      const afterEl = $("#bud-income-after");
+      if (afterEl) afterEl.textContent = payoffsInMonth > 0.004
+        ? "After card payoffs: " + formatMoney(monthIncome - payoffsInMonth) + " (−" + formatMoney(payoffsInMonth) + ")"
+        : "";
       $("#bud-total-budget").textContent = formatMoney(totBudget);
       $("#bud-pct-income").textContent = monthIncome > 0 && totBudget > 0 ? ((totBudget / monthIncome) * 100).toFixed(0) + "% of income" : "";
       $("#bud-total-actual").textContent = formatMoney(totActual);
@@ -4332,7 +4474,665 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
     }
 
     
-// ===== Planner controls =====
+// =====================================================================
+    // PATCH BLOCK: past-income editing + credit card payoff planning
+    // =====================================================================
+
+    // ---------- Part 1: Upcoming / Past toggle for recurring incomes ----------
+    function decorateIncomeOccurrences(incomeId) {
+      const container = $(`#income-occ-content-${incomeId}`);
+      if (!container) return;
+      ui.incomeOccMode = ui.incomeOccMode || {};
+      const mode = ui.incomeOccMode[incomeId] === "past" ? "past" : "upcoming";
+
+      if (mode === "past") {
+        const hdr = container.querySelector(".text-xs.font-semibold");
+        if (hdr) {
+          hdr.textContent = "Past occurrences (newest first) — correct what was actually received, change the date, or skip one that never happened";
+        } else {
+          const empty = container.querySelector(".text-slate-500");
+          if (empty) empty.textContent = "No past occurrences yet — this income starts today or later.";
+        }
+        const list = container.querySelector(".space-y-2");
+        if (list) { list.style.maxHeight = "22rem"; list.style.overflowY = "auto"; list.style.paddingRight = "4px"; }
+      }
+
+      const bar = document.createElement("div");
+      bar.className = "flex items-center gap-2 mb-3";
+      const mk = (m, label) =>
+        `<button type="button" data-occ-mode="${m}" class="px-3 py-1 rounded-lg text-xs font-semibold border ${mode === m ? "bg-brand-600 text-white border-brand-600" : "bg-white text-slate-700 border-slate-300"}">${label}</button>`;
+      bar.innerHTML = mk("upcoming", "Upcoming") + mk("past", "Past");
+      container.insertBefore(bar, container.firstChild);
+      bar.querySelectorAll("[data-occ-mode]").forEach(b => {
+        b.addEventListener("click", () => {
+          ui.incomeOccMode[incomeId] = b.dataset.occMode;
+          renderIncomeOccurrences(incomeId);
+        });
+      });
+    }
+
+    // ---------- Part 2: Credit card payoff planning ----------
+    let ppList = [];
+    let ppEditingKey = null;
+
+    // A card has an active plan when it has a payment due day AND an interest type.
+    // The DUE DATE is the anchor; the statement date is derived from it (and only used to work out the amount):
+    //   rule "before": statement closes N days before the due date   (e.g. Capital One ~25)
+    //   rule "after" : statement closes N days after the previous due date (e.g. Chase ~3)
+    //   rule "day"   : statement closes on a fixed day of the month (legacy / fixed-cycle cards)
+    function numIn(v, def, min, max) {
+      if (v === null || v === undefined || v === "") return def;
+      const n = Number(v);
+      return (Number.isFinite(n) && n >= min && n <= max) ? Math.floor(n) : def;
+    }
+
+    function cardPlan(card) {
+      if (!card) return null;
+      const dd = Number(card.dueDay);
+      const mode = (card.interestMode === "full" || card.interestMode === "zero") ? card.interestMode : "";
+      if (!(dd >= 1 && dd <= 31) || !mode) return null;
+      const sd = Number(card.statementDay);
+      const sdOk = sd >= 1 && sd <= 31;
+      let rule = card.statementRule;
+      if (rule !== "before" && rule !== "after" && rule !== "day") rule = sdOk ? "day" : "before";
+      if (rule === "day" && !sdOk) return null;
+      return {
+        dueDay: Math.min(28, Math.floor(dd)),
+        rule,
+        ruleDays: rule === "before" ? numIn(card.statementRuleDays, 25, 1, 45) : (rule === "after" ? numIn(card.statementRuleDays, 3, 0, 27) : 0),
+        statementDay: rule === "day" ? Math.floor(sd) : null,
+        buffer: numIn(card.payBufferDays, 2, 0, 10),       // business days before the due date
+        lag: numIn(card.postingLagDays, 0, 0, 7),          // charges this close to the statement date roll to the next statement
+        mode,
+        amount: Number(card.planAmount) > 0 ? Number(card.planAmount) : 0,
+        bankId: card.payBankAccountId || null
+      };
+    }
+
+    function cardHasPlan(cardId) {
+      return !!cardPlan((state.creditCards || []).find(c => c.id === cardId));
+    }
+
+    // Old recurring "pays off credit card" bills: future ones are replaced by the plan (past ones stay as history).
+    function plannedPayoffBillFilter(occ) {
+      return !(occ.payoffCardId && occ.date > toISODate(new Date()) && cardHasPlan(occ.payoffCardId));
+    }
+
+    // ---- business-day helpers (US federal holidays) ----
+    const _holidayCache = {};
+    function nthWeekdayOf(y, m, wd, n) {
+      const first = new Date(y, m, 1);
+      return new Date(y, m, 1 + ((wd - first.getDay() + 7) % 7) + (n - 1) * 7);
+    }
+    function lastWeekdayOf(y, m, wd) {
+      const last = new Date(y, m + 1, 0);
+      return new Date(y, m, last.getDate() - ((last.getDay() - wd + 7) % 7));
+    }
+    function federalHolidays(y) {
+      if (_holidayCache[y]) return _holidayCache[y];
+      const list = [
+        new Date(y, 0, 1), nthWeekdayOf(y, 0, 1, 3), nthWeekdayOf(y, 1, 1, 3), lastWeekdayOf(y, 4, 1),
+        new Date(y, 5, 19), new Date(y, 6, 4), nthWeekdayOf(y, 8, 1, 1), nthWeekdayOf(y, 9, 1, 2),
+        new Date(y, 10, 11), nthWeekdayOf(y, 10, 4, 4), new Date(y, 11, 25)
+      ].map(d => (d.getDay() === 0 ? addDays(d, 1) : d));          // Sunday holidays are observed Monday
+      return (_holidayCache[y] = new Set(list.map(toISODate)));
+    }
+    function isBusinessDay(d) {
+      const w = d.getDay();
+      return !(w === 0 || w === 6) && !federalHolidays(d.getFullYear()).has(toISODate(d));
+    }
+
+    // Planned pay date = `buffer` business days before the due date (never later than the last business day on/before it).
+    function payDateFor(due, buffer) {
+      let d = new Date(due);
+      while (!isBusinessDay(d)) d = addDays(d, -1);
+      for (let i = 0; i < buffer; i++) {
+        d = addDays(d, -1);
+        while (!isBusinessDay(d)) d = addDays(d, -1);
+      }
+      return d;
+    }
+
+    // Due date and derived statement date for the cycle whose due date falls in month (y, mIdx).
+    function cycleDates(plan, y, mIdx) {
+      const D = clampedMonthDate(y, mIdx, plan.dueDay);
+      let S;
+      if (plan.rule === "before") S = addDays(D, -plan.ruleDays);
+      else if (plan.rule === "after") S = addDays(clampedMonthDate(y, mIdx - 1, plan.dueDay), plan.ruleDays);
+      else S = clampedMonthDate(y, mIdx - (plan.statementDay < plan.dueDay ? 0 : 1), plan.statementDay);
+      return { D, S };
+    }
+
+    // Balance owed on a card as of a date (history + dated bills + earlier planned payoffs).
+    // chargeISO (optional): purchases/bill charges dated after this still count toward the NEXT statement (posting lag).
+    function cardBalanceAsOf(card, asOfISO, billOccs, planned, todayISO, chargeISO) {
+      const hasPlan = !!cardPlan(card);
+      const cISO = chargeISO || asOfISO;
+      let bal = Number(card.startingBalance || 0);
+      for (const t of state.transactions || []) {
+        if (t.cardType !== "credit" || t.cardId !== card.id) continue;
+        if (!t.date || t.date > asOfISO) continue;
+        const amt = Number(t.amount || 0);
+        if (t.txnType === "expense") { if (t.date <= cISO) bal += amt; }
+        else if (t.txnType === "credit" || t.txnType === "payoff") bal -= amt;
+      }
+      for (const o of billOccs) {
+        if (o.date > asOfISO) continue;
+        if (o.payMethod === "credit" && o.payCardId === card.id && o.date <= cISO) bal += Number(o.amount || 0);
+        if (o.payoffCardId === card.id && !(hasPlan && o.date > todayISO)) bal -= Number(o.amount || 0);
+      }
+      for (const p of planned) {
+        if (p.cardId === card.id && p.date <= asOfISO) bal -= p.amount;
+      }
+      return bal;
+    }
+
+    // Real payoffs already made against a statement (dated after it closed, up to the next close).
+    function paidInWindow(card, fromISO, endISO, billOccs, todayISO) {
+      let paid = 0;
+      for (const t of state.transactions || []) {
+        if (t.cardType === "credit" && t.cardId === card.id && t.txnType === "payoff" && t.date && t.date > fromISO && t.date <= endISO) {
+          paid += Number(t.amount || 0);
+        }
+      }
+      for (const o of billOccs) {
+        if (o.payoffCardId === card.id && o.date > fromISO && o.date <= endISO && o.date <= todayISO) paid += Number(o.amount || 0);
+      }
+      return paid;
+    }
+
+    // Projects each plan-enabled card's monthly payoffs, one per DUE DATE. Returns entries whose pay date is within [rangeStart, rangeEnd].
+    function getPlannedPayoffs(rangeStart, rangeEnd, opts) {
+      const includeSkipped = !!(opts && opts.includeSkipped);
+      const todayISO = toISODate(new Date());
+      const today = parseISODateLocal(todayISO);
+      const rsISO = toISODate(rangeStart), reISO = toISODate(rangeEnd);
+
+      const cards = (state.creditCards || []).filter(c => cardPlan(c));
+      if (!cards.length) return [];
+
+      // Overrides are keyed by due date (new) or by statement date (older docs).
+      const ovMap = new Map();
+      for (const o of state.payoffOverrides || []) {
+        if (!o.cardId) continue;
+        if (o.dueDate) ovMap.set(`${o.cardId}__D${o.dueDate}`, o);
+        else if (o.statementDate) ovMap.set(`${o.cardId}__${o.statementDate}`, o);
+      }
+      const billStarts = (state.bills || []).map(b => b.date).filter(Boolean).sort();
+      const billOccs = billStarts.length ? generateBillOccurrences(parseISODateLocal(billStarts[0]), rangeEnd) : [];
+
+      const all = [];
+      for (const card of cards) {
+        const plan = cardPlan(card);
+        const mine = [];   // payoffs already planned for this card (feeds later statement balances)
+        for (let k = -2; k < 600; k++) {
+          const { D, S } = cycleDates(plan, today.getFullYear(), today.getMonth() + k);
+          if (S > rangeEnd) break;
+          if (D < today) continue;                     // due date already passed: real payoffs govern
+          const nxt = cycleDates(plan, today.getFullYear(), today.getMonth() + k + 1);
+          const sISO = toISODate(S), snISO = toISODate(nxt.S), dISO = toISODate(D);
+
+          const stmtBal = cardBalanceAsOf(card, sISO, billOccs, mine, todayISO, toISODate(addDays(S, -plan.lag)));
+          const paid = paidInWindow(card, sISO, snISO, billOccs, todayISO);
+          let target = Math.max(0, stmtBal);
+          if (plan.mode === "zero") target = Math.min(plan.amount, target);
+
+          const dueKey = `${card.id}__D${dISO}`;
+          const ov = ovMap.get(dueKey) || (plan.rule === "day" ? ovMap.get(`${card.id}__${sISO}`) : undefined);
+          const key = ov ? ov.id : dueKey;
+          const skipped = !!(ov && ov.deleted);
+          const hasAmt = !!(ov && ov.amount != null && ov.amount !== "");
+          // Override amount = total intended for this statement; subtract what's already been paid
+          const amount = Math.round(Math.max(0, (hasAmt ? Number(ov.amount) : target) - paid) * 100) / 100;
+          if (amount <= 0.004) continue;
+
+          let P = payDateFor(D, plan.buffer);
+          if (P < today) P = today;                    // the early-pay date has passed but the bill isn't due yet
+          const calcISO = toISODate(P);
+          const effISO = (ov && ov.newDate) ? ov.newDate : calcISO;
+          const bankId = (ov && ov.bankId) || plan.bankId || null;
+          if (!skipped) mine.push({ cardId: card.id, date: effISO, amount });
+          if (skipped && !includeSkipped) continue;
+          if (effISO < rsISO || effISO > reISO) continue;
+
+          all.push({
+            cardId: card.id, cardName: card.name, bankId, mode: plan.mode,
+            date: effISO, originalDate: calcISO, dueDate: dISO, statementDate: sISO,
+            amount, stmtBal, paid, skipped, overridden: !!ov, key
+          });
+        }
+      }
+      return all.sort((a, b) => a.date.localeCompare(b.date));
+    }
+
+    // Everything paid or planned toward cards during a month (used by Budgets).
+    function monthPayoffTotal(y, mo) {
+      const start = new Date(y, mo - 1, 1), end = new Date(y, mo, 0);
+      const sISO = toISODate(start), eISO = toISODate(end);
+      let total = 0;
+      for (const t of state.transactions || []) {
+        if (t.txnType === "payoff" && t.date && t.date >= sISO && t.date <= eISO) total += Number(t.amount || 0);
+      }
+      for (const o of generateBillOccurrences(start, end).filter(plannedPayoffBillFilter)) {
+        if (o.payoffCardId) total += Number(o.amount || 0);
+      }
+      for (const p of getPlannedPayoffs(start, end)) total += p.amount;
+      return total;
+    }
+
+    // ---------- Card form: Payoff Plan fields (injected into the existing credit card form) ----------
+    function toggleCardPlanAmount() {
+      const zero = $("#credit-card-interest-mode").value === "zero";
+      $("#credit-card-plan-amount-wrap").classList.toggle("hidden", !zero);
+    }
+
+    function populateCardPlanBankSelect() {
+      const sel = $("#credit-card-pay-bank");
+      if (!sel) return;
+      const prev = sel.value;
+      const banks = (state.bankAccounts || []).slice().sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+      sel.innerHTML = `<option value="">— None —</option>` + banks.map(b => `<option value="${b.id}">${escapeHtml(b.name)}</option>`).join("");
+      if (banks.some(b => b.id === prev)) sel.value = prev;
+    }
+
+    function toggleCardStmtRule() {
+      const rule = $("#credit-card-stmt-rule").value;
+      $("#credit-card-statement-day-wrap").classList.toggle("hidden", rule !== "day");
+      $("#credit-card-stmt-days-wrap").classList.toggle("hidden", rule === "day");
+      const lab = $("#credit-card-stmt-days-label"), inp = $("#credit-card-stmt-days");
+      if (rule === "after") { lab.textContent = "Days after the previous due date"; inp.placeholder = "3 (Chase is typically ~3)"; inp.max = "27"; inp.min = "0"; }
+      else { lab.textContent = "Days before the due date"; inp.placeholder = "25 (Capital One is typically ~25)"; inp.max = "45"; inp.min = "1"; }
+    }
+
+    function fillCardPlanFields(c) {
+      populateCardPlanBankSelect();
+      $("#credit-card-due-day").value = c?.dueDay ? Math.min(28, c.dueDay) : "";
+      $("#credit-card-interest-mode").value = c?.interestMode || "";
+      $("#credit-card-plan-amount").value = c?.planAmount ?? "";
+      $("#credit-card-pay-bank").value = c?.payBankAccountId || "";
+      const rule = (c?.statementRule === "before" || c?.statementRule === "after" || c?.statementRule === "day")
+        ? c.statementRule : (c?.statementDay ? "day" : "before");
+      $("#credit-card-stmt-rule").value = rule;
+      $("#credit-card-statement-day").value = c?.statementDay ?? "";
+      $("#credit-card-stmt-days").value = c?.statementRuleDays ?? "";
+      $("#credit-card-pay-buffer").value = c?.payBufferDays ?? "";
+      $("#credit-card-posting-lag").value = c?.postingLagDays ?? "";
+      toggleCardPlanAmount();
+      toggleCardStmtRule();
+    }
+
+    function readCardPlanFields() {
+      const sd = parseInt($("#credit-card-statement-day").value, 10);
+      const dd = parseInt($("#credit-card-due-day").value, 10);
+      const mode = $("#credit-card-interest-mode").value;
+      const amt = Number($("#credit-card-plan-amount").value);
+      const rule = ["before", "after", "day"].includes($("#credit-card-stmt-rule").value) ? $("#credit-card-stmt-rule").value : "before";
+      const nd = parseInt($("#credit-card-stmt-days").value, 10);
+      const buf = parseInt($("#credit-card-pay-buffer").value, 10);
+      const lag = parseInt($("#credit-card-posting-lag").value, 10);
+      return {
+        statementDay: (rule === "day" && sd >= 1 && sd <= 31) ? sd : null,
+        dueDay: (dd >= 1 && dd <= 31) ? Math.min(dd, 28) : null,
+        interestMode: (mode === "full" || mode === "zero") ? mode : "",
+        planAmount: (mode === "zero" && Number.isFinite(amt) && amt > 0) ? amt : null,
+        payBankAccountId: $("#credit-card-pay-bank").value || null,
+        statementRule: rule,
+        statementRuleDays: rule === "before" ? (nd >= 1 && nd <= 45 ? nd : 25) : (rule === "after" ? (nd >= 0 && nd <= 27 ? nd : 3) : null),
+        payBufferDays: (buf >= 0 && buf <= 10) ? buf : 2,
+        postingLagDays: (lag >= 0 && lag <= 7) ? lag : 0
+      };
+    }
+
+    function cardPlanSummaryHtml(c) {
+      const p = cardPlan(c);
+      if (!p) {
+        return (c.interestMode && !(Number(c.dueDay) >= 1))
+          ? `<div class="text-[11px] text-amber-600 mt-0.5">Payoff plan needs a payment due day</div>`
+          : ((c.interestMode && c.statementRule === "day") ? `<div class="text-[11px] text-amber-600 mt-0.5">Payoff plan needs a statement closing day</div>` : "");
+      }
+      const bank = (state.bankAccounts || []).find(b => b.id === p.bankId);
+      const modeTxt = p.mode === "full" ? "Interest charged · pay in full"
+        : (p.amount ? `0% APR · ${formatMoney(p.amount)}/mo` : "0% APR · set a monthly amount");
+      const stmtTxt = p.rule === "before" ? `statement ${p.ruleDays}d before due`
+        : (p.rule === "after" ? `statement ${p.ruleDays}d after prev. due` : `statement closes day ${p.statementDay}`);
+      return `<div class="text-[11px] text-slate-500 mt-0.5">Due day ${p.dueDay} · ${stmtTxt} · pay ${p.buffer} bus. day${p.buffer === 1 ? "" : "s"} early · ${escapeHtml(modeTxt)}${bank ? ` · from ${escapeHtml(bank.name)}` : ""}</div>`;
+    }
+
+    (function injectCardPlanFields() {
+      const form = $("#credit-card-form");
+      const actions = $("#credit-card-cancel-btn")?.parentElement;
+      if (!form || !actions) return;
+      const lbl = "block text-sm font-medium text-slate-700 mb-1";
+      const inp = "w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none";
+      const hint = "text-[11px] text-slate-500 mt-1";
+      const wrap = document.createElement("div");
+      wrap.className = "mt-4 p-3 rounded-xl bg-slate-50 border border-slate-200";
+      wrap.innerHTML = `
+        <div class="text-sm font-semibold text-slate-900">Payoff Plan (optional)</div>
+        <p class="text-xs text-slate-500 mt-1">The payment due date drives when the payoff is planned. The statement date is only used to work out how much is owed. Copy both dates from your latest statement to calibrate.</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+          <div>
+            <label class="${lbl}">Payment due day (1–28)</label>
+            <input type="number" id="credit-card-due-day" min="1" max="28" step="1" inputmode="numeric" placeholder="e.g. 15" class="${inp}">
+            <p class="${hint}">Required for a payoff plan. Issuers keep the same due day every month.</p>
+          </div>
+          <div>
+            <label class="${lbl}">Interest</label>
+            <select id="credit-card-interest-mode" class="${inp}">
+              <option value="">No payoff plan</option>
+              <option value="full">Interest charged — pay statement balance in full</option>
+              <option value="zero">0% APR — partial payments OK</option>
+            </select>
+          </div>
+          <div id="credit-card-plan-amount-wrap" class="hidden">
+            <label class="${lbl}">Fixed monthly payment ($)</label>
+            <input type="number" id="credit-card-plan-amount" min="0" step="0.01" placeholder="e.g. 300" class="${inp}">
+          </div>
+          <div>
+            <label class="${lbl}">Statement closes</label>
+            <select id="credit-card-stmt-rule" class="${inp}">
+              <option value="before">N days before the due date</option>
+              <option value="after">N days after the previous due date</option>
+              <option value="day">On a fixed day of the month</option>
+            </select>
+          </div>
+          <div id="credit-card-stmt-days-wrap">
+            <label class="${lbl}" id="credit-card-stmt-days-label">Days before the due date</label>
+            <input type="number" id="credit-card-stmt-days" min="1" max="45" step="1" inputmode="numeric" placeholder="25" class="${inp}">
+            <p class="${hint}">Blank uses the typical default. Check your statement: closing date to due date.</p>
+          </div>
+          <div id="credit-card-statement-day-wrap" class="hidden">
+            <label class="${lbl}">Statement closing day (1–31)</label>
+            <input type="number" id="credit-card-statement-day" min="1" max="31" step="1" inputmode="numeric" placeholder="e.g. 20" class="${inp}">
+          </div>
+          <div>
+            <label class="${lbl}">Pay this many business days early</label>
+            <input type="number" id="credit-card-pay-buffer" min="0" max="10" step="1" inputmode="numeric" placeholder="2" class="${inp}">
+            <p class="${hint}">Planned pay date skips weekends and US federal holidays. 0 = last business day on/before the due date.</p>
+          </div>
+          <div>
+            <label class="${lbl}">Posting lag (days)</label>
+            <input type="number" id="credit-card-posting-lag" min="0" max="7" step="1" inputmode="numeric" placeholder="0" class="${inp}">
+            <p class="${hint}">Purchases this close to the statement date count toward the next statement.</p>
+          </div>
+          <div class="sm:col-span-2">
+            <label class="${lbl}">Default pay-from bank account</label>
+            <select id="credit-card-pay-bank" class="${inp}"><option value="">— None —</option></select>
+          </div>
+        </div>`;
+      form.insertBefore(wrap, actions);
+      $("#credit-card-interest-mode").addEventListener("change", toggleCardPlanAmount);
+      $("#credit-card-stmt-rule").addEventListener("change", toggleCardStmtRule);
+      toggleCardStmtRule();
+    })();
+
+    // Quick Add: default the "Pay From" bank to the card's saved default when logging a payoff
+    function applyPayoffDefaultBank() {
+      if ($("#txn-card-type").value !== "credit" || $("#txn-type").value !== "payoff") return;
+      const card = (state.creditCards || []).find(c => c.id === $("#txn-card-select").value);
+      const sel = $("#txn-source-bank");
+      if (card && card.payBankAccountId && sel && !sel.value && !ui.editing.transactionId) sel.value = card.payBankAccountId;
+    }
+    $("#txn-card-select").addEventListener("change", applyPayoffDefaultBank);
+    $("#txn-type").addEventListener("change", applyPayoffDefaultBank);
+
+    // ---------- Planned Card Payoffs table (Accounts & Cards page) ----------
+    // Rows are grouped by card. Collapsed by default, except the card with the next upcoming payoff.
+    let ppOpen = new Set();
+    let ppUserToggled = false;
+
+    function renderPlannedPayoffs() {
+      const body = $("#planned-payoffs-body");
+      if (!body || ppEditingKey) return;
+      const today = parseISODateLocal(toISODate(new Date()));
+      ppList = getPlannedPayoffs(today, addDays(today, 150), { includeSkipped: true });
+      ppList.forEach((pp, i) => { pp._i = i; });
+
+      // Bill check: match each planned payoff to the nearest recurring "pays off this card" bill (within 12 days)
+      const billOccs = generateBillOccurrences(addDays(today, -20), addDays(today, 170)).filter(o => o.payoffCardId);
+      const usedBills = new Set();
+      for (const pp of ppList) {
+        pp.bill = null; pp.billDiff = null;
+        if (pp.skipped) continue;
+        const pd = parseISODateLocal(pp.date);
+        let best = null, bestAbs = 1e9;
+        for (const o of billOccs) {
+          if (o.payoffCardId !== pp.cardId) continue;
+          const bk = `${o.billId}__${o.date}`;
+          if (usedBills.has(bk)) continue;
+          const diff = Math.round((parseISODateLocal(o.date) - pd) / 86400000);
+          if (Math.abs(diff) <= 12 && Math.abs(diff) < bestAbs) { bestAbs = Math.abs(diff); best = { o, diff, bk }; }
+        }
+        if (best) { usedBills.add(best.bk); pp.bill = best.o; pp.billDiff = best.diff; }
+      }
+
+      const cards = state.creditCards || [];
+      const bankName = (id) => ((state.bankAccounts || []).find(b => b.id === id) || {}).name || "—";
+      const notes = [];
+      if (!cards.length) notes.push("Add a credit card first.");
+      const noPlan = cards.filter(c => !cardPlan(c)).map(c => c.name);
+      const noAmt = cards.filter(c => { const p = cardPlan(c); return p && p.mode === "zero" && !p.amount; }).map(c => c.name);
+      if (noPlan.length) notes.push(`No payoff plan yet: ${noPlan.join(", ")} (edit the card and set a payment due day and interest type).`);
+      if (noAmt.length) notes.push(`Needs a fixed monthly amount (0% APR): ${noAmt.join(", ")}.`);
+      const noteEl = $("#planned-payoffs-note");
+      if (noteEl) noteEl.textContent = notes.join(" ");
+
+      // keep the mobile sort controls in sync with the column headers
+      const st = ui.sorts.planned;
+      const hasSort = !!(st && SORT_GETTERS.planned[st.key]);
+      const selEl = $("#pp-sort-select"), dirEl = $("#pp-sort-dir");
+      if (selEl) selEl.value = hasSort ? st.key : "";
+      if (dirEl) { dirEl.textContent = (hasSort && st.dir === "desc") ? "▼" : "▲"; dirEl.disabled = !hasSort; dirEl.style.opacity = hasSort ? "1" : ".4"; }
+
+      if (!ppList.length) {
+        body.innerHTML = `<tr><td colspan="9" class="px-3 py-3 text-center text-slate-500">No planned payoffs in the next 150 days.</td></tr>`;
+        return;
+      }
+
+      // ---- build groups (one per card)
+      const gm = new Map();
+      for (const pp of ppList) {
+        if (!gm.has(pp.cardId)) gm.set(pp.cardId, { cardId: pp.cardId, cardName: pp.cardName, mode: pp.mode, items: [] });
+        gm.get(pp.cardId).items.push(pp);
+      }
+      const groups = [...gm.values()];
+      for (const g of groups) {
+        if (hasSort) g.items = applySort("planned", g.items);
+        const live = g.items.filter(x => !x.skipped);
+        g.total = Math.round(live.reduce((t, x) => t + x.amount, 0) * 100) / 100;
+        g.liveCount = live.length;
+        g.skippedCount = g.items.length - live.length;
+        g.next = (live.length ? live : g.items).map(x => x.date).sort()[0] || "";
+      }
+
+      // the card whose next live payoff is soonest is auto-opened until the user toggles a group
+      const firstLive = ppList.find(x => !x.skipped);
+      if (!ppUserToggled) ppOpen = new Set(firstLive ? [firstLive.cardId] : []);
+
+      // ---- order groups
+      const mult = (hasSort && st.dir === "desc") ? -1 : 1;
+      const groupVal = (g) => {
+        if (!hasSort) return g.next;
+        if (st.key === "card") return lc(g.cardName);
+        if (st.key === "amount") return g.total;
+        return SORT_GETTERS.planned[st.key](g.items[0]);   // value of the group's first row after sorting
+      };
+      groups.sort((x, y) => {
+        const vx = groupVal(x), vy = groupVal(y);
+        const c = (typeof vx === "string") ? vx.localeCompare(vy) : vx - vy;
+        return (c * mult) || lc(x.cardName).localeCompare(lc(y.cardName));
+      });
+
+      const field = "pp-btn";
+      const checkHtml = (pp) => {
+        if (pp.skipped) return `<span class="text-xs text-slate-400">—</span>`;
+        if (!pp.bill) return `<span class="text-xs text-slate-400">no bill</span>`;
+        if (pp.billDiff === 0) return `<span class="text-xs text-emerald-600">✓ matches bill</span>`;
+        const sign = pp.billDiff > 0 ? "+" : "";
+        return `<span class="text-xs text-amber-600">Bill ${escapeHtml(pp.bill.date)} (${sign}${pp.billDiff}d)</span> <button type="button" class="pp-btn text-brand-600 hover:underline text-xs" data-pp-act="adopt" data-i="${pp._i}">Adopt date</button>`;
+      };
+      const rowHtml = (pp) => {
+        const i = pp._i;
+        const dateHtml = escapeHtml(pp.date) + (pp.date !== pp.originalDate ? ` <span class="text-[11px] text-amber-600">(moved from ${escapeHtml(pp.originalDate)})</span>` : "");
+        const amtHtml = pp.skipped
+          ? `<span class="text-slate-400 line-through">${formatMoney(pp.amount)}</span> <span class="badge badge-slate">Skipped</span>`
+          : `<span class="font-semibold text-amber-700">${formatMoney(pp.amount)}</span>${pp.overridden ? ' <span class="text-[11px] text-amber-600">(edited)</span>' : ""}${pp.paid > 0.004 ? ` <span class="text-[11px] text-slate-400">(${formatMoney(pp.paid)} already paid)</span>` : ""}`;
+        return `<tr data-i="${i}" class="pp-row ${pp.skipped ? "opacity-60" : ""}">
+          <td class="pp-cardcell px-3 py-2 pl-6" data-label="Card">↳</td>
+          <td class="px-3 py-2 text-slate-700 whitespace-nowrap" data-label="Statement closes">${escapeHtml(pp.statementDate)}</td>
+          <td class="px-3 py-2 font-medium text-slate-800 whitespace-nowrap" data-label="Due date">${escapeHtml(pp.dueDate)}</td>
+          <td class="px-3 py-2 text-slate-700" data-label="Pay on">${dateHtml}</td>
+          <td class="px-3 py-2 text-slate-700" data-label="Pay from">${escapeHtml(bankName(pp.bankId))}</td>
+          <td class="px-3 py-2 text-right text-slate-700" data-label="Statement balance">${formatMoney(pp.stmtBal)}</td>
+          <td class="px-3 py-2 text-right" data-label="Planned payoff"><span class="inline-block text-right">${amtHtml}</span></td>
+          <td class="px-3 py-2 text-right" data-label="Bill check">${checkHtml(pp)}</td>
+          <td class="pp-actions px-3 py-2 text-right" data-label="Actions">
+            <div class="inline-flex items-center gap-2 flex-wrap justify-end">
+              ${pp.skipped
+                ? `<button type="button" class="${field} pp-btn-wide text-brand-600 hover:underline text-sm" data-pp-act="restore" data-i="${i}">Restore</button>`
+                : `<button type="button" class="${field} pp-btn-wide text-emerald-600 hover:underline text-sm" data-pp-act="log" data-i="${i}">Log payoff</button>
+                   <button type="button" class="${field} text-brand-600 hover:underline text-sm" data-pp-act="edit" data-i="${i}">Edit</button>
+                   <button type="button" class="${field} text-rose-600 hover:underline text-sm" data-pp-act="skip" data-i="${i}">Skip</button>`}
+              ${pp.overridden && !pp.skipped ? `<button type="button" class="${field} text-slate-500 hover:underline text-sm" data-pp-act="reset" data-i="${i}">Reset</button>` : ""}
+            </div>
+          </td>
+        </tr>`;
+      };
+
+      body.innerHTML = groups.map(g => {
+        const open = ppOpen.has(g.cardId);
+        const modeBadge = g.mode === "full" ? `<span class="badge badge-rose">Interest · full</span>` : `<span class="badge badge-emerald">0% APR</span>`;
+        const meta = `${g.liveCount} payoff${g.liveCount === 1 ? "" : "s"}${g.next ? ` · next ${escapeHtml(g.next)}` : ""}${g.skippedCount ? ` · ${g.skippedCount} skipped` : ""}`;
+        const head = `<tr class="pp-group-row bg-slate-50" data-pp-group="${escapeHtml(g.cardId)}">
+          <td colspan="9">
+            <button type="button" class="pp-group-btn" data-pp-toggle="${escapeHtml(g.cardId)}" aria-expanded="${open ? "true" : "false"}">
+              <span class="pp-chev text-slate-400">▶</span>
+              <span class="flex-1 min-w-0">
+                <span class="font-semibold text-slate-900">${escapeHtml(g.cardName)}</span> ${modeBadge}
+                <span class="block text-xs text-slate-500 mt-0.5">${meta}</span>
+              </span>
+              <span class="text-right shrink-0">
+                <span class="block text-sm font-semibold text-amber-700">${formatMoney(g.total)}</span>
+                <span class="block text-[11px] text-slate-400">planned total</span>
+              </span>
+            </button>
+          </td>
+        </tr>`;
+        return head + (open ? g.items.map(rowHtml).join("") : "");
+      }).join("");
+    }
+
+    // mobile sort controls (the column headers are hidden on small screens)
+    $("#pp-sort-select")?.addEventListener("change", (e) => {
+      const k = e.target.value;
+      if (!k) delete ui.sorts.planned;
+      else ui.sorts.planned = { key: k, dir: DESC_FIRST_KEYS.has(k) ? "desc" : "asc" };
+      refreshAllViews();
+    });
+    $("#pp-sort-dir")?.addEventListener("click", () => {
+      const cur = ui.sorts.planned;
+      if (!cur) return;
+      cur.dir = cur.dir === "asc" ? "desc" : "asc";
+      refreshAllViews();
+    });
+
+    function startPlannedPayoffEdit(pp, tr, i) {
+      ppEditingKey = pp.key;
+      const banks = (state.bankAccounts || []).slice().sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+      const bankOpts = `<option value="">— None —</option>` + banks.map(b => `<option value="${b.id}"${b.id === pp.bankId ? " selected" : ""}>${escapeHtml(b.name)}</option>`).join("");
+      const field = "border border-slate-300 rounded-lg px-2 py-1 text-sm";
+      tr.innerHTML = `
+        <td class="pp-cardcell px-3 py-2 pl-6" data-label="Card">↳</td>
+        <td class="px-3 py-2 text-slate-700 whitespace-nowrap" data-label="Statement closes">${escapeHtml(pp.statementDate)}</td>
+        <td class="px-3 py-2 font-medium text-slate-800 whitespace-nowrap" data-label="Due date">${escapeHtml(pp.dueDate)}</td>
+        <td class="px-3 py-2" data-label="Pay on"><input type="date" value="${escapeHtml(pp.date)}" class="${field}" data-pp-date></td>
+        <td class="px-3 py-2" data-label="Pay from"><select class="${field}" data-pp-bank>${bankOpts}</select></td>
+        <td class="px-3 py-2 text-right text-slate-700" data-label="Statement balance">${formatMoney(pp.stmtBal)}</td>
+        <td class="px-3 py-2 text-right" data-label="Planned payoff"><input type="number" min="0" step="0.01" value="${pp.amount}" class="${field} w-28" data-pp-amt></td>
+        <td class="px-3 py-2" data-label="Bill check"></td>
+        <td class="pp-actions px-3 py-2 text-right" data-label="Actions">
+          <div class="inline-flex items-center gap-2 justify-end">
+            <button type="button" class="pp-btn text-emerald-600 hover:underline text-sm" data-pp-act="save" data-i="${i}">Save</button>
+            <button type="button" class="pp-btn text-slate-500 hover:underline text-sm ml-2" data-pp-act="cancel" data-i="${i}">Cancel</button>
+          </div>
+        </td>`;
+    }
+
+    async function savePlannedPayoffEdit(pp, tr) {
+      const val = Number(tr.querySelector("[data-pp-amt]").value);
+      const newDate = tr.querySelector("[data-pp-date]").value;
+      const bank = tr.querySelector("[data-pp-bank]").value;
+      if (!Number.isFinite(val) || val < 0) { alert("Enter an amount of 0 or more."); return; }
+      const ov = (state.payoffOverrides || []).find(o => o.id === pp.key);
+      const keepAmt = (ov && ov.amount != null) || Math.abs(val - pp.amount) > 0.004;
+      const defaultBank = ((state.creditCards || []).find(c => c.id === pp.cardId) || {}).payBankAccountId || "";
+      await setDoc(doc(db, "users", currentUser.uid, "payoffOverrides", pp.key), {
+        cardId: pp.cardId, statementDate: pp.statementDate, dueDate: pp.dueDate,
+        amount: keepAmt ? val + (pp.paid || 0) : null,          // stored as the total intended for this statement
+        newDate: (newDate && newDate !== pp.originalDate) ? newDate : null,
+        bankId: (bank && bank !== defaultBank) ? bank : null,
+        deleted: false, updatedAt: serverTimestamp()
+      }, { merge: true });
+      ppEditingKey = null;
+      renderPlannedPayoffs();
+    }
+
+    async function logPlannedPayoff(pp) {
+      const card = (state.creditCards || []).find(c => c.id === pp.cardId);
+      if (!card) { alert("Card not found."); return; }
+      if (!pp.bankId) { alert("Choose a pay-from bank first (edit the card's default, or use Edit on this row)."); return; }
+      const bank = (state.bankAccounts || []).find(b => b.id === pp.bankId);
+      if (!confirm(`Log a ${formatMoney(pp.amount)} payoff on ${pp.cardName} dated ${pp.date}, paid from ${bank ? bank.name : "the selected bank"}?`)) return;
+      await addDoc(userCol("transactions"), {
+        date: pp.date, amount: pp.amount, description: "Card payoff (from plan)",
+        cardType: "credit", cardId: card.id, cardName: card.name, txnType: "payoff",
+        sourceBankAccountId: pp.bankId, bankAccountId: null, category: "",
+        createdAt: serverTimestamp()
+      });
+    }
+
+    // Use the date of the matching recurring payoff bill as this payoff's planned date
+    async function adoptBillDate(pp) {
+      if (!pp.bill) return;
+      await setDoc(doc(db, "users", currentUser.uid, "payoffOverrides", pp.key), {
+        cardId: pp.cardId, statementDate: pp.statementDate, dueDate: pp.dueDate,
+        newDate: pp.bill.date !== pp.originalDate ? pp.bill.date : null,
+        deleted: false, updatedAt: serverTimestamp()
+      }, { merge: true });
+    }
+
+    $("#planned-payoffs-body")?.addEventListener("click", async (e) => {
+      const tg = e.target.closest("[data-pp-toggle]");
+      if (tg) {
+        if (ppEditingKey) return;                 // finish (save/cancel) the edit first
+        const id = tg.dataset.ppToggle;
+        ppUserToggled = true;
+        if (ppOpen.has(id)) ppOpen.delete(id); else ppOpen.add(id);
+        renderPlannedPayoffs();
+        return;
+      }
+      const btn = e.target.closest("[data-pp-act]");
+      if (!btn || !currentUser) return;
+      const act = btn.dataset.ppAct;
+      const tr = btn.closest("tr");
+      const pp = ppList[Number(btn.dataset.i)];
+      if (!pp) return;
+      const ref = doc(db, "users", currentUser.uid, "payoffOverrides", pp.key);
+      try {
+        if (act === "skip") await setDoc(ref, { cardId: pp.cardId, statementDate: pp.statementDate, dueDate: pp.dueDate, deleted: true, updatedAt: serverTimestamp() }, { merge: true });
+        else if (act === "restore") await setDoc(ref, { cardId: pp.cardId, statementDate: pp.statementDate, dueDate: pp.dueDate, deleted: false, updatedAt: serverTimestamp() }, { merge: true });
+        else if (act === "reset") await deleteDoc(ref);
+        else if (act === "adopt") await adoptBillDate(pp);
+        else if (act === "log") await logPlannedPayoff(pp);
+        else if (act === "edit") startPlannedPayoffEdit(pp, tr, btn.dataset.i);
+        else if (act === "cancel") { ppEditingKey = null; renderPlannedPayoffs(); }
+        else if (act === "save") await savePlannedPayoffEdit(pp, tr);
+      } catch (err) {
+        alert(err?.message || "Failed to update planned payoff");
+      }
+    });
+
+    // ===== Planner controls =====
     $("#planner-horizon-days").addEventListener("input", () => {
       ui.planner.horizonDays = Number($("#planner-horizon-days").value || 180);
     });
