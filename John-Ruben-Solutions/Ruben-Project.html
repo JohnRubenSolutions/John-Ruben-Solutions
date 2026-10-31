@@ -449,7 +449,7 @@
                 Manage Accounts &amp; Cards →
               </button>
             </div>
-            <div class="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3" id="dashboard-accounts-summary"></div>
+            <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3" id="dashboard-accounts-summary"></div>
             <div class="mt-4" id="dashboard-accounts-list"></div>
           </div>
         </section>
@@ -541,14 +541,20 @@
           </div>
 
           <!-- Summary strip -->
-          <div class="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
               <div class="text-xs text-slate-500">Total in Bank Accounts</div>
               <div class="text-xl font-bold text-emerald-700" id="accounts-total-bank">$0.00</div>
             </div>
             <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
-              <div class="text-xs text-slate-500">Total Credit Card Debt</div>
+              <div class="text-xs text-slate-500">Spoken-For (Card Debt Owed)</div>
               <div class="text-xl font-bold text-rose-700" id="accounts-total-credit-debt">$0.00</div>
+              <div class="text-[11px] text-slate-400 mt-0.5" id="accounts-installment-note"></div>
+            </div>
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
+              <div class="text-xs text-slate-500">True Available Cash (Bank − Cards)</div>
+              <div class="text-xl font-bold text-emerald-700" id="accounts-true-available">$0.00</div>
+              <div class="text-[11px] text-slate-400 mt-0.5">Real cash left after zeroing out all cards today</div>
             </div>
             <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
               <div class="text-xs text-slate-500">Total Available Credit</div>
@@ -730,6 +736,7 @@
               <h3 class="text-lg font-semibold text-slate-900">Planned Card Payoffs</h3>
               <p class="text-sm text-slate-500 mt-1">Projected monthly from each card's payment due date (planned a few business days early). The statement date is only used to work out how much is owed. "Interest charged" cards pay the full statement balance; 0% APR cards pay the fixed amount you set. Edit the amount, date or bank for any month, skip a month, or log it as paid. These feed the Period Planner and reduce the month's income in Budgets.</p>
               <div id="planned-payoffs-note" class="text-xs text-amber-600 mt-2"></div>
+              <div id="zero-out-bar" class="mt-3 flex flex-wrap items-center justify-between gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200"></div>
               <div class="md:hidden mt-3 flex items-center gap-2">
                 <label class="text-xs text-slate-500 shrink-0" for="pp-sort-select">Sort by</label>
                 <select id="pp-sort-select" class="flex-1 min-w-0 border border-slate-300 rounded-lg px-3 py-2 text-sm">
@@ -1015,7 +1022,7 @@
               <div class="flex items-start justify-between gap-3 flex-wrap">
                 <div>
                   <h3 class="text-lg font-semibold text-slate-900">Budgets by Category</h3>
-                  <p class="text-sm text-slate-500 mt-1">Monthly budgets for the categories you already use. Set a fixed dollar amount or a percentage of that month's expected income. Spending counts expenses and bills, minus refunds; card payoffs are excluded.</p>
+                  <p class="text-sm text-slate-500 mt-1">Monthly budgets for the categories you already use. Set a fixed dollar amount or a percentage of that month's expected income. Spending counts ALL expenses and bills for the month (budgeted, unbudgeted and Uncategorized), minus refunds; card payoffs are excluded.</p>
                 </div>
                 <div>
                   <label class="block text-xs font-medium text-slate-600 mb-1" for="bud-month">Month</label>
@@ -1024,9 +1031,9 @@
               </div>
               <div class="mt-4 grid grid-cols-2 lg:grid-cols-4 gap-3">
                 <div class="bg-slate-50 rounded-xl border border-slate-200 p-4"><div class="text-xs text-slate-500">Expected income</div><div class="text-lg font-bold text-emerald-700" id="bud-income">$0.00</div><div class="text-[11px] text-slate-400" id="bud-income-after"></div></div>
-                <div class="bg-slate-50 rounded-xl border border-slate-200 p-4"><div class="text-xs text-slate-500">Total budgeted</div><div class="text-lg font-bold text-slate-900" id="bud-total-budget">$0.00</div><div class="text-[11px] text-slate-400" id="bud-pct-income"></div></div>
-                <div class="bg-slate-50 rounded-xl border border-slate-200 p-4"><div class="text-xs text-slate-500">Spent (budgeted categories)</div><div class="text-lg font-bold text-rose-700" id="bud-total-actual">$0.00</div></div>
-                <div class="bg-slate-50 rounded-xl border border-slate-200 p-4"><div class="text-xs text-slate-500">Remaining</div><div class="text-lg font-bold" id="bud-total-left">$0.00</div></div>
+                <div class="bg-slate-50 rounded-xl border border-slate-200 p-4"><div class="text-xs text-slate-500">Total budgeted (spending cap)</div><div class="text-lg font-bold text-slate-900" id="bud-total-budget">$0.00</div><div class="text-[11px] text-slate-400" id="bud-pct-income"></div></div>
+                <div class="bg-slate-50 rounded-xl border border-slate-200 p-4"><div class="text-xs text-slate-500">Total spent this month</div><div class="text-lg font-bold text-rose-700" id="bud-total-actual">$0.00</div><div class="text-[11px] text-slate-400" id="bud-actual-sub"></div></div>
+                <div class="bg-slate-50 rounded-xl border border-slate-200 p-4"><div class="text-xs text-slate-500">Remaining budget &amp; projected savings</div><div class="text-lg font-bold" id="bud-total-left">$0.00</div><div class="text-[11px] text-slate-400" id="bud-left-sub"></div></div>
               </div>
               <div class="mt-4 overflow-x-auto">
                 <table class="min-w-[860px] w-full text-sm">
@@ -1416,6 +1423,8 @@ service cloud.firestore {
       creditCards: [],
       debitCards: [],
       transactions: [],
+      payoffOverrides: [],
+      budgets: [],
     };
 
     let ui = {
@@ -1927,6 +1936,29 @@ service cloud.firestore {
       return null;
     }
 
+    // A recurring "pays off card X" bill occurrence is IGNORED (shadowed) when the card has a payoff plan,
+    // or when a real payoff transaction for that card already exists within ±12 days of the occurrence.
+    // This prevents the same payoff from being deducted twice.
+    function makePayoffShadowTest() {
+      const byCard = new Map();
+      for (const t of state.transactions || []) {
+        if (t.txnType !== "payoff" || !t.cardId || !t.date) continue;
+        if (!byCard.has(t.cardId)) byCard.set(t.cardId, []);
+        byCard.get(t.cardId).push(parseISODateLocal(t.date).getTime());
+      }
+      const planned = new Map();
+      return (occ) => {
+        const cid = occ && occ.payoffCardId;
+        if (!cid) return false;
+        if (!planned.has(cid)) planned.set(cid, cardHasPlan(cid));
+        if (planned.get(cid)) return true;
+        const list = byCard.get(cid);
+        if (!list || !list.length) return false;
+        const ot = parseISODateLocal(occ.date).getTime();
+        return list.some(ms => Math.abs(Math.round((ms - ot) / 86400000)) <= 12);
+      };
+    }
+
     // "As of today" — future-dated incomes/transactions do not inflate the current balance.
     function computeBankAccountBalance(bank) {
       const todayISO = toISODate(new Date());
@@ -1941,8 +1973,9 @@ service cloud.firestore {
         for (const occ of generateIncomeOccurrences(from, to)) {
           if (occ.bankAccountId === bank.id) balance += Number(occ.amount || 0);
         }
+        const shadow = makePayoffShadowTest();
         for (const occ of generateBillOccurrences(from, to)) {
-          if (resolveBillBankId(occ) === bank.id) balance -= Number(occ.amount || 0);
+          if (resolveBillBankId(occ) === bank.id && !shadow(occ)) balance -= Number(occ.amount || 0);
         }
       }
       for (const t of state.transactions || []) {
@@ -2063,8 +2096,8 @@ service cloud.firestore {
       const notes = $("#credit-card-notes").value.trim();
       if (!currentUser) return;
       const planCheck = readCardPlanFields();
-      if (planCheck.interestMode && !planCheck.dueDay) { alert("A payoff plan needs the payment due day (1–28). Enter it, or set Interest to \"No payoff plan\"."); return; }
-      if (planCheck.interestMode && planCheck.statementRule === "day" && !planCheck.statementDay) { alert("Enter the statement closing day, or choose a different statement rule."); return; }
+      if ((planCheck.interestMode === "full" || planCheck.interestMode === "zero") && !planCheck.dueDay) { alert("A payoff plan needs the payment due day (1–28). Enter it, or set Interest to \"No payoff plan\"."); return; }
+      if ((planCheck.interestMode === "full" || planCheck.interestMode === "zero") && planCheck.statementRule === "day" && !planCheck.statementDay) { alert("Enter the statement closing day, or choose a different statement rule."); return; }
 
       const payload = {
         name, startingBalance: Number.isFinite(startingBalance) ? startingBalance : 0,
@@ -2101,9 +2134,10 @@ service cloud.firestore {
       // Bills paid with this card (+) and bills that pay this card off (-), dated today or earlier
       const billDates = (state.bills || []).map(b => b.date).filter(Boolean).sort();
       if (billDates.length) {
+        const shadow = makePayoffShadowTest();
         for (const occ of generateBillOccurrences(parseISODateLocal(billDates[0]), parseISODateLocal(todayISO))) {
           if (occ.payMethod === "credit" && occ.payCardId === card.id) balance += Number(occ.amount || 0);
-          if (occ.payoffCardId === card.id) balance -= Number(occ.amount || 0);   // bill that pays this card off
+          if (occ.payoffCardId === card.id && !shadow(occ)) balance -= Number(occ.amount || 0);   // bill that pays this card off (unless a plan / real payoff already covers it)
         }
       }
       return balance;
@@ -2131,7 +2165,7 @@ service cloud.firestore {
           const tr = document.createElement("tr");
           tr.innerHTML = `
             <td class="px-3 py-2 font-medium text-slate-800">
-              ${escapeHtml(c.name)}
+              ${escapeHtml(c.name)}${isInstallment(c) ? ` <span class="badge badge-slate ml-1">Installment</span>` : ""}
               ${c.notes ? `<div class="text-xs text-slate-500">${escapeHtml(c.notes)}</div>` : ""}
               ${cardPlanSummaryHtml(c)}
             </td>
@@ -2140,7 +2174,8 @@ service cloud.firestore {
               ${utilHtml}
             </td>
             <td class="px-3 py-2 text-right align-top">
-              <div class="inline-flex items-center gap-2">
+              <div class="inline-flex items-center gap-2 flex-wrap justify-end">
+                ${(balance > 0.004 && !isInstallment(c)) ? `<button class="text-emerald-600 hover:underline text-sm whitespace-nowrap" data-action="zero" data-id="${c.id}" title="Log a payoff dated today for the full current balance">⚡ Zero Out Now</button>` : ""}
                 <button class="text-brand-600 hover:underline text-sm" data-action="edit" data-id="${c.id}">Edit</button>
                 <button class="text-rose-600 hover:underline text-sm" data-action="del" data-id="${c.id}">Delete</button>
               </div>
@@ -2150,6 +2185,9 @@ service cloud.firestore {
         }
         tbody.querySelectorAll("[data-action='edit']").forEach(btn => {
           btn.addEventListener("click", () => openCreditCardForm(state.creditCards.find(x => x.id === btn.dataset.id)));
+        });
+        tbody.querySelectorAll("[data-action='zero']").forEach(btn => {
+          btn.addEventListener("click", () => openZeroOutModal([btn.dataset.id]));
         });
         tbody.querySelectorAll("[data-action='del']").forEach(btn => {
           btn.addEventListener("click", async () => {
@@ -2256,25 +2294,40 @@ service cloud.firestore {
     }
 
     // ===== Accounts Summary (Accounts route + Dashboard mirror) =====
+    // Installment plans (e.g. installment) are fixed-term balances, not revolving cards you clear monthly.
+    function isInstallment(c) { return !!c && c.accountType === "installment"; }
+
     function computeAccountsTotals() {
       const bankTotal = state.bankAccounts.reduce((s, b) => s + computeBankAccountBalance(b), 0);
-      const creditTotal = state.creditCards.reduce((s, c) => s + computeCreditCardBalance(c), 0);
+      const creditTotal = state.creditCards.reduce((s, c) => s + computeCreditCardBalance(c), 0);   // ALL debt (used for net worth)
+      const spokenFor = state.creditCards.reduce((s, c) => isInstallment(c) ? s : s + computeCreditCardBalance(c), 0);   // revolving cards only
+      const installmentTotal = creditTotal - spokenFor;
       const availableCredit = state.creditCards.reduce((s, c) => {
+        if (isInstallment(c)) return s;
         if (!c.creditLimit) return s;
         return s + Math.max(0, c.creditLimit - computeCreditCardBalance(c));
       }, 0);
-      return { bankTotal, creditTotal, availableCredit };
+      return { bankTotal, creditTotal, spokenFor, installmentTotal, availableCredit };
     }
 
     function renderAccountsSummary() {
-      const { bankTotal, creditTotal, availableCredit } = computeAccountsTotals();
+      const { bankTotal, creditTotal, spokenFor, installmentTotal, availableCredit } = computeAccountsTotals();
 
       const elBank = $("#accounts-total-bank");
       const elCredit = $("#accounts-total-credit-debt");
       const elAvail = $("#accounts-total-available-credit");
       if (elBank) elBank.textContent = formatMoney(bankTotal);
-      if (elCredit) elCredit.textContent = formatMoney(creditTotal);
+      if (elCredit) elCredit.textContent = formatMoney(spokenFor);
+      const instNote = installmentTotal > 0.004 ? `Excludes installment plans: ${formatMoney(installmentTotal)}` : "";
+      const elInst = $("#accounts-installment-note");
+      if (elInst) elInst.textContent = instNote;
       if (elAvail) elAvail.textContent = formatMoney(availableCredit);
+      const trueAvail = bankTotal - spokenFor;
+      const elTrue = $("#accounts-true-available");
+      if (elTrue) {
+        elTrue.textContent = formatMoney(trueAvail);
+        elTrue.className = "text-xl font-bold " + (trueAvail >= 0 ? "text-emerald-700" : "text-rose-700");
+      }
 
       const dashSummary = $("#dashboard-accounts-summary");
       if (dashSummary) {
@@ -2284,8 +2337,14 @@ service cloud.firestore {
             <div class="text-lg font-bold text-emerald-700">${formatMoney(bankTotal)}</div>
           </div>
           <div class="bg-slate-50 rounded-xl border border-slate-200 p-4">
-            <div class="text-xs text-slate-500">Total Credit Card Debt</div>
-            <div class="text-lg font-bold text-rose-700">${formatMoney(creditTotal)}</div>
+            <div class="text-xs text-slate-500">Spoken-For (Card Debt Owed)</div>
+            <div class="text-lg font-bold text-rose-700">${formatMoney(spokenFor)}</div>
+            ${instNote ? `<div class="text-[11px] text-slate-400 mt-0.5">${instNote}</div>` : ""}
+          </div>
+          <div class="bg-slate-50 rounded-xl border border-slate-200 p-4">
+            <div class="text-xs text-slate-500">True Available Cash (Bank − Cards)</div>
+            <div class="text-lg font-bold ${trueAvail >= 0 ? "text-emerald-700" : "text-rose-700"}">${formatMoney(trueAvail)}</div>
+            <div class="text-[11px] text-slate-400 mt-0.5">Real cash left after zeroing out all cards today</div>
           </div>
           <div class="bg-slate-50 rounded-xl border border-slate-200 p-4">
             <div class="text-xs text-slate-500">Total Available Credit</div>
@@ -2293,6 +2352,8 @@ service cloud.firestore {
           </div>
         `;
       }
+
+      renderZeroOutBar();
 
       const dashList = $("#dashboard-accounts-list");
       if (dashList) {
@@ -3850,7 +3911,9 @@ service cloud.firestore {
             kind: "payoffplan", id: pp.cardId, recurring: true, key: pp.key,
             date: pp.date, originalDate: pp.originalDate, statementDate: pp.statementDate, dueDate: pp.dueDate,
             name: `Planned payoff — ${pp.cardName}`,
-            sub: `Due ${pp.dueDate} · statement ${pp.statementDate} · ${pp.mode === "full" ? "pay in full" : "0% APR fixed amount"}${ppBank ? ` · from ${ppBank.name}` : ""}`,
+            sub: (pp.mode === "eom"
+              ? `Month-end zero-out · pay balance on ${pp.dueDate}`
+              : `Due ${pp.dueDate} · statement ${pp.statementDate} · ${pp.mode === "full" ? "pay in full" : "0% APR fixed amount"}`) + (ppBank ? ` · from ${ppBank.name}` : ""),
             amount: pp.amount, flow: "out", txnType: "payoff", cardType: "credit"
           });
         }
@@ -3939,7 +4002,7 @@ service cloud.firestore {
 
       const manualAssetsTotal = (state.assets || []).reduce((s, a) => s + Number(a.value || 0), 0);
       const manualLiabilitiesTotal = (state.liabilities || []).reduce((s, l) => s + Number(l.value || 0), 0);
-      const { bankTotal, creditTotal } = computeAccountsTotals();
+      const { bankTotal, creditTotal, spokenFor } = computeAccountsTotals();
 
       const assetsTotal = manualAssetsTotal + bankTotal;
       const liabilitiesTotal = manualLiabilitiesTotal + creditTotal;
@@ -3962,7 +4025,7 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
       const netWorth = assetsTotal - liabilitiesTotal + netCashflowAdj;
 
       return {
-        todayISO, manualAssetsTotal, manualLiabilitiesTotal, bankTotal, creditTotal,
+        todayISO, manualAssetsTotal, manualLiabilitiesTotal, bankTotal, creditTotal, spokenFor,
         assetsTotal, liabilitiesTotal, unroutedIncomeToday, billsToday,
         netCashflowAdj, netWorth
       };
@@ -3978,7 +4041,17 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
       $("#bank-cash-now").textContent = formatMoney(d.bankTotal);
       $("#bank-cash-now").className = "text-2xl font-bold " + (d.bankTotal >= 0 ? "text-emerald-700" : "text-rose-700");
       const acctCount = state.bankAccounts.length;
-      $("#bank-cash-sub").textContent = `As of ${d.todayISO} · ${acctCount} account${acctCount === 1 ? "" : "s"}`;
+      const spokenFor = d.spokenFor;
+      const trueCash = d.bankTotal - d.spokenFor;
+      const floatAmt = d.spokenFor - d.bankTotal;
+      const cashBadge = d.bankTotal >= d.spokenFor
+        ? `<span class="badge badge-emerald">100% Cash-Backed</span>`
+        : `<span class="badge ${d.bankTotal >= 0 ? "badge-amber" : "badge-rose"}">On Credit Float (-${formatMoney(floatAmt)})</span>`;
+      $("#bank-cash-sub").innerHTML = `
+        <div>As of ${escapeHtml(d.todayISO)} · ${acctCount} account${acctCount === 1 ? "" : "s"}</div>
+        <div class="mt-1">Spoken-For (Card Balances): <span class="font-semibold text-rose-700">${formatMoney(spokenFor)}</span></div>
+        <div>True Available Cash (Unencumbered): <span class="font-semibold ${trueCash >= 0 ? "text-emerald-700" : "text-rose-700"}">${formatMoney(trueCash)}</span></div>
+        <div class="mt-1">${cashBadge}</div>`;
 
       const pm = computeCurrentPeriodMetrics();
       $("#period-carry-in").textContent = formatMoney(pm.carryIn);
@@ -4249,13 +4322,18 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
         .reduce((s, o) => s + Number(o.amount || 0), 0);
 
       const actual = new Map(), used = new Set();
+      let totalAllSpend = 0;   // ALL spending this month (every category incl. unbudgeted + Uncategorized, minus refunds, excl. card payoffs)
       for (const r of getLedgerBaseRows().rows) {
         const amt = rowSpend(r);
         if (!amt) continue;
         const cat = categoryLabel(rowCategoryRaw(r));
-        if (cat === UNCATEGORIZED) continue;
-        used.add(cat);
-        if ((r.date || "").slice(0, 7) === ym) actual.set(cat, (actual.get(cat) || 0) + amt);
+        const inMonth = (r.date || "").slice(0, 7) === ym;
+        if (cat !== UNCATEGORIZED) used.add(cat);
+        if (inMonth) {
+          if (cat === UNCATEGORIZED) used.add(cat);   // only listed when it has spending this month (or a budget)
+          actual.set(cat, (actual.get(cat) || 0) + amt);
+          totalAllSpend += amt;
+        }
       }
       const budgets = new Map();
       for (const b of state.budgets || []) { const c = categoryLabel(b.category); budgets.set(c, b); used.add(c); }
@@ -4322,18 +4400,23 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
         }).join("");
       }
 
-      const totLeft = totBudget - totActual;
+      const totLeft = totBudget - totalAllSpend;
+      const unbudgetedSpend = totalAllSpend - totActual;
+      const targetSavings = monthIncome - totBudget;
+      const targetPct = monthIncome > 0 ? ((targetSavings / monthIncome) * 100).toFixed(0) : "0";
+      const actualSavings = monthIncome - totalAllSpend;
       $("#bud-income").textContent = formatMoney(monthIncome);
-      const payoffsInMonth = monthPayoffTotal(y, mo);
       const afterEl = $("#bud-income-after");
-      if (afterEl) afterEl.textContent = payoffsInMonth > 0.004
-        ? "After card payoffs: " + formatMoney(monthIncome - payoffsInMonth) + " (−" + formatMoney(payoffsInMonth) + ")"
-        : "";
+      if (afterEl) afterEl.textContent = `Target Savings: ${formatMoney(targetSavings)} (${targetPct}%)`;
       $("#bud-total-budget").textContent = formatMoney(totBudget);
       $("#bud-pct-income").textContent = monthIncome > 0 && totBudget > 0 ? ((totBudget / monthIncome) * 100).toFixed(0) + "% of income" : "";
-      $("#bud-total-actual").textContent = formatMoney(totActual);
+      $("#bud-total-actual").textContent = formatMoney(totalAllSpend);
+      const actSub = $("#bud-actual-sub");
+      if (actSub) actSub.textContent = `Budgeted cats: ${formatMoney(totActual)} · Unbudgeted/Uncat: ${formatMoney(unbudgetedSpend)}`;
       $("#bud-total-left").textContent = formatMoney(totLeft);
       $("#bud-total-left").className = "text-lg font-bold " + (totLeft >= 0 ? "text-emerald-700" : "text-rose-700");
+      const leftSub = $("#bud-left-sub");
+      if (leftSub) leftSub.textContent = `Actual Savings (Income − All Spend): ${formatMoney(actualSavings)}`;
 
       tbody.querySelectorAll("[data-bud-save]").forEach(btn => btn.addEventListener("click", async () => {
         if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
@@ -4529,8 +4612,17 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
     function cardPlan(card) {
       if (!card) return null;
       const dd = Number(card.dueDay);
-      const mode = (card.interestMode === "full" || card.interestMode === "zero") ? card.interestMode : "";
-      if (!(dd >= 1 && dd <= 31) || !mode) return null;
+      const mode = (card.interestMode === "full" || card.interestMode === "zero" || card.interestMode === "eom") ? card.interestMode : "";
+      if (!mode) return null;
+      if (mode === "eom") {
+        // End-of-Month Zero-Out: no due day / statement date needed. Pays the balance on the last day of each month.
+        return {
+          eom: true, dueDay: null, rule: "eom", ruleDays: 0, statementDay: null,
+          buffer: numIn(card.payBufferDays, 0, 0, 10), lag: 0, mode, amount: 0,
+          bankId: card.payBankAccountId || null
+        };
+      }
+      if (!(dd >= 1 && dd <= 31)) return null;
       const sd = Number(card.statementDay);
       const sdOk = sd >= 1 && sd <= 31;
       let rule = card.statementRule;
@@ -4605,7 +4697,8 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
 
     // Balance owed on a card as of a date (history + dated bills + earlier planned payoffs).
     // chargeISO (optional): purchases/bill charges dated after this still count toward the NEXT statement (posting lag).
-    function cardBalanceAsOf(card, asOfISO, billOccs, planned, todayISO, chargeISO) {
+    function cardBalanceAsOf(card, asOfISO, billOccs, planned, todayISO, chargeISO, shadow) {
+      const sh = shadow || makePayoffShadowTest();
       const hasPlan = !!cardPlan(card);
       const cISO = chargeISO || asOfISO;
       let bal = Number(card.startingBalance || 0);
@@ -4619,7 +4712,7 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
       for (const o of billOccs) {
         if (o.date > asOfISO) continue;
         if (o.payMethod === "credit" && o.payCardId === card.id && o.date <= cISO) bal += Number(o.amount || 0);
-        if (o.payoffCardId === card.id && !(hasPlan && o.date > todayISO)) bal -= Number(o.amount || 0);
+        if (o.payoffCardId === card.id && !(hasPlan && o.date > todayISO) && !sh(o)) bal -= Number(o.amount || 0);
       }
       for (const p of planned) {
         if (p.cardId === card.id && p.date <= asOfISO) bal -= p.amount;
@@ -4628,7 +4721,8 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
     }
 
     // Real payoffs already made against a statement (dated after it closed, up to the next close).
-    function paidInWindow(card, fromISO, endISO, billOccs, todayISO) {
+    function paidInWindow(card, fromISO, endISO, billOccs, todayISO, shadow) {
+      const sh = shadow || makePayoffShadowTest();
       let paid = 0;
       for (const t of state.transactions || []) {
         if (t.cardType === "credit" && t.cardId === card.id && t.txnType === "payoff" && t.date && t.date > fromISO && t.date <= endISO) {
@@ -4636,7 +4730,7 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
         }
       }
       for (const o of billOccs) {
-        if (o.payoffCardId === card.id && o.date > fromISO && o.date <= endISO && o.date <= todayISO) paid += Number(o.amount || 0);
+        if (o.payoffCardId === card.id && o.date > fromISO && o.date <= endISO && o.date <= todayISO && !sh(o)) paid += Number(o.amount || 0);
       }
       return paid;
     }
@@ -4659,12 +4753,50 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
         else if (o.statementDate) ovMap.set(`${o.cardId}__${o.statementDate}`, o);
       }
       const billStarts = (state.bills || []).map(b => b.date).filter(Boolean).sort();
-      const billOccs = billStarts.length ? generateBillOccurrences(parseISODateLocal(billStarts[0]), rangeEnd) : [];
+      const billOccs = billStarts.length ? generateBillOccurrences(parseISODateLocal(billStarts[0]), addDays(rangeEnd, 31)) : [];
+      const shadow = makePayoffShadowTest();
 
       const all = [];
       for (const card of cards) {
         const plan = cardPlan(card);
         const mine = [];   // payoffs already planned for this card (feeds later statement balances)
+
+        if (plan.eom) {
+          // End-of-Month Zero-Out: one payoff per calendar month = projected unpaid balance as of the last day of that month.
+          for (let k = 0; k < 600; k++) {
+            const monthStart = new Date(today.getFullYear(), today.getMonth() + k, 1);
+            if (monthStart > rangeEnd) break;
+            const E = new Date(today.getFullYear(), today.getMonth() + k + 1, 0);   // last calendar day
+            if (E < today) continue;
+            const eISO = toISODate(E);
+            const stmtBal = cardBalanceAsOf(card, eISO, billOccs, mine, todayISO, eISO, shadow);
+            const target = Math.max(0, stmtBal);
+
+            const dueKey = `${card.id}__D${eISO}`;
+            const ov = ovMap.get(dueKey);
+            const key = ov ? ov.id : dueKey;
+            const skipped = !!(ov && ov.deleted);
+            const hasAmt = !!(ov && ov.amount != null && ov.amount !== "");
+            const amount = Math.round(Math.max(0, hasAmt ? Number(ov.amount) : target) * 100) / 100;
+            if (amount <= 0.004) continue;
+
+            let P = plan.buffer > 0 ? payDateFor(E, plan.buffer) : E;
+            if (P < today) P = today;
+            const calcISO = toISODate(P);
+            const effISO = (ov && ov.newDate) ? ov.newDate : calcISO;
+            const bankId = (ov && ov.bankId) || plan.bankId || null;
+            if (!skipped) mine.push({ cardId: card.id, date: effISO, amount });
+            if (skipped && !includeSkipped) continue;
+            if (effISO < rsISO || effISO > reISO) continue;
+
+            all.push({
+              cardId: card.id, cardName: card.name, bankId, mode: "eom",
+              date: effISO, originalDate: calcISO, dueDate: eISO, statementDate: eISO,
+              amount, stmtBal, paid: 0, skipped, overridden: !!ov, key
+            });
+          }
+          continue;
+        }
         for (let k = -2; k < 600; k++) {
           const { D, S } = cycleDates(plan, today.getFullYear(), today.getMonth() + k);
           if (S > rangeEnd) break;
@@ -4672,8 +4804,8 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
           const nxt = cycleDates(plan, today.getFullYear(), today.getMonth() + k + 1);
           const sISO = toISODate(S), snISO = toISODate(nxt.S), dISO = toISODate(D);
 
-          const stmtBal = cardBalanceAsOf(card, sISO, billOccs, mine, todayISO, toISODate(addDays(S, -plan.lag)));
-          const paid = paidInWindow(card, sISO, snISO, billOccs, todayISO);
+          const stmtBal = cardBalanceAsOf(card, sISO, billOccs, mine, todayISO, toISODate(addDays(S, -plan.lag)), shadow);
+          const paid = paidInWindow(card, sISO, snISO, billOccs, todayISO, shadow);
           let target = Math.max(0, stmtBal);
           if (plan.mode === "zero") target = Math.min(plan.amount, target);
 
@@ -4713,8 +4845,9 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
       for (const t of state.transactions || []) {
         if (t.txnType === "payoff" && t.date && t.date >= sISO && t.date <= eISO) total += Number(t.amount || 0);
       }
+      const shadow = makePayoffShadowTest();
       for (const o of generateBillOccurrences(start, end).filter(plannedPayoffBillFilter)) {
-        if (o.payoffCardId) total += Number(o.amount || 0);
+        if (o.payoffCardId && !shadow(o)) total += Number(o.amount || 0);
       }
       for (const p of getPlannedPayoffs(start, end)) total += p.amount;
       return total;
@@ -4722,8 +4855,15 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
 
     // ---------- Card form: Payoff Plan fields (injected into the existing credit card form) ----------
     function toggleCardPlanAmount() {
-      const zero = $("#credit-card-interest-mode").value === "zero";
+      const modeVal = $("#credit-card-interest-mode").value;
+      const zero = modeVal === "zero";
+      const eom = modeVal === "eom";
       $("#credit-card-plan-amount-wrap").classList.toggle("hidden", !zero);
+      // End-of-Month needs no due day, statement rule or posting lag
+      ["#credit-card-due-day-wrap", "#credit-card-stmt-rule-wrap", "#credit-card-posting-lag-wrap"].forEach(sel => {
+        const el = $(sel); if (el) el.classList.toggle("hidden", eom);
+      });
+      toggleCardStmtRule();
     }
 
     function populateCardPlanBankSelect() {
@@ -4737,8 +4877,9 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
 
     function toggleCardStmtRule() {
       const rule = $("#credit-card-stmt-rule").value;
-      $("#credit-card-statement-day-wrap").classList.toggle("hidden", rule !== "day");
-      $("#credit-card-stmt-days-wrap").classList.toggle("hidden", rule === "day");
+      const eomMode = $("#credit-card-interest-mode").value === "eom";
+      $("#credit-card-statement-day-wrap").classList.toggle("hidden", eomMode || rule !== "day");
+      $("#credit-card-stmt-days-wrap").classList.toggle("hidden", eomMode || rule === "day");
       const lab = $("#credit-card-stmt-days-label"), inp = $("#credit-card-stmt-days");
       if (rule === "after") { lab.textContent = "Days after the previous due date"; inp.placeholder = "3 (Chase is typically ~3)"; inp.max = "27"; inp.min = "0"; }
       else { lab.textContent = "Days before the due date"; inp.placeholder = "25 (Capital One is typically ~25)"; inp.max = "45"; inp.min = "1"; }
@@ -4746,6 +4887,7 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
 
     function fillCardPlanFields(c) {
       populateCardPlanBankSelect();
+      $("#credit-card-account-type").value = c?.accountType === "installment" ? "installment" : "revolving";
       $("#credit-card-due-day").value = c?.dueDay ? Math.min(28, c.dueDay) : "";
       $("#credit-card-interest-mode").value = c?.interestMode || "";
       $("#credit-card-plan-amount").value = c?.planAmount ?? "";
@@ -4771,24 +4913,29 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
       const buf = parseInt($("#credit-card-pay-buffer").value, 10);
       const lag = parseInt($("#credit-card-posting-lag").value, 10);
       return {
+        accountType: $("#credit-card-account-type").value === "installment" ? "installment" : "revolving",
         statementDay: (rule === "day" && sd >= 1 && sd <= 31) ? sd : null,
         dueDay: (dd >= 1 && dd <= 31) ? Math.min(dd, 28) : null,
-        interestMode: (mode === "full" || mode === "zero") ? mode : "",
+        interestMode: (mode === "full" || mode === "zero" || mode === "eom") ? mode : "",
         planAmount: (mode === "zero" && Number.isFinite(amt) && amt > 0) ? amt : null,
         payBankAccountId: $("#credit-card-pay-bank").value || null,
         statementRule: rule,
         statementRuleDays: rule === "before" ? (nd >= 1 && nd <= 45 ? nd : 25) : (rule === "after" ? (nd >= 0 && nd <= 27 ? nd : 3) : null),
-        payBufferDays: (buf >= 0 && buf <= 10) ? buf : 2,
+        payBufferDays: (buf >= 0 && buf <= 10) ? buf : (mode === "eom" ? 0 : 2),
         postingLagDays: (lag >= 0 && lag <= 7) ? lag : 0
       };
     }
 
     function cardPlanSummaryHtml(c) {
       const p = cardPlan(c);
+      if (p && p.eom) {
+        const bankE = (state.bankAccounts || []).find(b => b.id === p.bankId);
+        return `<div class="text-[11px] text-slate-500 mt-0.5">⚡ Month-end zero-out · pay balance on the last day of each month${p.buffer > 0 ? ` (${p.buffer} bus. day${p.buffer === 1 ? "" : "s"} early)` : ""}${bankE ? ` · from ${escapeHtml(bankE.name)}` : ""}</div>`;
+      }
       if (!p) {
-        return (c.interestMode && !(Number(c.dueDay) >= 1))
+        return ((c.interestMode === "full" || c.interestMode === "zero") && !(Number(c.dueDay) >= 1))
           ? `<div class="text-[11px] text-amber-600 mt-0.5">Payoff plan needs a payment due day</div>`
-          : ((c.interestMode && c.statementRule === "day") ? `<div class="text-[11px] text-amber-600 mt-0.5">Payoff plan needs a statement closing day</div>` : "");
+          : (((c.interestMode === "full" || c.interestMode === "zero") && c.statementRule === "day") ? `<div class="text-[11px] text-amber-600 mt-0.5">Payoff plan needs a statement closing day</div>` : "");
       }
       const bank = (state.bankAccounts || []).find(b => b.id === p.bankId);
       const modeTxt = p.mode === "full" ? "Interest charged · pay in full"
@@ -4806,15 +4953,25 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
       const inp = "w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none";
       const hint = "text-[11px] text-slate-500 mt-1";
       const wrap = document.createElement("div");
+      const typeWrap = document.createElement("div");
+      typeWrap.className = "mt-4";
+      typeWrap.innerHTML = `
+        <label class="${lbl}">Account type</label>
+        <select id="credit-card-account-type" class="${inp}">
+          <option value="revolving">Revolving card — charged monthly, paid off in full</option>
+          <option value="installment">Installment plan — fixed balance paid down over time (e.g. Installment)</option>
+        </select>
+        <p class="${hint}">Installment plans are left out of Spoken-For, True Available Cash, and the Zero-Out buttons. They still count as debt in net worth and can use a payoff plan.</p>`;
+      form.insertBefore(typeWrap, actions);
       wrap.className = "mt-4 p-3 rounded-xl bg-slate-50 border border-slate-200";
       wrap.innerHTML = `
         <div class="text-sm font-semibold text-slate-900">Payoff Plan (optional)</div>
         <p class="text-xs text-slate-500 mt-1">The payment due date drives when the payoff is planned. The statement date is only used to work out how much is owed. Copy both dates from your latest statement to calibrate.</p>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
-          <div>
+          <div id="credit-card-due-day-wrap">
             <label class="${lbl}">Payment due day (1–28)</label>
             <input type="number" id="credit-card-due-day" min="1" max="28" step="1" inputmode="numeric" placeholder="e.g. 15" class="${inp}">
-            <p class="${hint}">Required for a payoff plan. Issuers keep the same due day every month.</p>
+            <p class="${hint}">Required for "pay in full" and 0% APR plans (not needed for End-of-Month). Issuers keep the same due day every month.</p>
           </div>
           <div>
             <label class="${lbl}">Interest</label>
@@ -4822,13 +4979,14 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
               <option value="">No payoff plan</option>
               <option value="full">Interest charged — pay statement balance in full</option>
               <option value="zero">0% APR — partial payments OK</option>
+              <option value="eom">End-of-Month Zero-Out — pay balance on last day of month</option>
             </select>
           </div>
           <div id="credit-card-plan-amount-wrap" class="hidden">
             <label class="${lbl}">Fixed monthly payment ($)</label>
             <input type="number" id="credit-card-plan-amount" min="0" step="0.01" placeholder="e.g. 300" class="${inp}">
           </div>
-          <div>
+          <div id="credit-card-stmt-rule-wrap">
             <label class="${lbl}">Statement closes</label>
             <select id="credit-card-stmt-rule" class="${inp}">
               <option value="before">N days before the due date</option>
@@ -4848,9 +5006,9 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
           <div>
             <label class="${lbl}">Pay this many business days early</label>
             <input type="number" id="credit-card-pay-buffer" min="0" max="10" step="1" inputmode="numeric" placeholder="2" class="${inp}">
-            <p class="${hint}">Planned pay date skips weekends and US federal holidays. 0 = last business day on/before the due date.</p>
+            <p class="${hint}">Planned pay date skips weekends and US federal holidays. 0 = last business day on/before the due date. For End-of-Month: blank/0 = pay on the last calendar day of the month.</p>
           </div>
-          <div>
+          <div id="credit-card-posting-lag-wrap">
             <label class="${lbl}">Posting lag (days)</label>
             <input type="number" id="credit-card-posting-lag" min="0" max="7" step="1" inputmode="numeric" placeholder="0" class="${inp}">
             <p class="${hint}">Purchases this close to the statement date count toward the next statement.</p>
@@ -4875,6 +5033,99 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
     }
     $("#txn-card-select").addEventListener("change", applyPayoffDefaultBank);
     $("#txn-type").addEventListener("change", applyPayoffDefaultBank);
+
+    // ---------- Month-End Zero-Out quick actions ----------
+    function renderZeroOutBar() {
+      const el = $("#zero-out-bar");
+      if (!el) return;
+      const owing = (state.creditCards || [])
+        .filter(c => !isInstallment(c))
+        .map(c => ({ c, bal: computeCreditCardBalance(c) }))
+        .filter(x => x.bal > 0.004);
+      const total = owing.reduce((s, x) => s + x.bal, 0);
+      el.innerHTML = `
+        <div>
+          <div class="text-xs text-slate-500">Owed across ${owing.length} card${owing.length === 1 ? "" : "s"} with a balance today</div>
+          <div class="text-lg font-bold text-rose-700">${formatMoney(total)}</div>
+        </div>
+        <button type="button" id="zero-out-all-btn" ${owing.length ? "" : "disabled"}
+          class="bg-brand-600 hover:bg-brand-700 text-white font-medium px-4 py-2.5 rounded-lg transition-colors shadow-md text-sm ${owing.length ? "" : "opacity-50 cursor-not-allowed"}">
+          ⚡ Log Zero-Out Payoff for All Cards Today
+        </button>`;
+      const btn = $("#zero-out-all-btn");
+      if (btn && owing.length) btn.addEventListener("click", () => openZeroOutModal(owing.map(x => x.c.id)));
+    }
+
+    function openZeroOutModal(cardIds) {
+      if (!currentUser) return;
+      const cards = (cardIds || []).map(id => (state.creditCards || []).find(c => c.id === id)).filter(c => c && !isInstallment(c));
+      const items = cards.map(c => ({ card: c, amount: Math.round(computeCreditCardBalance(c) * 100) / 100 })).filter(x => x.amount > 0.004);
+      if (!items.length) { alert("No credit card balance is owed right now."); return; }
+      const banks = (state.bankAccounts || []).slice().sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+      if (!banks.length) { alert("Add a bank account first so the payoff has somewhere to come from."); return; }
+
+      const old = $("#zero-out-modal");
+      if (old) old.remove();
+      const overlay = document.createElement("div");
+      overlay.id = "zero-out-modal";
+      overlay.className = "fixed inset-0 z-50 flex items-center justify-center p-4";
+      overlay.style.background = "rgba(0,0,0,.6)";
+      const field = "border border-slate-300 rounded-lg px-2 py-1.5 text-sm outline-none min-w-0 w-full";
+      const total = items.reduce((s, x) => s + x.amount, 0);
+      const rowsHtml = items.map(x => {
+        const def = banks.some(b => b.id === x.card.payBankAccountId) ? x.card.payBankAccountId : "";
+        const opts = `<option value="">— Choose bank —</option>` + banks.map(b => `<option value="${b.id}"${b.id === def ? " selected" : ""}>${escapeHtml(b.name)}</option>`).join("");
+        return `<div class="py-3 border-b border-slate-100 last:border-b-0">
+          <div class="flex items-center justify-between gap-3">
+            <div class="font-medium text-slate-800">${escapeHtml(x.card.name)}</div>
+            <div class="font-semibold text-amber-700">${formatMoney(x.amount)}</div>
+          </div>
+          <div class="mt-2"><select class="${field}" data-zo-card="${x.card.id}">${opts}</select></div>
+        </div>`;
+      }).join("");
+      overlay.innerHTML = `
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-xl p-5 w-full max-w-lg max-h-[90vh] overflow-y-auto" role="dialog" aria-modal="true">
+          <h3 class="text-lg font-semibold text-slate-900">⚡ Month-End Zero-Out</h3>
+          <p class="text-sm text-slate-500 mt-1">Logs a payoff dated <strong>${escapeHtml(toISODate(new Date()))}</strong> for each card's exact current balance, resetting it to $0.00. Pick the bank account each payoff comes from.</p>
+          <div class="mt-3">${rowsHtml}</div>
+          <div class="flex items-center justify-between mt-3 text-sm"><span class="text-slate-500">Total</span><span class="font-bold text-amber-700">${formatMoney(total)}</span></div>
+          <div class="flex items-center justify-end gap-2 mt-4">
+            <button type="button" data-zo="cancel" class="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 text-sm hover:bg-slate-50">Cancel</button>
+            <button type="button" data-zo="ok" class="bg-brand-600 hover:bg-brand-700 text-white font-medium px-4 py-2 rounded-lg shadow-md text-sm">Log ${items.length} payoff${items.length === 1 ? "" : "s"}</button>
+          </div>
+        </div>`;
+      document.body.appendChild(overlay);
+
+      const close = () => { overlay.remove(); document.removeEventListener("keydown", onKey); };
+      const onKey = (e) => { if (e.key === "Escape") close(); };
+      document.addEventListener("keydown", onKey);
+      overlay.addEventListener("click", (e) => { if (e.target === overlay) close(); });
+      overlay.querySelector('[data-zo="cancel"]').addEventListener("click", close);
+      overlay.querySelector('[data-zo="ok"]').addEventListener("click", async (e) => {
+        const okBtn = e.currentTarget;
+        const picks = items.map(x => ({ x, bankId: overlay.querySelector(`[data-zo-card="${x.card.id}"]`).value }));
+        const missing = picks.find(p => !p.bankId);
+        if (missing) { alert(`Choose the bank account to pay ${missing.x.card.name} from.`); return; }
+        okBtn.disabled = true; okBtn.classList.add("opacity-50");
+        try {
+          const todayISO = toISODate(new Date());
+          for (const p of picks) {
+            const amt = Math.round(computeCreditCardBalance(p.x.card) * 100) / 100;   // exact live balance at the moment of logging
+            if (amt <= 0.004) continue;
+            await addDoc(userCol("transactions"), {
+              date: todayISO, amount: amt, description: "Month-end zero-out payoff",
+              cardType: "credit", cardId: p.x.card.id, cardName: p.x.card.name, txnType: "payoff",
+              sourceBankAccountId: p.bankId, bankAccountId: null, category: "",
+              createdAt: serverTimestamp()
+            });
+          }
+          close();
+        } catch (err) {
+          okBtn.disabled = false; okBtn.classList.remove("opacity-50");
+          alert(err?.message || "Failed to log payoff");
+        }
+      });
+    }
 
     // ---------- Planned Card Payoffs table (Accounts & Cards page) ----------
     // Rows are grouped by card. Collapsed by default, except the card with the next upcoming payoff.
@@ -4912,7 +5163,7 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
       if (!cards.length) notes.push("Add a credit card first.");
       const noPlan = cards.filter(c => !cardPlan(c)).map(c => c.name);
       const noAmt = cards.filter(c => { const p = cardPlan(c); return p && p.mode === "zero" && !p.amount; }).map(c => c.name);
-      if (noPlan.length) notes.push(`No payoff plan yet: ${noPlan.join(", ")} (edit the card and set a payment due day and interest type).`);
+      if (noPlan.length) notes.push(`No payoff plan yet: ${noPlan.join(", ")} (edit the card and set an interest type; "pay in full" and 0% APR also need a payment due day).`);
       if (noAmt.length) notes.push(`Needs a fixed monthly amount (0% APR): ${noAmt.join(", ")}.`);
       const noteEl = $("#planned-payoffs-note");
       if (noteEl) noteEl.textContent = notes.join(" ");
@@ -4979,8 +5230,8 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
           : `<span class="font-semibold text-amber-700">${formatMoney(pp.amount)}</span>${pp.overridden ? ' <span class="text-[11px] text-amber-600">(edited)</span>' : ""}${pp.paid > 0.004 ? ` <span class="text-[11px] text-slate-400">(${formatMoney(pp.paid)} already paid)</span>` : ""}`;
         return `<tr data-i="${i}" class="pp-row ${pp.skipped ? "opacity-60" : ""}">
           <td class="pp-cardcell px-3 py-2 pl-6" data-label="Card">↳</td>
-          <td class="px-3 py-2 text-slate-700 whitespace-nowrap" data-label="Statement closes">${escapeHtml(pp.statementDate)}</td>
-          <td class="px-3 py-2 font-medium text-slate-800 whitespace-nowrap" data-label="Due date">${escapeHtml(pp.dueDate)}</td>
+          <td class="px-3 py-2 text-slate-700 whitespace-nowrap" data-label="Statement closes">${pp.mode === "eom" ? "—" : escapeHtml(pp.statementDate)}</td>
+          <td class="px-3 py-2 font-medium text-slate-800 whitespace-nowrap" data-label="Due date">${pp.mode === "eom" ? "Month-end " + escapeHtml(pp.dueDate) : escapeHtml(pp.dueDate)}</td>
           <td class="px-3 py-2 text-slate-700" data-label="Pay on">${dateHtml}</td>
           <td class="px-3 py-2 text-slate-700" data-label="Pay from">${escapeHtml(bankName(pp.bankId))}</td>
           <td class="px-3 py-2 text-right text-slate-700" data-label="Statement balance">${formatMoney(pp.stmtBal)}</td>
@@ -5001,7 +5252,7 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
 
       body.innerHTML = groups.map(g => {
         const open = ppOpen.has(g.cardId);
-        const modeBadge = g.mode === "full" ? `<span class="badge badge-rose">Interest · full</span>` : `<span class="badge badge-emerald">0% APR</span>`;
+        const modeBadge = g.mode === "full" ? `<span class="badge badge-rose">Interest · full</span>` : (g.mode === "eom" ? `<span class="badge badge-amber">⚡ Month-end zero-out</span>` : `<span class="badge badge-emerald">0% APR</span>`);
         const meta = `${g.liveCount} payoff${g.liveCount === 1 ? "" : "s"}${g.next ? ` · next ${escapeHtml(g.next)}` : ""}${g.skippedCount ? ` · ${g.skippedCount} skipped` : ""}`;
         const head = `<tr class="pp-group-row bg-slate-50" data-pp-group="${escapeHtml(g.cardId)}">
           <td colspan="9">
@@ -5043,8 +5294,8 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
       const field = "border border-slate-300 rounded-lg px-2 py-1 text-sm";
       tr.innerHTML = `
         <td class="pp-cardcell px-3 py-2 pl-6" data-label="Card">↳</td>
-        <td class="px-3 py-2 text-slate-700 whitespace-nowrap" data-label="Statement closes">${escapeHtml(pp.statementDate)}</td>
-        <td class="px-3 py-2 font-medium text-slate-800 whitespace-nowrap" data-label="Due date">${escapeHtml(pp.dueDate)}</td>
+        <td class="px-3 py-2 text-slate-700 whitespace-nowrap" data-label="Statement closes">${pp.mode === "eom" ? "—" : escapeHtml(pp.statementDate)}</td>
+        <td class="px-3 py-2 font-medium text-slate-800 whitespace-nowrap" data-label="Due date">${pp.mode === "eom" ? "Month-end " + escapeHtml(pp.dueDate) : escapeHtml(pp.dueDate)}</td>
         <td class="px-3 py-2" data-label="Pay on"><input type="date" value="${escapeHtml(pp.date)}" class="${field}" data-pp-date></td>
         <td class="px-3 py-2" data-label="Pay from"><select class="${field}" data-pp-bank>${bankOpts}</select></td>
         <td class="px-3 py-2 text-right text-slate-700" data-label="Statement balance">${formatMoney(pp.stmtBal)}</td>
@@ -5155,7 +5406,8 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
         clearSubscriptions();
         state = {
           assets: [], liabilities: [], incomes: [], incomeOverrides: [], bills: [], billOverrides: [],
-          bankAccounts: [], creditCards: [], debitCards: [], transactions: []
+          bankAccounts: [], creditCards: [], debitCards: [], transactions: [],
+          payoffOverrides: [], budgets: []
         };
         ui.expandedBillIds = new Set();
         ui.expandedIncomeIds = new Set();
