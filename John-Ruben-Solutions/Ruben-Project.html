@@ -653,7 +653,7 @@
                 </div>
                 <div class="flex items-center gap-2 mt-4">
                   <button type="submit" class="bg-brand-600 hover:bg-brand-700 text-white font-medium py-2.5 rounded-lg transition-colors shadow-md w-full">
-                    Save Credit Card
+                    Save Item
                   </button>
                   <button type="button" id="credit-card-cancel-btn"
                           class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium py-2.5 rounded-lg transition-colors">
@@ -2116,7 +2116,7 @@ service cloud.firestore {
         $("#credit-card-form").classList.add("hidden");
         ui.editing.creditCardId = null;
       } catch (err) {
-        alert(err?.message || "Failed to save credit card");
+        alert(err?.message || "Failed to save item");
       }
     });
 
