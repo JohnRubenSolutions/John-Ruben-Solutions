@@ -730,6 +730,34 @@
               </div>
             </div>
 
+            <!-- INSTALLMENT PLANS (tracked as bills) -->
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 lg:col-span-2" id="installment-plans-card">
+              <div class="flex flex-wrap items-end justify-between gap-3">
+                <div>
+                  <h3 class="text-lg font-semibold text-slate-900">Installment Plans</h3>
+                  <p class="text-sm text-slate-500 mt-1">Fixed-balance payment plans you track as recurring bills (Bills → Installment plan). Each payment counts as spending and comes out of your bank. Edit or delete a plan from the Bills list.</p>
+                </div>
+                <div class="text-right">
+                  <div class="text-xs text-slate-500">Total remaining</div>
+                  <div class="text-xl font-bold text-amber-700" id="installment-total-remaining">$0.00</div>
+                </div>
+              </div>
+              <div class="mt-4 overflow-x-auto">
+                <table class="w-full text-sm">
+                  <thead>
+                    <tr class="bg-slate-50">
+                      <th class="text-left px-3 py-2 font-semibold text-slate-600">Plan</th>
+                      <th class="text-right px-3 py-2 font-semibold text-slate-600">Payment</th>
+                      <th class="text-left px-3 py-2 font-semibold text-slate-600">Next payment</th>
+                      <th class="text-right px-3 py-2 font-semibold text-slate-600">Remaining</th>
+                      <th class="text-left px-3 py-2 font-semibold text-slate-600">Ends</th>
+                    </tr>
+                  </thead>
+                  <tbody id="installment-plans-body"></tbody>
+                </table>
+              </div>
+            </div>
+
             <!-- PLANNED CARD PAYOFFS -->
             <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 lg:col-span-2" id="planned-payoffs-card">
               <h3 class="text-lg font-semibold text-slate-900">Planned Card Payoffs</h3>
@@ -1173,6 +1201,18 @@
                           class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
                     <option value="">No — regular bill</option>
                   </select>
+                </div>
+                <div>
+                  <label class="flex items-center gap-2 text-sm font-medium text-slate-700 mb-1">
+                    <input type="checkbox" id="bill-installment" class="rounded border-slate-300 text-brand-600 focus:ring-brand-500">
+                    Installment plan
+                  </label>
+                  <div id="bill-installment-wrap" class="hidden mt-1">
+                    <label class="block text-xs font-medium text-slate-600 mb-1" for="bill-installment-balance">Remaining balance (as of first due date)</label>
+                    <input type="number" id="bill-installment-balance" step="0.01" min="0" placeholder="e.g. 4800"
+                           class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                    <p class="text-[11px] text-slate-500 mt-1">Repeats automatically until the balance is paid. Paying extra on an upcoming payment (Bills → Upcoming → Edit) shortens the plan; skipping one extends it. Leave blank to set your own end date.</p>
+                  </div>
                 </div>
                 
 <div>
@@ -3522,6 +3562,23 @@ service cloud.firestore {
     }
 
     // ===== Recurring Bills: overrides, occurrence generation =====
+    $("#bill-installment").addEventListener("change", () => {
+      const on = $("#bill-installment").checked;
+      $("#bill-installment-wrap").classList.toggle("hidden", !on);
+      if (on && !$("#bill-recurring").checked) {
+        $("#bill-recurring").checked = true;
+        $("#bill-recurring").dispatchEvent(new Event("change"));
+      }
+    });
+
+    // Last payment date for an installment plan: balance ÷ payment, rounded up, counted from the first due date.
+    function installmentEndDate(firstISO, recurrenceType, balance, amount) {
+      const n = Math.max(1, Math.ceil(balance / amount - 1e-9));
+      const d0 = parseISODateLocal(firstISO);
+      if (recurrenceType === "biweekly") return toISODate(addDays(d0, 14 * (n - 1)));
+      return toISODate(new Date(d0.getFullYear(), d0.getMonth() + n, 0));   // last day of the month holding the final payment
+    }
+
     $("#bill-recurring").addEventListener("change", () => {
       $("#bill-recurrence-type").classList.toggle("hidden", !$("#bill-recurring").checked);
       $("#bill-end-wrap").classList.toggle("hidden", !$("#bill-recurring").checked);
@@ -3577,6 +3634,51 @@ service cloud.firestore {
       });
     }
 
+    // Installment plans with a remaining balance follow a "pay until the balance is zero" schedule:
+    // payments (with any per-occurrence edits / skips applied) run in date order, the last one is trimmed to what is left,
+    // and nothing is scheduled after that. So paying extra on an upcoming payment shortens the plan, and skipping one extends it.
+    function installmentSchedule(bill) {
+      if (!bill || !bill.isInstallment || !bill.isRecurring || !bill.date) return null;
+      const balance = Number(bill.installmentBalance);
+      if (!(balance > 0) || !(Number(bill.amount) > 0)) return null;
+      const overridesMap = buildOverridesMap();
+      const startDate = parseISODateLocal(bill.date);
+      const far = addDays(startDate, 365 * 25);
+      const raw = [];
+      forEachRecurringDate(startDate, bill.recurrenceType, startDate, far, (d) => {
+        const originalDate = toISODate(d);
+        const key = `${bill.id}__${originalDate}`;
+        const ov = overridesMap.get(key);
+        if (ov && ov.deleted) return;
+        const date = (ov && ov.newDate) ? ov.newDate : originalDate;
+        const amount = (ov && ov.amount != null && ov.amount !== "") ? Number(ov.amount) : Number(bill.amount || 0);
+        raw.push({ originalDate, key, ov, date, amount });
+      }, null);
+      raw.sort((a, b) => a.date < b.date ? -1 : (a.date > b.date ? 1 : 0));
+      const out = [];
+      let remaining = balance;
+      for (const r of raw) {
+        if (remaining <= 0.004) break;
+        out.push({ ...r, amount: Math.min(r.amount, remaining) });
+        remaining -= r.amount;
+      }
+      return out;
+    }
+
+    function installmentStatus(bill, todayISO) {
+      const sched = installmentSchedule(bill);
+      if (!sched) return null;
+      const balance = Number(bill.installmentBalance);
+      const paid = sched.filter(r => r.date <= todayISO).reduce((s, r) => s + r.amount, 0);
+      const future = sched.filter(r => r.date > todayISO);
+      const remaining = Math.max(0, balance - paid);
+      return {
+        remaining, paymentsLeft: future.length, next: future.length ? future[0].date : null,
+        endISO: sched.length ? sched[sched.length - 1].date : null,
+        pct: Math.min(100, Math.round((1 - remaining / balance) * 100))
+      };
+    }
+
     function generateBillOccurrences(rangeStart, rangeEnd) {
       const overridesMap = buildOverridesMap();
       const occurrences = [];
@@ -3600,6 +3702,21 @@ service cloud.firestore {
           continue;
         }
 
+        const sched = installmentSchedule(bill);
+        if (sched) {
+          for (const r of sched) {
+            const eff = parseISODateLocal(r.date);
+            if (eff < rangeStart || eff > rangeEnd) continue;
+            occurrences.push({
+              billId: bill.id, name: bill.name, category: bill.category,
+              payMethod: bill.payMethod || null, payCardId: bill.payCardId || null, payoffCardId: bill.payoffCardId || null,
+              date: r.date, originalDate: r.originalDate, moved: r.date !== r.originalDate,
+              amount: r.amount, recurring: true, overridden: !!r.ov, occurrenceKey: r.key, installment: true
+            });
+          }
+          continue;
+        }
+
         forEachRecurringDate(startDate, bill.recurrenceType, scanStart, scanEnd, (d) => {
           pushOccurrence(bill, d, overridesMap, occurrences, rangeStart, rangeEnd);
         }, bill.endDate ? parseISODateLocal(bill.endDate) : null);
@@ -3614,9 +3731,12 @@ service cloud.firestore {
       const category = $("#bill-category").value.trim();
       const date = $("#bill-date").value;
       const amount = Number($("#bill-amount").value);
-      const isRecurring = $("#bill-recurring").checked;
+      const isInstallment = $("#bill-installment").checked;
+      const instBal = Number($("#bill-installment-balance").value);
+      const isRecurring = $("#bill-recurring").checked || isInstallment;
       const recurrenceType = isRecurring ? ($("#bill-recurrence-type").value === "biweekly" ? "biweekly" : "monthly") : null;
-      const endDate = isRecurring ? ($("#bill-end-date").value || null) : null;
+      let endDate = isRecurring ? ($("#bill-end-date").value || null) : null;
+      if (isInstallment && instBal > 0 && amount > 0) endDate = null;   // the balance drives when the plan ends
       if (endDate && endDate < date) { alert("The end date can't be before the bill's first due date."); return; }
       const payWith = $("#bill-pay-with").value;
       const [pmRaw, pidRaw] = payWith ? payWith.split(":") : ["", ""];
@@ -3628,6 +3748,7 @@ service cloud.firestore {
         name, category: category || "", date,
         amount: Number.isFinite(amount) ? amount : 0,
         isRecurring, recurrenceType, endDate,
+        isInstallment, installmentBalance: (isInstallment && instBal > 0) ? instBal : null,
         payMethod, payCardId,
         payoffCardId: ($("#bill-payoff-card")?.value || null),
         createdAt: serverTimestamp()
@@ -3646,6 +3767,7 @@ service cloud.firestore {
         $("#bill-amount").value = "";
         $("#bill-pay-with").value = ""; if ($("#bill-payoff-card")) $("#bill-payoff-card").value = "";
         $("#bill-recurring").checked = false;
+        $("#bill-installment").checked = false; $("#bill-installment-balance").value = ""; $("#bill-installment-wrap").classList.add("hidden");
         $("#bill-recurrence-type").classList.add("hidden"); setEditBanner("#bill-editing-banner", false);
         $("#bill-end-wrap").classList.add("hidden"); $("#bill-end-date").value = "";
       } catch (err) {
@@ -3662,6 +3784,9 @@ service cloud.firestore {
       populateBillPayWithOptions();
       $("#bill-pay-with").value = (item.payMethod && item.payCardId) ? `${item.payMethod}:${item.payCardId}` : "";
       $("#bill-recurring").checked = !!item.isRecurring; if ($("#bill-payoff-card")) $("#bill-payoff-card").value = item.payoffCardId || "";
+      $("#bill-installment").checked = !!item.isInstallment;
+      $("#bill-installment-balance").value = item.installmentBalance ?? "";
+      $("#bill-installment-wrap").classList.toggle("hidden", !item.isInstallment);
       $("#bill-recurrence-type").classList.toggle("hidden", !item.isRecurring);
       $("#bill-end-wrap").classList.toggle("hidden", !item.isRecurring);
       $("#bill-end-date").value = (item.isRecurring && item.endDate) ? item.endDate : "";
@@ -3669,7 +3794,41 @@ service cloud.firestore {
       $("#bill-name")?.scrollIntoView?.({ behavior: "smooth", block: "center" });
     }
 
+    // Installment Plans summary (Accounts & Cards page) — built from bills flagged as installment plans
+    function renderInstallmentPlans() {
+      const body = $("#installment-plans-body");
+      if (!body) return;
+      const plans = (state.bills || []).filter(b => b.isInstallment).sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+      if (!plans.length) {
+        body.innerHTML = `<tr><td colspan="5" class="px-3 py-3 text-center text-slate-500">No installment plans yet — add a bill and tick “Installment plan”.</td></tr>`;
+        $("#installment-total-remaining").textContent = formatMoney(0);
+        return;
+      }
+      const todayISO = toISODate(new Date());
+      let totalRem = 0;
+      body.innerHTML = "";
+      for (const p of plans) {
+        const st = installmentStatus(p, todayISO);
+        const amt = Number(p.amount || 0);
+        if (st) totalRem += st.remaining;
+        const cadence = p.recurrenceType === "biweekly" ? "every 2 weeks" : "monthly";
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td class="px-3 py-2 font-medium text-slate-800">${escapeHtml(p.name)}
+            ${p.category ? `<div class="text-xs text-slate-500">${escapeHtml(p.category)}</div>` : ""}
+            ${st ? `<div class="mt-1 h-1.5 w-32 rounded-full bg-slate-200 overflow-hidden"><div class="h-full bg-emerald-500" style="width:${st.pct}%"></div></div><div class="text-[11px] text-slate-400">${st.pct}% paid</div>` : ""}
+          </td>
+          <td class="px-3 py-2 text-right font-semibold text-rose-700">${formatMoney(amt)}<div class="text-[11px] text-slate-400 font-normal">${cadence}</div></td>
+          <td class="px-3 py-2 text-slate-700">${st ? (st.next ? escapeHtml(st.next) : "—") : "See Bills"}</td>
+          <td class="px-3 py-2 text-right font-semibold ${st && st.remaining <= 0.004 ? "text-emerald-700" : "text-amber-700"}">${st ? (st.remaining > 0.004 ? formatMoney(st.remaining) + `<div class="text-[11px] text-slate-400 font-normal">${st.paymentsLeft} payment${st.paymentsLeft === 1 ? "" : "s"} left</div>` : "Paid off") : "—<div class=\"text-[11px] text-slate-400 font-normal\">no balance set</div>"}</td>
+          <td class="px-3 py-2 text-slate-700">${st ? escapeHtml(st.endISO || "—") : (p.endDate ? escapeHtml(p.endDate) : "No end date")}</td>`;
+        body.appendChild(tr);
+      }
+      $("#installment-total-remaining").textContent = formatMoney(totalRem);
+    }
+
     function renderBills() {
+      renderInstallmentPlans();
       const tbody = $("#bills-table-body");
       tbody.innerHTML = "";
       const items = applySort("bills", sortByDateAsc(state.bills, "date").reverse());
@@ -3680,14 +3839,26 @@ service cloud.firestore {
       }
 
       for (const b of items) {
+        let instHtml = "";
+        let instEnd = null;
+        if (b.isInstallment) {
+          const st = installmentStatus(b, toISODate(new Date()));
+          if (st) {
+            instEnd = st.endISO;
+            instHtml = `<div class="text-xs text-amber-600">Installment · ${st.remaining > 0.004 ? `${formatMoney(st.remaining)} left (${st.paymentsLeft} payment${st.paymentsLeft === 1 ? "" : "s"})` : "paid off"}</div>`;
+          } else {
+            instHtml = `<div class="text-xs text-amber-600">Installment plan</div>`;
+          }
+        }
         const recurLabel = !b.isRecurring
           ? "One-time"
-          : ((b.recurrenceType === "biweekly" ? "Bi-Weekly" : `Monthly (day ${parseISODateLocal(b.date).getDate()})`) + (b.endDate ? ` · ends ${escapeHtml(b.endDate)}` : ""));
+          : ((b.recurrenceType === "biweekly" ? "Bi-Weekly" : `Monthly (day ${parseISODateLocal(b.date).getDate()})`) + ((instEnd || b.endDate) ? ` · ends ${escapeHtml(instEnd || b.endDate)}` : ""));
 
         const tr = document.createElement("tr");
         tr.innerHTML = `
           <td class="px-3 py-2 font-medium text-slate-800">
             ${escapeHtml(b.name)}
+            ${instHtml}
             ${billPayLabel(b) ? `<div class="text-xs text-slate-500">Pays via ${escapeHtml(billPayLabel(b))}</div>` : ""}
             ${b.payoffCardId ? `<div class="text-xs text-emerald-600">Pays off ${escapeHtml((state.creditCards.find(c => c.id === b.payoffCardId) || {}).name || "card")}</div>` : ""}
 
@@ -3889,7 +4060,7 @@ service cloud.firestore {
             kind: "bill", id: occ.billId, recurring: occ.recurring, key: occ.occurrenceKey,
             date: occ.date, originalDate: occ.originalDate,
             name: occ.name || "Bill",
-            sub: [occ.category, payLabel ? `via ${payLabel}` : "", occ.recurring ? "recurring" : "one-time"].filter(Boolean).join(" · "),
+            sub: [occ.installment ? "Installment" : "", occ.category, payLabel ? `via ${payLabel}` : "", occ.recurring ? "recurring" : "one-time"].filter(Boolean).join(" · "),
             amount: amt, flow: onCredit ? "cc" : "out", onCredit, bankId: resolveBillBankId(occ)
           });
         }
@@ -5034,7 +5205,7 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
           <option value="revolving">Revolving card — charged monthly, paid off in full</option>
           <option value="installment">Installment plan — fixed balance paid down over time (e.g. installment)</option>
         </select>
-        <p class="${hint}">Installment plans are left out of Spoken-For, True Available Cash, and the Zero-Out buttons. They still count as debt in net worth and can use a payoff plan.</p>`;
+        <p class="${hint}">Tip: it's usually easier to track installment payments as a recurring bill (Bills → Installment plan), where they count as spending. Installment plans here are left out of Spoken-For, True Available Cash, and the Zero-Out buttons. They still count as debt in net worth and can use a payoff plan.</p>`;
       form.insertBefore(typeWrap, actions);
       wrap.className = "mt-4 p-3 rounded-xl bg-slate-50 border border-slate-200";
       wrap.innerHTML = `
