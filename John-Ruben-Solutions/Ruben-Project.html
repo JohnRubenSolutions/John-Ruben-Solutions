@@ -4581,7 +4581,8 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
         cardBal += Math.max(0, computeCreditCardBalance(c));
         cardLim += Number(c.creditLimit) || 0;
       }
-      const bank = computeAccountsTotals().bankTotal;
+      const acctTotals = computeAccountsTotals();
+      const bank = acctTotals.bankTotal - acctTotals.spokenFor;   // true cash: bank minus revolving card balances owed
       const monthlySpend = spend90 / (effDays / 30.4);
       const nw = computeDailyNetWorth();
 
@@ -4590,7 +4591,7 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
       const save = income90 > 0 ? (income90 - spend90) / income90 : null;
       const inv = income90 > 0 ? invest90 / income90 : null;
       const util = cardLim > 0 ? cardBal / cardLim : null;
-      const runway = monthlySpend > 0 ? bank / monthlySpend : null;
+      const runway = monthlySpend > 0 ? Math.max(0, bank) / monthlySpend : null;
       const fix = monthIncome > 0 ? fixed / monthIncome : null;
       const dta = nw.assetsTotal > 0 ? nw.liabilitiesTotal / nw.assetsTotal : null;
       const vsPrev = prevMtd > 0 ? (mtd - prevMtd) / prevMtd : null;
@@ -4612,7 +4613,7 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
         { label: "Credit utilization", value: util === null ? "—" : P(util), status: util === null ? null : lo(util, 0.3, 0.5),
           sub: util === null ? "Add credit limits to your cards" : formatMoney(cardBal) + " of " + formatMoney(cardLim) + ". Target under 30%" },
         { label: "Cash runway", value: runway === null ? "—" : runway.toFixed(1) + " mo", status: runway === null ? null : hi(runway, 6, 3),
-          sub: "Bank cash ÷ average monthly spending. Target 3–6+ months" },
+          sub: "(Bank cash − card balances owed: " + formatMoney(bank) + ") ÷ average monthly spending. Target 3–6+ months" },
         { label: "Debt-to-assets", value: dta === null ? "—" : P(dta), status: dta === null ? null : lo(dta, 0.3, 0.6),
           sub: formatMoney(nw.liabilitiesTotal) + " owed vs " + formatMoney(nw.assetsTotal) + " owned" }
       ];
