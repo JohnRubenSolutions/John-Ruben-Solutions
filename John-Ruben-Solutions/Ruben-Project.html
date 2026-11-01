@@ -377,22 +377,15 @@
                     <div class="text-xs text-slate-500">Net Worth</div>
                     <div class="text-4xl font-extrabold text-brand-900" id="net-worth"></div>
                   </div>
-                  <div class="grid grid-cols-2 gap-x-6 gap-y-2">
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3">
                     <div>
-                      <div class="text-xs text-slate-500">Carry Over from Previous Period</div>
-                      <div class="text-sm font-semibold" id="period-carry-in"></div>
+                      <div class="text-xs text-slate-500" id="dash-default-bank-label">Default Bank Balance</div>
+                      <div class="text-xl font-bold" id="dash-default-bank-balance"></div>
                     </div>
                     <div>
-                      <div class="text-xs text-slate-500">Expected Carry Over to Next Period</div>
-                      <div class="text-sm font-semibold" id="period-carry-out"></div>
-                    </div>
-                    <div>
-                      <div class="text-xs text-slate-500">Expected Incomes (Current Period)</div>
-                      <div class="text-sm font-semibold text-emerald-700" id="period-income"></div>
-                    </div>
-                    <div>
-                      <div class="text-xs text-slate-500">Expected Expenses (Current Period)</div>
-                      <div class="text-sm font-semibold text-rose-700" id="period-expense"></div>
+                      <div class="text-xs text-slate-500">Credit Cards Owed (Right Now)</div>
+                      <div class="text-xl font-bold text-rose-700" id="dash-credit-owed"></div>
+                      <div class="text-[11px] text-slate-400 mt-0.5 space-y-0.5" id="dash-credit-owed-list"></div>
                     </div>
                   </div>
                 </div>
@@ -465,8 +458,9 @@
             </div>
             <div class="flex items-center gap-3">
               <div class="text-right">
-                <div class="text-xs text-slate-500">Carry-forward (next month)</div>
-                <div class="text-xl font-bold text-slate-900" id="carry-forward-next-month">$0.00</div>
+                <div class="text-xs text-slate-500" id="current-period-projected-label">Projected balance (end of current period)</div>
+                <div class="text-xl font-bold text-slate-900" id="current-period-projected">—</div>
+                <div class="text-[11px] text-slate-400 mt-0.5" id="current-period-projected-sub"></div>
               </div>
             </div>
           </div>
@@ -507,14 +501,15 @@
               </div>
 
               <div class="mt-4 overflow-x-auto">
-                <table class="min-w-[880px] w-full text-sm">
+                <table class="min-w-[1000px] w-full text-sm">
                   <thead>
                     <tr class="bg-slate-50">
                       <th class="text-left px-4 py-3 font-semibold text-slate-600"><button type="button" data-sort-table="period" data-sort-key="date" class="inline-flex items-center gap-1 hover:text-slate-900">Period <span data-sort-ind class="text-xs text-slate-400">↕</span></button></th>
                       <th class="text-right px-4 py-3 font-semibold text-slate-600"><button type="button" data-sort-table="period" data-sort-key="income" class="inline-flex items-center gap-1 hover:text-slate-900">Cash In (Income) <span data-sort-ind class="text-xs text-slate-400">↕</span></button></th>
                       <th class="text-right px-4 py-3 font-semibold text-slate-600"><button type="button" data-sort-table="period" data-sort-key="expense" class="inline-flex items-center gap-1 hover:text-slate-900">Cash Out (Debit + Payoffs + Bills) <span data-sort-ind class="text-xs text-slate-400">↕</span></button></th>
                       <th class="text-right px-4 py-3 font-semibold text-slate-600"><button type="button" data-sort-table="period" data-sort-key="net" class="inline-flex items-center gap-1 hover:text-slate-900">Net <span data-sort-ind class="text-xs text-slate-400">↕</span></button></th>
-                      <th class="text-right px-4 py-3 font-semibold text-slate-600"><button type="button" data-sort-table="period" data-sort-key="carry" class="inline-flex items-center gap-1 hover:text-slate-900">Carry‑forward <span data-sort-ind class="text-xs text-slate-400">↕</span></button></th>
+                      
+                      <th class="text-right px-4 py-3 font-semibold text-slate-600" title="Default bank's balance today, plus its planned flows after today (or minus its flows since the period ended, for past periods)"><button type="button" data-sort-table="period" data-sort-key="projected" class="inline-flex items-center gap-1 hover:text-slate-900"><span id="period-projected-label">Projected Balance</span> <span data-sort-ind class="text-xs text-slate-400">↕</span></button></th>
                     </tr>
                   </thead>
                   <tbody id="period-table-body"></tbody>
@@ -591,6 +586,10 @@
                   <input type="text" id="bank-notes" placeholder="Last 4 digits, bank name, etc."
                          class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
                 </div>
+                <label class="mt-3 flex items-start gap-2 text-sm text-slate-700">
+                  <input type="checkbox" id="bank-is-default" class="mt-0.5">
+                  <span>Default bank — the Period Planner's Projected Balance tracks this account only</span>
+                </label>
                 <div class="flex items-center gap-2 mt-4">
                   <button type="submit" class="bg-brand-600 hover:bg-brand-700 text-white font-medium py-2.5 rounded-lg transition-colors shadow-md w-full">
                     Save Bank Account
@@ -653,7 +652,7 @@
                 </div>
                 <div class="flex items-center gap-2 mt-4">
                   <button type="submit" class="bg-brand-600 hover:bg-brand-700 text-white font-medium py-2.5 rounded-lg transition-colors shadow-md w-full">
-                    Save Item
+                    Save Information
                   </button>
                   <button type="button" id="credit-card-cancel-btn"
                           class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium py-2.5 rounded-lg transition-colors">
@@ -1873,14 +1872,23 @@ service cloud.firestore {
         $("#bank-name").value = editing.name ?? "";
         $("#bank-starting-balance").value = editing.startingBalance ?? 0;
         $("#bank-notes").value = editing.notes ?? "";
+        $("#bank-is-default").checked = !!editing.isDefault;
         ui.editing.bankAccountId = editing.id;
       } else {
         $("#bank-form").reset?.();
         $("#bank-name").value = "";
         $("#bank-starting-balance").value = 0;
         $("#bank-notes").value = "";
+        $("#bank-is-default").checked = false;
         ui.editing.bankAccountId = null;
       }
+    }
+
+    // The bank the Period Planner's projected balance follows: the one flagged as default,
+    // or the only bank account if there is just one. null = none chosen yet.
+    function getDefaultBank() {
+      const banks = state.bankAccounts || [];
+      return banks.find(b => b.isDefault) || (banks.length === 1 ? banks[0] : null);
     }
 
     $("#add-bank-btn").addEventListener("click", () => openBankForm(null));
@@ -1898,15 +1906,25 @@ service cloud.firestore {
 
       const payload = {
         name, startingBalance: Number.isFinite(startingBalance) ? startingBalance : 0,
-        notes: notes || "", createdAt: serverTimestamp()
+        notes: notes || "", isDefault: $("#bank-is-default").checked, createdAt: serverTimestamp()
       };
 
       try {
-        if (ui.editing.bankAccountId) {
+        let savedId = ui.editing.bankAccountId;
+        if (savedId) {
           delete payload.createdAt;
-          await setDoc(doc(db, "users", currentUser.uid, "bankAccounts", ui.editing.bankAccountId), payload, { merge: true });
+          await setDoc(doc(db, "users", currentUser.uid, "bankAccounts", savedId), payload, { merge: true });
         } else {
-          await addDoc(userCol("bankAccounts"), payload);
+          const ref = await addDoc(userCol("bankAccounts"), payload);
+          savedId = ref.id;
+        }
+        if (payload.isDefault) {
+          // only one default at a time
+          for (const b of (state.bankAccounts || [])) {
+            if (b.id !== savedId && b.isDefault) {
+              await setDoc(doc(db, "users", currentUser.uid, "bankAccounts", b.id), { isDefault: false }, { merge: true });
+            }
+          }
         }
         $("#bank-form").classList.add("hidden");
         ui.editing.bankAccountId = null;
@@ -2004,7 +2022,7 @@ service cloud.firestore {
           const tr = document.createElement("tr");
           tr.innerHTML = `
             <td class="px-3 py-2 font-medium text-slate-800">
-              ${escapeHtml(b.name)}
+              ${escapeHtml(b.name)}${b.isDefault ? ` <span class="badge badge-emerald ml-1">Default</span>` : ""}
               ${b.notes ? `<div class="text-xs text-slate-500">${escapeHtml(b.notes)}</div>` : ""}
             </td>
             <td class="px-3 py-2 text-right font-semibold ${balance >= 0 ? 'text-emerald-700' : 'text-rose-700'}">${formatMoney(balance)}</td>
@@ -2116,7 +2134,7 @@ service cloud.firestore {
         $("#credit-card-form").classList.add("hidden");
         ui.editing.creditCardId = null;
       } catch (err) {
-        alert(err?.message || "Failed to save item");
+        alert(err?.message || "Failed to save information");
       }
     });
 
@@ -2294,7 +2312,7 @@ service cloud.firestore {
     }
 
     // ===== Accounts Summary (Accounts route + Dashboard mirror) =====
-    // Installment plans (e.g. installment) are fixed-term balances, not revolving cards you clear monthly.
+    // Installment plans (e.g. Installment payoff) are fixed-term balances, not revolving cards you clear monthly.
     function isInstallment(c) { return !!c && c.accountType === "installment"; }
 
     function computeAccountsTotals() {
@@ -3094,7 +3112,7 @@ service cloud.firestore {
       income: { source: i => lc(i.source), date: i => i.date || "", bank: i => bankNameById(i.bankAccountId), recurrence: recurrenceKey, amount: i => num(i.amount) },
       bills: { name: b => lc(b.name), category: b => lc(b.category), date: b => b.date || "", recurrence: recurrenceKey, amount: b => num(b.amount) },
       planned: { card: p => lc(p.cardName), closes: p => p.statementDate || "", due: p => p.dueDate || "", check: p => (p.billDiff == null ? 9999 : Math.abs(p.billDiff)), paydate: p => p.date || "", bank: p => bankNameById(p.bankId), stmt: p => num(p.stmtBal), amount: p => p.skipped ? 0 : num(p.amount) },
-      period: { date: r => r.i, income: r => r.income, expense: r => r.expense, net: r => r.net, carry: r => r.carry }
+      period: { date: r => r.i, income: r => r.income, expense: r => r.expense, net: r => r.net, carry: r => r.carry, projected: r => (r.projected == null ? -Infinity : r.projected) }
     };
     const DESC_FIRST_KEYS = new Set(["balance", "amount", "value", "income", "expense", "net", "carry", "date", "stmt"]);
 
@@ -3856,7 +3874,7 @@ service cloud.firestore {
             kind: "income", id: occ.incomeId, recurring: occ.recurring, key: occ.occurrenceKey,
             date: occ.date, originalDate: occ.originalDate,
             name: occ.source || "Income", sub: occ.recurring ? "Recurring income" : "One-time income",
-            amount: amt, flow: "in"
+            amount: amt, flow: "in", bankId: occ.bankAccountId || null
           });
         }
 
@@ -3872,7 +3890,7 @@ service cloud.firestore {
             date: occ.date, originalDate: occ.originalDate,
             name: occ.name || "Bill",
             sub: [occ.category, payLabel ? `via ${payLabel}` : "", occ.recurring ? "recurring" : "one-time"].filter(Boolean).join(" · "),
-            amount: amt, flow: onCredit ? "cc" : "out", onCredit
+            amount: amt, flow: onCredit ? "cc" : "out", onCredit, bankId: resolveBillBankId(occ)
           });
         }
       }
@@ -3896,7 +3914,8 @@ service cloud.firestore {
             kind: "txn", id: t.id, recurring: false, key: null,
             date: t.date, originalDate: t.date,
             name: t.description || "Transaction", sub: t.cardName || "",
-            amount: amt, flow, txnType: t.txnType, cardType: t.cardType
+            amount: amt, flow, txnType: t.txnType, cardType: t.cardType,
+            bankId: t.cardType === "debit" ? resolveDebitTxnBankId(t) : (t.txnType === "payoff" ? (t.sourceBankAccountId || null) : null)
           });
         }
       }
@@ -3914,7 +3933,7 @@ service cloud.firestore {
             sub: (pp.mode === "eom"
               ? `Month-end zero-out · pay balance on ${pp.dueDate}`
               : `Due ${pp.dueDate} · statement ${pp.statementDate} · ${pp.mode === "full" ? "pay in full" : "0% APR fixed amount"}`) + (ppBank ? ` · from ${ppBank.name}` : ""),
-            amount: pp.amount, flow: "out", txnType: "payoff", cardType: "credit"
+            amount: pp.amount, flow: "out", txnType: "payoff", cardType: "credit", bankId: pp.bankId || null
           });
         }
       }
@@ -3926,6 +3945,16 @@ service cloud.firestore {
       const periods = buildPeriods();
       const { periodCashIn, periodCashOut, periodCCSpend, periodItems } = computePeriodCashFlows(periods);
 
+      // Projected bank balance, anchored to today's live bank total (starting balances + everything logged so far).
+      // End of period i = bank today + cash flows dated after today up to period end
+      //                   − cash flows dated after period end up to today (for periods already over).
+      const defaultBank = getDefaultBank();
+      const bankNow = defaultBank ? computeBankAccountBalance(defaultBank) : null;
+      const todayISOp = toISODate(new Date());
+      const netOf = it => it.flow === "in" ? Number(it.amount || 0) : (it.flow === "out" ? -Number(it.amount || 0) : 0);
+      const allItems = [];
+      periodItems.forEach(list => list.forEach(it => { const n = netOf(it); if (n && defaultBank && it.bankId === defaultBank.id) allItems.push({ date: it.date, n }); }));
+
       let carry = 0;
       const rows = [];
       for (let i = 0; i < periods.length; i++) {
@@ -3933,7 +3962,16 @@ service cloud.firestore {
         const exp = periodCashOut[i];
         const net = income - exp;
         carry += net;
-        rows.push({ i, period: periods[i], income, expense: exp, ccSpend: periodCCSpend[i], net, carry, items: periodItems[i] });
+        const endISO = periods[i].endISO;
+        let projected = null;
+        if (defaultBank) {
+          projected = bankNow;
+          for (const it of allItems) {
+            if (it.date > todayISOp && it.date <= endISO) projected += it.n;
+            else if (it.date > endISO && it.date <= todayISOp) projected -= it.n;
+          }
+        }
+        rows.push({ i, period: periods[i], income, expense: exp, ccSpend: periodCCSpend[i], net, carry, projected, items: periodItems[i] });
       }
 
       const today = parseISODateLocal(toISODate(new Date()));
@@ -3944,7 +3982,7 @@ service cloud.firestore {
         if (monthKey(r.period.endISO) === nextMonthKey) { carryNextMonth = r.carry; break; }
       }
 
-      return { periods, rows, carryNextMonth };
+      return { periods, rows, carryNextMonth, defaultBank };
     }
 
     // Current-period metrics for the Dashboard: pulls straight from the planner rows.
@@ -4054,12 +4092,27 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
         <div class="mt-1">${cashBadge}</div>`;
 
       const pm = computeCurrentPeriodMetrics();
-      $("#period-carry-in").textContent = formatMoney(pm.carryIn);
-      $("#period-carry-in").className = "text-sm font-semibold " + (pm.carryIn >= 0 ? "text-emerald-700" : "text-rose-700");
-      $("#period-income").textContent = formatMoney(pm.income);
-      $("#period-expense").textContent = formatMoney(pm.expense);
-      $("#period-carry-out").textContent = formatMoney(pm.carryOut);
-      $("#period-carry-out").className = "text-sm font-semibold " + (pm.carryOut >= 0 ? "text-emerald-700" : "text-rose-700");
+      {
+        const db_ = getDefaultBank();
+        const lbl = $("#dash-default-bank-label");
+        const val = $("#dash-default-bank-balance");
+        if (db_) {
+          const bal = computeBankAccountBalance(db_);
+          lbl.textContent = `Default Bank Balance — ${db_.name}`;
+          val.textContent = formatMoney(bal);
+          val.className = "text-xl font-bold " + (bal >= 0 ? "text-emerald-700" : "text-rose-700");
+        } else {
+          lbl.textContent = "Default Bank Balance";
+          val.textContent = "Set a default bank";
+          val.className = "text-sm font-semibold text-slate-400";
+        }
+        const t = computeAccountsTotals();
+        $("#dash-credit-owed").textContent = formatMoney(t.spokenFor);
+        const owing = (state.creditCards || []).filter(c => !isInstallment(c))
+          .map(c => ({ name: c.name, bal: computeCreditCardBalance(c) })).filter(x => Math.abs(x.bal) > 0.004);
+        $("#dash-credit-owed-list").innerHTML = owing.map(x => `<div>${escapeHtml(x.name)}: ${formatMoney(x.bal)}</div>`).join("")
+          + (t.installmentTotal > 0.004 ? `<div class="text-slate-500">+ installment plans: ${formatMoney(t.installmentTotal)} (not included above)</div>` : "");
+      }
 
       $("#net-worth").textContent = formatMoney(d.netWorth);
       $("#net-worth").className = "text-4xl font-extrabold " + (d.netWorth >= 0 ? "text-brand-900" : "text-rose-700");
@@ -4088,7 +4141,26 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
       const planner = computePlanner();
       const carryNextMonth = planner.carryNextMonth;
       const rows = applySort("period", planner.rows);
-      $("#carry-forward-next-month").textContent = formatMoney(carryNextMonth);
+      const projTh = $("#period-projected-label");
+      if (projTh) projTh.textContent = planner.defaultBank ? `Projected Balance — ${planner.defaultBank.name}` : "Projected Balance (set a default bank)";
+      {
+        const todayP = toISODate(new Date());
+        const cur = planner.rows.find(r => todayP >= r.period.startISO && todayP <= r.period.endISO);
+        const valEl = $("#current-period-projected"), subEl = $("#current-period-projected-sub");
+        if (valEl) {
+          if (!planner.defaultBank) {
+            valEl.textContent = "Set a default bank"; valEl.className = "text-sm font-semibold text-slate-400";
+            subEl.textContent = "";
+          } else if (!cur || cur.projected == null) {
+            valEl.textContent = "—"; valEl.className = "text-xl font-bold text-slate-400";
+            subEl.textContent = planner.defaultBank.name;
+          } else {
+            valEl.textContent = formatMoney(cur.projected);
+            valEl.className = "text-xl font-bold " + (cur.projected >= 0 ? "text-emerald-700" : "text-rose-700");
+            subEl.textContent = `${planner.defaultBank.name} · by ${cur.period.endISO}`;
+          }
+        }
+      }
 
       const tbody = $("#period-table-body");
       tbody.innerHTML = "";
@@ -4103,7 +4175,6 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
 
       for (const r of rows) {
         const tr = document.createElement("tr");
-        const carryClass = r.carry >= 0 ? "text-emerald-700" : "text-rose-700";
         const netClass = r.net >= 0 ? "text-emerald-700" : "text-rose-700";
         const expanded = ui.expandedPeriodKeys.has(r.period.startISO);
         const isCurrent = todayISO >= r.period.startISO && todayISO <= r.period.endISO;
@@ -4120,7 +4191,7 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
             ${r.ccSpend ? `<div class="text-[11px] text-slate-400 font-normal mt-0.5">+ ${formatMoney(r.ccSpend)} CC spend (billed later)</div>` : ""}
           </td>
           <td class="px-4 py-3 text-right font-semibold ${netClass}">${formatMoney(r.net)}</td>
-          <td class="px-4 py-3 text-right font-bold ${carryClass}">${formatMoney(r.carry)}</td>
+          <td class="px-4 py-3 text-right font-bold ${r.projected == null ? "text-slate-400" : (r.projected >= 0 ? "text-emerald-700" : "text-rose-700")}">${r.projected == null ? "—" : formatMoney(r.projected)}</td>
         `;
         tbody.appendChild(tr);
 
@@ -4498,13 +4569,14 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
       }
       const elapsed = day / mEnd.getDate();
 
-      // Fixed costs (recurring bills, excluding card payoffs and investing)
+      // Fixed costs (ALL bills this month, recurring and one-time, excluding card payoffs and investing)
       const fixed = sum(generateBillOccurrences(mStart, mEnd)
-        .filter(o => o.recurring && !o.payoffCardId && !KPI_SAVE_RX.test(categoryLabel(o.category))));
+        .filter(o => !o.payoffCardId && !KPI_SAVE_RX.test(categoryLabel(o.category))));
 
       // Cards, cash, net worth
       let cardBal = 0, cardLim = 0;
       for (const c of state.creditCards || []) {
+        if (isInstallment(c)) continue;   // installment plans are not revolving credit
         if (!c.creditLimit) continue;
         cardBal += Math.max(0, computeCreditCardBalance(c));
         cardLim += Number(c.creditLimit) || 0;
@@ -4536,7 +4608,7 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
           status: vsPrev === null ? null : lo(vsPrev, 0, 0.1),
           sub: formatMoney(mtd) + " so far vs " + formatMoney(prevMtd) + " by this day last month" },
         { label: "Fixed-cost ratio", value: fix === null ? "—" : P(fix), status: fix === null ? null : lo(fix, 0.5, 0.65),
-          sub: formatMoney(fixed) + " recurring bills this month. Target under 50% of income" },
+          sub: formatMoney(fixed) + " in bills this month (recurring + one-time, excl. card payoffs). Target under 50% of income" },
         { label: "Credit utilization", value: util === null ? "—" : P(util), status: util === null ? null : lo(util, 0.3, 0.5),
           sub: util === null ? "Add credit limits to your cards" : formatMoney(cardBal) + " of " + formatMoney(cardLim) + ". Target under 30%" },
         { label: "Cash runway", value: runway === null ? "—" : runway.toFixed(1) + " mo", status: runway === null ? null : hi(runway, 6, 3),
@@ -4959,7 +5031,7 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
         <label class="${lbl}">Account type</label>
         <select id="credit-card-account-type" class="${inp}">
           <option value="revolving">Revolving card — charged monthly, paid off in full</option>
-          <option value="installment">Installment plan — fixed balance paid down over time (e.g. Installment)</option>
+          <option value="installment">Installment plan — fixed balance paid down over time (e.g. installment)</option>
         </select>
         <p class="${hint}">Installment plans are left out of Spoken-For, True Available Cash, and the Zero-Out buttons. They still count as debt in net worth and can use a payoff plan.</p>`;
       form.insertBefore(typeWrap, actions);
