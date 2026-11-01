@@ -412,6 +412,50 @@
               </div>
             </div>
 
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5" id="asset-insights-card">
+              <div>
+                <h3 class="text-lg font-semibold text-slate-900">Other Assets — Net Assets &amp; Trends</h3>
+                <p class="text-sm text-slate-500 mt-1">Built from the dated values and groups you enter under Other Assets. Add a new value on a new date to extend the trend.</p>
+              </div>
+              <div class="mt-4 grid grid-cols-2 lg:grid-cols-4 gap-3">
+                <div class="bg-slate-50 rounded-xl border border-slate-200 p-4">
+                  <div class="text-xs text-slate-500">Total Other Assets</div>
+                  <div class="text-lg font-bold text-emerald-700" id="asset-ins-total">$0.00</div>
+                </div>
+                <div class="bg-slate-50 rounded-xl border border-slate-200 p-4">
+                  <div class="text-xs text-slate-500">Net Assets (after Other Liabilities)</div>
+                  <div class="text-lg font-bold" id="asset-ins-net">$0.00</div>
+                </div>
+                <div class="bg-slate-50 rounded-xl border border-slate-200 p-4">
+                  <div class="text-xs text-slate-500">Change since first record</div>
+                  <div class="text-lg font-bold" id="asset-ins-change">—</div>
+                  <div class="text-[11px] text-slate-400 mt-0.5" id="asset-ins-change-sub"></div>
+                </div>
+                <div class="bg-slate-50 rounded-xl border border-slate-200 p-4">
+                  <div class="text-xs text-slate-500">Groups</div>
+                  <div class="text-lg font-bold text-slate-900" id="asset-ins-groups">0</div>
+                </div>
+              </div>
+              <div id="asset-ins-empty" class="hidden mt-4 text-sm text-slate-500">No other assets yet. Add one under Other Assets (Data Entry) with a value, date and group to see charts here.</div>
+              <div id="asset-ins-error" class="hidden mt-4 text-sm text-amber-600"></div>
+              <div id="asset-ins-charts" class="mt-4 grid grid-cols-1 lg:grid-cols-5 gap-4">
+                <div class="lg:col-span-2 rounded-xl border border-slate-200 p-4">
+                  <h4 class="text-sm font-semibold text-slate-900">Net assets by group</h4>
+                  <div class="mt-3" style="position:relative;height:260px;"><canvas id="asset-doughnut"></canvas></div>
+                  <div id="asset-group-breakdown" class="mt-3 space-y-1 text-sm"></div>
+                </div>
+                <div class="lg:col-span-3 rounded-xl border border-slate-200 p-4">
+                  <h4 class="text-sm font-semibold text-slate-900">Total asset value over time</h4>
+                  <div class="mt-3" style="position:relative;height:300px;"><canvas id="asset-total-trend"></canvas></div>
+                  <div class="text-[11px] text-slate-400 mt-2" id="asset-trend-note"></div>
+                </div>
+                <div class="lg:col-span-5 rounded-xl border border-slate-200 p-4">
+                  <h4 class="text-sm font-semibold text-slate-900">Asset value by group over time</h4>
+                  <div class="mt-3" style="position:relative;height:320px;"><canvas id="asset-group-trend"></canvas></div>
+                </div>
+              </div>
+            </div>
+
             <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
               <h3 class="text-lg font-semibold text-slate-900">Recent Activities</h3>
               <p class="text-sm text-slate-500 mt-1">Quick glance of your latest entries.</p>
@@ -509,7 +553,7 @@
                       <th class="text-right px-4 py-3 font-semibold text-slate-600"><button type="button" data-sort-table="period" data-sort-key="expense" class="inline-flex items-center gap-1 hover:text-slate-900">Cash Out (Debit + Payoffs + Bills) <span data-sort-ind class="text-xs text-slate-400">↕</span></button></th>
                       <th class="text-right px-4 py-3 font-semibold text-slate-600"><button type="button" data-sort-table="period" data-sort-key="net" class="inline-flex items-center gap-1 hover:text-slate-900">Net <span data-sort-ind class="text-xs text-slate-400">↕</span></button></th>
                       
-                      <th class="text-right px-4 py-3 font-semibold text-slate-600" title="Default bank's balance today, plus its planned flows after today (or minus its flows since the period ended, for past periods)"><button type="button" data-sort-table="period" data-sort-key="projected" class="inline-flex items-center gap-1 hover:text-slate-900"><span id="period-projected-label">Projected Balance</span> <span data-sort-ind class="text-xs text-slate-400">↕</span></button></th>
+                      <th class="text-right px-4 py-3 font-semibold text-slate-600" title="Default bank's balance today, plus planned flows after today that use it or have no bank chosen (or minus its flows since the period ended, for past periods)"><button type="button" data-sort-table="period" data-sort-key="projected" class="inline-flex items-center gap-1 hover:text-slate-900"><span id="period-projected-label">Projected Balance</span> <span data-sort-ind class="text-xs text-slate-400">↕</span></button></th>
                     </tr>
                   </thead>
                   <tbody id="period-table-body"></tbody>
@@ -1276,6 +1320,21 @@
                   </div>
                 </div>
 
+                <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">As of date</label>
+                    <input type="date" id="asset-date" required class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                    <p class="text-[11px] text-slate-500 mt-1">The date this value is true. Editing an asset with a new date records a new value and keeps the old ones for the charts.</p>
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Group</label>
+                    <input type="text" id="asset-group" list="asset-group-options" placeholder="e.g. Retirement, Real estate, Cash"
+                           class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                    <datalist id="asset-group-options"></datalist>
+                    <p class="text-[11px] text-slate-500 mt-1">Type a new group or pick an existing one. Used to group the charts.</p>
+                  </div>
+                </div>
+
                 <div class="mt-3">
                   <label class="block text-sm font-medium text-slate-700 mb-1">Type (optional)</label>
                   <input type="text" id="asset-type" placeholder="Savings / Investment / Cash / Other"
@@ -1744,15 +1803,50 @@ service cloud.firestore {
         $("#asset-name").value = editing.name ?? "";
         $("#asset-value").value = editing.value ?? "";
         $("#asset-type").value = editing.type ?? "";
+        $("#asset-group").value = editing.group ?? "";
+        $("#asset-date").value = toISODate(new Date());   // default: record a new value as of today
         ui.editing.assetId = editing.id;
       } else {
         $("#asset-form").reset?.();
         $("#asset-name").value = "";
         $("#asset-value").value = "";
         $("#asset-type").value = "";
+        $("#asset-group").value = "";
+        $("#asset-date").value = toISODate(new Date());
         ui.editing.assetId = null;
       }
     }
+
+    // ----- Other Assets: groups + dated value history -----
+    const ASSET_UNGROUPED = "Ungrouped";
+    const assetGroupName = (a) => ((a && a.group) || "").trim() || ASSET_UNGROUPED;
+
+    // Sorted [{date, value}] snapshots. Assets saved before dated values existed get one snapshot (created date).
+    function assetHistory(a) {
+      let h = Array.isArray(a.valueHistory)
+        ? a.valueHistory.filter(e => e && e.date && Number.isFinite(Number(e.value))).map(e => ({ date: e.date, value: Number(e.value) }))
+        : [];
+      if (!h.length) {
+        const d = a.valueDate || (a.createdAt?.toDate ? toISODate(a.createdAt.toDate()) : toISODate(new Date()));
+        h = [{ date: d, value: Number(a.value || 0) }];
+      }
+      return h.sort((x, y) => x.date < y.date ? -1 : (x.date > y.date ? 1 : 0));
+    }
+    // Value in effect on a date (null if the asset had no value yet).
+    function assetValueOn(h, iso) {
+      let v = null;
+      for (const e of h) { if (e.date <= iso) v = e.value; else break; }
+      return v;
+    }
+    // The "current" snapshot: latest dated today or earlier (else the first one).
+    function assetCurrent(h) {
+      const today = toISODate(new Date());
+      let cur = h[0];
+      for (const e of h) { if (e.date <= today) cur = e; }
+      return cur;
+    }
+
+    const assetHistoryOpen = new Set();
 
     $("#add-asset-btn").addEventListener("click", () => openAssetForm(null));
     $("#asset-cancel-btn").addEventListener("click", () => {
@@ -1765,10 +1859,22 @@ service cloud.firestore {
       const name = $("#asset-name").value.trim();
       const value = Number($("#asset-value").value);
       const type = $("#asset-type").value.trim();
+      const group = $("#asset-group").value.trim();
+      const date = $("#asset-date").value || toISODate(new Date());
       if (!currentUser) return;
 
+      const val = Number.isFinite(value) ? value : 0;
+      const existingAsset = ui.editing.assetId ? state.assets.find(x => x.id === ui.editing.assetId) : null;
+      const history = existingAsset ? assetHistory(existingAsset).slice() : [];
+      const at = history.findIndex(e => e.date === date);
+      if (at >= 0) history[at] = { date, value: val };
+      else if (assetValueOn(history, date) !== val) history.push({ date, value: val });   // skip if nothing changed
+      history.sort((x, y) => x.date < y.date ? -1 : (x.date > y.date ? 1 : 0));
+      const cur = assetCurrent(history);
+
       const payload = {
-        name, value: Number.isFinite(value) ? value : 0, type: type || "", createdAt: serverTimestamp()
+        name, value: cur.value, valueDate: cur.date, valueHistory: history,
+        group: group || "", type: type || "", createdAt: serverTimestamp()
       };
 
       try {
@@ -1788,25 +1894,66 @@ service cloud.firestore {
     function renderAssets() {
       const tbody = $("#assets-table-body");
       tbody.innerHTML = "";
+      const dl = $("#asset-group-options");
+      if (dl) dl.innerHTML = Array.from(new Set((state.assets || []).map(a => (a.group || "").trim()).filter(Boolean))).sort().map(g => `<option value="${escapeHtml(g)}"></option>`).join("");
+      renderAssetInsights();
       const items = applySort("assets", state.assets.slice().sort((a,b) => (b.createdAt?.seconds||0)-(a.createdAt?.seconds||0)));
       if (!items.length) {
         tbody.innerHTML = `<tr><td colspan="3" class="px-3 py-3 text-center text-slate-500">No other assets yet.</td></tr>`;
         return;
       }
       for (const a of items) {
+        const h = assetHistory(a);
+        const cur = assetCurrent(h);
+        const grp = (a.group || "").trim();
         const tr = document.createElement("tr");
         tr.innerHTML = `
-          <td class="px-3 py-2 font-medium text-slate-800">${escapeHtml(a.name)}</td>
-          <td class="px-3 py-2 text-right font-semibold text-emerald-700">${formatMoney(a.value)}</td>
+          <td class="px-3 py-2 font-medium text-slate-800">${escapeHtml(a.name)}
+            ${grp ? `<span class="badge badge-slate ml-1">${escapeHtml(grp)}</span>` : ""}
+          </td>
+          <td class="px-3 py-2 text-right font-semibold text-emerald-700">${formatMoney(cur.value)}
+            <div class="text-[11px] text-slate-400 font-normal">as of ${escapeHtml(cur.date)}</div>
+          </td>
           <td class="px-3 py-2 text-right">
             <div class="inline-flex items-center gap-2">
+              <button class="text-slate-500 hover:underline text-sm" data-action="hist" data-id="${a.id}">History (${h.length})</button>
               <button class="text-brand-600 hover:underline text-sm" data-action="edit" data-id="${a.id}">Edit</button>
               <button class="text-rose-600 hover:underline text-sm" data-action="del" data-id="${a.id}">Delete</button>
             </div>
           </td>
         `;
         tbody.appendChild(tr);
+        if (assetHistoryOpen.has(a.id)) {
+          const hr = document.createElement("tr");
+          const rows = h.slice().reverse().map(e => `
+            <div class="flex items-center justify-between gap-3 bg-white border border-slate-200 rounded-lg px-3 py-1.5">
+              <span class="text-slate-700">${escapeHtml(e.date)}</span>
+              <span class="font-semibold text-emerald-700">${formatMoney(e.value)}</span>
+              ${h.length > 1 ? `<button class="text-rose-600 hover:underline text-xs" data-hist-del="${a.id}" data-date="${escapeHtml(e.date)}">Remove</button>` : `<span class="w-12"></span>`}
+            </div>`).join("");
+          hr.innerHTML = `<td colspan="3" class="px-3 py-2 bg-slate-50"><div class="text-xs text-slate-500 mb-2">Recorded values (edit the asset with a new date to add one)</div><div class="space-y-1">${rows}</div></td>`;
+          tbody.appendChild(hr);
+        }
       }
+      tbody.querySelectorAll("[data-action='hist']").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const id = btn.dataset.id;
+          if (assetHistoryOpen.has(id)) assetHistoryOpen.delete(id); else assetHistoryOpen.add(id);
+          renderAssets();
+        });
+      });
+      tbody.querySelectorAll("[data-hist-del]").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          const asset = state.assets.find(x => x.id === btn.dataset.histDel);
+          if (!asset) return;
+          const h = assetHistory(asset).filter(e => e.date !== btn.dataset.date);
+          if (!h.length) return;
+          const cur = assetCurrent(h);
+          try {
+            await setDoc(doc(db, "users", currentUser.uid, "assets", asset.id), { valueHistory: h, value: cur.value, valueDate: cur.date }, { merge: true });
+          } catch (err) { alert(err?.message || "Failed to remove value"); }
+        });
+      });
       tbody.querySelectorAll("[data-action='edit']").forEach(btn => {
         btn.addEventListener("click", () => {
           const item = state.assets.find(x => x.id === btn.dataset.id);
@@ -1820,6 +1967,152 @@ service cloud.firestore {
           catch (err) { alert(err?.message || "Failed to delete asset"); }
         });
       });
+    }
+
+    // ----- Other Assets insights (dashboard) -----
+    let assetDoughnut = null, assetTotalChart = null, assetGroupChart = null;
+    const fmtAxisDate = (ms) => new Date(ms).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "2-digit" });
+
+    function renderAssetInsights() {
+      const card = $("#asset-insights-card");
+      if (!card) return;
+      const assets = state.assets || [];
+      const todayISO = toISODate(new Date());
+      const hist = assets.map(a => ({ a, h: assetHistory(a), group: assetGroupName(a) }));
+      const total = hist.reduce((s, x) => s + assetCurrent(x.h).value, 0);
+      const liabTotal = (state.liabilities || []).reduce((s, l) => s + Number(l.value || 0), 0);
+      const net = total - liabTotal;
+      $("#asset-ins-total").textContent = formatMoney(total);
+      const netEl = $("#asset-ins-net");
+      netEl.textContent = formatMoney(net);
+      netEl.className = "text-lg font-bold " + (net >= 0 ? "text-emerald-700" : "text-rose-700");
+
+      // current value by group
+      const byGroup = new Map();
+      for (const x of hist) byGroup.set(x.group, (byGroup.get(x.group) || 0) + assetCurrent(x.h).value);
+      const groups = Array.from(byGroup.entries()).sort((p, q) => q[1] - p[1]);
+      $("#asset-ins-groups").textContent = String(groups.length);
+
+      const emptyEl = $("#asset-ins-empty"), chartsEl = $("#asset-ins-charts"), errEl = $("#asset-ins-error");
+      emptyEl.classList.toggle("hidden", assets.length > 0);
+      chartsEl.classList.toggle("hidden", assets.length === 0);
+
+      // timeline: every date any asset was valued, plus today; each asset carries its latest value forward
+      const dateSet = new Set([todayISO]);
+      for (const x of hist) for (const e of x.h) dateSet.add(e.date);
+      const dates = Array.from(dateSet).sort();
+      const totals = dates.map(d => hist.reduce((s, x) => s + (assetValueOn(x.h, d) ?? 0), 0));
+      const groupNames = groups.map(g => g[0]);
+      const perGroup = groupNames.map(g => dates.map(d => hist.filter(x => x.group === g).reduce((s, x) => s + (assetValueOn(x.h, d) ?? 0), 0)));
+
+      // change since first record
+      const chEl = $("#asset-ins-change"), chSub = $("#asset-ins-change-sub");
+      const firstIdx = dates.findIndex(d => d <= todayISO);
+      const nowIdx = dates.lastIndexOf(todayISO);
+      if (assets.length && dates.length > 1 && firstIdx >= 0 && nowIdx > firstIdx && totals[firstIdx] !== 0) {
+        const diff = totals[nowIdx] - totals[firstIdx];
+        const pct = (diff / Math.abs(totals[firstIdx])) * 100;
+        chEl.textContent = (diff >= 0 ? "+" : "−") + formatMoney(Math.abs(diff));
+        chEl.className = "text-lg font-bold " + (diff >= 0 ? "text-emerald-700" : "text-rose-700");
+        chSub.textContent = `${diff >= 0 ? "+" : "−"}${Math.abs(pct).toFixed(1)}% since ${dates[firstIdx]}`;
+      } else {
+        chEl.textContent = "—"; chEl.className = "text-lg font-bold text-slate-400";
+        chSub.textContent = assets.length ? "Add values on more dates to see change" : "";
+      }
+      $("#asset-trend-note").textContent = dates.length < 2 ? "Only one date recorded so far — edit an asset with a new date and value to build the trend." : "";
+
+      // group breakdown list
+      const colorFor = (g) => (g === ASSET_UNGROUPED ? "#94a3b8" : categoryColor(g));
+      const posTotal = groups.reduce((s, g) => s + Math.max(0, g[1]), 0);
+      $("#asset-group-breakdown").innerHTML = groups.map(([g, v]) => `
+        <div class="flex items-center justify-between gap-3">
+          <span class="inline-flex items-center gap-2 text-slate-700"><span class="inline-block w-2.5 h-2.5 rounded-full" style="background:${colorFor(g)}"></span>${escapeHtml(g)}</span>
+          <span class="font-semibold text-slate-800">${formatMoney(v)} <span class="text-xs text-slate-400 font-normal">${posTotal > 0 && v > 0 ? ((v / posTotal) * 100).toFixed(1) + "%" : ""}</span></span>
+        </div>`).join("");
+
+      if (!assets.length) return;
+      if (typeof Chart === "undefined") {
+        errEl.textContent = "Charts couldn't load (Chart.js is unavailable). Totals above still work.";
+        errEl.classList.remove("hidden");
+        return;
+      }
+      errEl.classList.add("hidden");
+      if (routeDashboard.classList.contains("hidden")) return;   // draw charts only while the dashboard is visible
+
+      // --- doughnut: current value by group ---
+      const pieGroups = groups.filter(g => g[1] > 0);
+      const pieLabels = pieGroups.map(g => g[0]);
+      const pieData = pieGroups.map(g => Math.round(g[1] * 100) / 100);
+      const pieColors = pieGroups.map(g => colorFor(g[0]));
+      if (!assetDoughnut) {
+        assetDoughnut = new Chart($("#asset-doughnut"), {
+          type: "doughnut",
+          data: { labels: pieLabels, datasets: [{ data: pieData, backgroundColor: pieColors, borderColor: "#0f172a", borderWidth: 2 }] },
+          options: {
+            responsive: true, maintainAspectRatio: false, cutout: "58%",
+            plugins: {
+              legend: { position: "bottom", labels: { boxWidth: 12, font: { family: "Inter" } } },
+              tooltip: { callbacks: { label: (ctx) => {
+                const sum = ctx.dataset.data.reduce((a, b) => a + b, 0);
+                return ` ${ctx.label}: ${formatMoney(ctx.parsed)} (${sum ? ((ctx.parsed / sum) * 100).toFixed(1) : 0}%)`;
+              } } }
+            }
+          }
+        });
+      } else {
+        assetDoughnut.data.labels = pieLabels;
+        assetDoughnut.data.datasets[0].data = pieData;
+        assetDoughnut.data.datasets[0].backgroundColor = pieColors;
+        assetDoughnut.update();
+      }
+
+      // --- shared time-axis options (numeric x so uneven dates are spaced truthfully) ---
+      const xs = dates.map(d => parseISODateLocal(d).getTime());
+      const xMin = xs.length > 1 ? xs[0] : xs[0] - 86400000;
+      const xMax = xs.length > 1 ? xs[xs.length - 1] : xs[0] + 86400000;
+      const mkOptions = (stacked) => ({
+        responsive: true, maintainAspectRatio: false,
+        interaction: { mode: "index", intersect: false },
+        scales: {
+          x: { type: "linear", min: xMin, max: xMax, grid: { display: false }, ticks: { maxTicksLimit: 7, callback: (v) => fmtAxisDate(v) } },
+          y: { stacked, beginAtZero: true, ticks: { callback: (v) => "$" + Number(v).toLocaleString() } }
+        },
+        plugins: {
+          legend: { display: stacked, position: "bottom", labels: { boxWidth: 12, font: { family: "Inter" } } },
+          tooltip: { callbacks: {
+            title: (items) => (items.length ? fmtAxisDate(items[0].parsed.x) : ""),
+            label: (ctx) => ` ${ctx.dataset.label}: ${formatMoney(ctx.parsed.y)}`
+          } }
+        }
+      });
+
+      // --- total over time ---
+      const totalData = xs.map((x, i) => ({ x, y: Math.round(totals[i] * 100) / 100 }));
+      const totalDs = [{ label: "Total other assets", data: totalData, borderColor: "#10b981", backgroundColor: "rgba(16,185,129,.18)", fill: true, tension: 0.2, pointRadius: 3, borderWidth: 2 }];
+      if (!assetTotalChart) {
+        assetTotalChart = new Chart($("#asset-total-trend"), { type: "line", data: { datasets: totalDs }, options: mkOptions(false) });
+      } else {
+        assetTotalChart.data.datasets = totalDs;
+        assetTotalChart.options = mkOptions(false);
+        assetTotalChart.update();
+      }
+
+      // --- by group over time (stacked) ---
+      const groupDs = groupNames.map((g, gi) => {
+        const c = colorFor(g);
+        return {
+          label: g, borderColor: c, backgroundColor: /^#[0-9a-f]{6}$/i.test(c) ? c + "66" : c,
+          data: xs.map((x, i) => ({ x, y: Math.round(perGroup[gi][i] * 100) / 100 })),
+          fill: true, tension: 0.2, pointRadius: 2, borderWidth: 2
+        };
+      });
+      if (!assetGroupChart) {
+        assetGroupChart = new Chart($("#asset-group-trend"), { type: "line", data: { datasets: groupDs }, options: mkOptions(true) });
+      } else {
+        assetGroupChart.data.datasets = groupDs;
+        assetGroupChart.options = mkOptions(true);
+        assetGroupChart.update();
+      }
     }
 
     // ===== CRUD: Liabilities =====
@@ -4124,7 +4417,13 @@ service cloud.firestore {
       const todayISOp = toISODate(new Date());
       const netOf = it => it.flow === "in" ? Number(it.amount || 0) : (it.flow === "out" ? -Number(it.amount || 0) : 0);
       const allItems = [];
-      periodItems.forEach(list => list.forEach(it => { const n = netOf(it); if (n && defaultBank && it.bankId === defaultBank.id) allItems.push({ date: it.date, n }); }));
+      // Flows tied to the default bank always count. Upcoming flows with NO bank chosen (e.g. a bill whose "Pay with" is blank)
+      // are assumed to come out of / go into the default bank too, so edits to them move the projected balance.
+      periodItems.forEach(list => list.forEach(it => {
+        const n = netOf(it);
+        if (!n || !defaultBank) return;
+        if (it.bankId === defaultBank.id || (!it.bankId && it.date > todayISOp)) allItems.push({ date: it.date, n });
+      }));
 
       let carry = 0;
       const rows = [];
