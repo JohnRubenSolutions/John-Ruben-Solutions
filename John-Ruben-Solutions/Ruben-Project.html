@@ -331,7 +331,7 @@
       </div>
 
       <!-- Content -->
-      <div class="flex-1 overflow-y-auto hide-scrollbar p-4 md:p-6 bg-slate-50" id="app-content-scroll">
+      <div class="flex-1 overflow-y-auto hide-scrollbar p-4 md:p-6 pb-6 bg-slate-50" id="app-content-scroll">
 
         <!-- ROUTE: DASHBOARD -->
         <section id="route-dashboard" class="hidden">
@@ -413,44 +413,54 @@
             </div>
 
             <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5" id="asset-insights-card">
-              <div>
-                <h3 class="text-lg font-semibold text-slate-900">Other Assets — Net Assets &amp; Trends</h3>
-                <p class="text-sm text-slate-500 mt-1">Built from the dated values and groups you enter under Other Assets. Add a new value on a new date to extend the trend.</p>
+              <div class="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h3 class="text-lg font-semibold text-slate-900">True Net Worth — Assets, Money Owed &amp; Trends</h3>
+                  <p class="text-sm text-slate-500 mt-1">Bank balances + Other Assets − credit cards − Other Liabilities. Recalculates daily from your income, bills and transactions. Other Assets use the dated values and groups you enter.</p>
+                </div>
+                <div class="inline-flex rounded-lg overflow-hidden border border-slate-200 text-xs" id="asset-range-btns">
+                  <button type="button" data-asset-range="30" class="px-3 py-1.5 bg-slate-100 text-slate-700">30D</button>
+                  <button type="button" data-asset-range="90" class="px-3 py-1.5 bg-slate-100 text-slate-700">90D</button>
+                  <button type="button" data-asset-range="365" class="px-3 py-1.5 bg-slate-100 text-slate-700">1Y</button>
+                  <button type="button" data-asset-range="all" class="px-3 py-1.5 bg-slate-100 text-slate-700">All</button>
+                </div>
               </div>
               <div class="mt-4 grid grid-cols-2 lg:grid-cols-4 gap-3">
                 <div class="bg-slate-50 rounded-xl border border-slate-200 p-4">
-                  <div class="text-xs text-slate-500">Total Other Assets</div>
-                  <div class="text-lg font-bold text-emerald-700" id="asset-ins-total">$0.00</div>
-                </div>
-                <div class="bg-slate-50 rounded-xl border border-slate-200 p-4">
-                  <div class="text-xs text-slate-500">Net Assets (after Other Liabilities)</div>
+                  <div class="text-xs text-slate-500">True Net Worth (today)</div>
                   <div class="text-lg font-bold" id="asset-ins-net">$0.00</div>
+                  <div class="text-[11px] text-slate-400 mt-0.5" id="asset-ins-net-sub"></div>
                 </div>
                 <div class="bg-slate-50 rounded-xl border border-slate-200 p-4">
-                  <div class="text-xs text-slate-500">Change since first record</div>
-                  <div class="text-lg font-bold" id="asset-ins-change">—</div>
+                  <div class="text-xs text-slate-500">Bank Balances</div>
+                  <div class="text-lg font-bold text-emerald-700" id="asset-ins-bank">$0.00</div>
+                </div>
+                <div class="bg-slate-50 rounded-xl border border-slate-200 p-4">
+                  <div class="text-xs text-slate-500">Other Assets</div>
+                  <div class="text-lg font-bold text-emerald-700" id="asset-ins-total">$0.00</div>
                   <div class="text-[11px] text-slate-400 mt-0.5" id="asset-ins-change-sub"></div>
                 </div>
                 <div class="bg-slate-50 rounded-xl border border-slate-200 p-4">
-                  <div class="text-xs text-slate-500">Groups</div>
-                  <div class="text-lg font-bold text-slate-900" id="asset-ins-groups">0</div>
+                  <div class="text-xs text-slate-500">Money Owed (Cards + Liabilities)</div>
+                  <div class="text-lg font-bold text-rose-700" id="asset-ins-owed">$0.00</div>
+                  <div class="text-[11px] text-slate-400 mt-0.5" id="asset-ins-owed-sub"></div>
                 </div>
               </div>
-              <div id="asset-ins-empty" class="hidden mt-4 text-sm text-slate-500">No other assets yet. Add one under Other Assets (Data Entry) with a value, date and group to see charts here.</div>
+              <div id="asset-ins-empty" class="hidden mt-4 text-sm text-slate-500">No accounts or assets yet. Add a bank account or an Other Asset (Data Entry) to see charts here.</div>
               <div id="asset-ins-error" class="hidden mt-4 text-sm text-amber-600"></div>
               <div id="asset-ins-charts" class="mt-4 grid grid-cols-1 lg:grid-cols-5 gap-4">
                 <div class="lg:col-span-2 rounded-xl border border-slate-200 p-4">
-                  <h4 class="text-sm font-semibold text-slate-900">Net assets by group</h4>
+                  <h4 class="text-sm font-semibold text-slate-900">Assets by group (incl. bank accounts)</h4>
                   <div class="mt-3" style="position:relative;height:260px;"><canvas id="asset-doughnut"></canvas></div>
                   <div id="asset-group-breakdown" class="mt-3 space-y-1 text-sm"></div>
                 </div>
                 <div class="lg:col-span-3 rounded-xl border border-slate-200 p-4">
-                  <h4 class="text-sm font-semibold text-slate-900">Total asset value over time</h4>
+                  <h4 class="text-sm font-semibold text-slate-900">True net worth over time</h4>
                   <div class="mt-3" style="position:relative;height:300px;"><canvas id="asset-total-trend"></canvas></div>
                   <div class="text-[11px] text-slate-400 mt-2" id="asset-trend-note"></div>
                 </div>
                 <div class="lg:col-span-5 rounded-xl border border-slate-200 p-4">
-                  <h4 class="text-sm font-semibold text-slate-900">Asset value by group over time</h4>
+                  <h4 class="text-sm font-semibold text-slate-900">Asset value by group over time (incl. bank accounts)</h4>
                   <div class="mt-3" style="position:relative;height:320px;"><canvas id="asset-group-trend"></canvas></div>
                 </div>
               </div>
@@ -887,68 +897,64 @@
               </div>
             </div>
 
-            <form id="txn-form" class="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
-              <div>
-                <label class="block text-sm font-medium text-slate-700 mb-1">Date</label>
-                <input type="date" id="txn-date" required
+            <form id="txn-form" class="mt-4 grid grid-cols-2 lg:grid-cols-6 gap-3">
+              <div class="col-span-2 lg:col-span-1">
+                <label class="block text-sm font-medium text-slate-700 mb-1" for="txn-amount">Amount</label>
+                <input type="number" id="txn-amount" required step="0.01" min="0.01" inputmode="decimal" enterkeyhint="next" placeholder="0.00"
+                       class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-xl font-bold focus:ring-2 focus:ring-brand-500 outline-none">
+              </div>
+              <div class="col-span-2 lg:col-span-2">
+                <label class="block text-sm font-medium text-slate-700 mb-1" for="txn-desc">Description</label>
+                <input type="text" id="txn-desc" required placeholder="Groceries / Fuel / Dining" list="txn-desc-options" autocomplete="off" enterkeyhint="next"
                        class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                <datalist id="txn-desc-options"></datalist>
+              </div>
+              <div class="col-span-2 lg:col-span-3">
+                <label class="block text-sm font-medium text-slate-700 mb-1" for="txn-category">Category</label>
+                <input type="text" id="txn-category" list="category-presets" placeholder="Uncategorized" autocomplete="off" enterkeyhint="done"
+                       class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                <div id="txn-cat-chips" class="flex flex-wrap gap-2 mt-2"></div>
               </div>
               <div>
-                <label class="block text-sm font-medium text-slate-700 mb-1">Amount</label>
-                <input type="number" id="txn-amount" required step="0.01" placeholder="0.00"
-                       class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-slate-700 mb-1">Card Type</label>
-                <select id="txn-card-type"
-                        class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                <label class="block text-sm font-medium text-slate-700 mb-1" for="txn-card-type">Card Type</label>
+                <select id="txn-card-type" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
                   <option value="credit">Credit Card</option>
                   <option value="debit">Debit Card</option>
                 </select>
               </div>
               <div>
-                <label class="block text-sm font-medium text-slate-700 mb-1">Specific Card</label>
-                <select id="txn-card-select" required
-                        class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                <label class="block text-sm font-medium text-slate-700 mb-1" for="txn-card-select">Specific Card</label>
+                <select id="txn-card-select" required class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
                   <option value="">Select a card…</option>
                 </select>
                 <div id="txn-card-hint" class="text-xs text-amber-600 mt-1"></div>
               </div>
               <div>
-                <label class="block text-sm font-medium text-slate-700 mb-1">Description</label>
-                <input type="text" id="txn-desc" required placeholder="Groceries / Fuel / Dining"
-                       class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                <label class="block text-sm font-medium text-slate-700 mb-1" for="txn-date">Date</label>
+                <input type="date" id="txn-date" required class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
               </div>
               <div>
-                <label class="block text-sm font-medium text-slate-700 mb-1">Transaction Type</label>
-                <select id="txn-type"
-                        class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                <label class="block text-sm font-medium text-slate-700 mb-1" for="txn-type">Transaction Type</label>
+                <select id="txn-type" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
                   <option value="expense">Expense (Purchase)</option>
                   <option value="credit">Statement Credit / Refund</option>
                   <option value="payoff">Card Payoff</option>
                 </select>
               </div>
 
-              <!-- NEW: Category (optional; pick a preset or type your own) -->
-              <div>
-                <label class="block text-sm font-medium text-slate-700 mb-1">Category</label>
-                <input type="text" id="txn-category" list="category-presets" placeholder="Uncategorized" autocomplete="off"
-                       class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
-              </div>
-
-              <div id="txn-source-bank-wrap" class="hidden sm:col-span-2 lg:col-span-3">
-                <label class="block text-sm font-medium text-slate-700 mb-1">Pay From (Bank Account)</label>
-                <select id="txn-source-bank"
-                        class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+              <div id="txn-source-bank-wrap" class="hidden col-span-2 lg:col-span-3">
+                <label class="block text-sm font-medium text-slate-700 mb-1" for="txn-source-bank">Pay From (Bank Account)</label>
+                <select id="txn-source-bank" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
                   <option value="">Select source bank account…</option>
                 </select>
               </div>
 
-              <div class="sm:col-span-2 lg:col-span-6">
+              <div class="col-span-2 lg:col-span-6">
                 <button type="submit"
-                        class="w-full sm:w-auto bg-brand-600 hover:bg-brand-700 text-white font-semibold px-6 py-2.5 rounded-lg transition-colors shadow-md">
+                        class="w-full lg:w-auto bg-brand-600 hover:bg-brand-700 text-white font-semibold px-6 py-3.5 lg:py-2.5 rounded-xl lg:rounded-lg text-base transition-colors shadow-md">
                   Save Transaction
                 </button>
+                <div class="text-sm text-slate-500 mt-2" id="txn-today-summary"></div>
               </div>
             </form>
           </div>
@@ -1420,6 +1426,29 @@
         </section>
       </div>
 
+    
+      <!-- Mobile bottom tab bar (thumb-reach navigation + one-tap "Add expense") -->
+      <nav id="bottom-nav" class="md:hidden flex-shrink-0 grid grid-cols-5 items-end bg-slate-900 border-t border-slate-800 text-[11px] z-20" style="padding-bottom:env(safe-area-inset-bottom,0px)">
+        <button type="button" data-btab="dashboard" class="py-2 flex flex-col items-center gap-0.5 text-slate-400">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l9-9 9 9M5 10v10h5v-6h4v6h5V10"></path></svg>Home
+        </button>
+        <button type="button" data-btab="period" class="py-2 flex flex-col items-center gap-0.5 text-slate-400">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3M4 11h16M5 5h14a1 1 0 011 1v14a1 1 0 01-1 1H5a1 1 0 01-1-1V6a1 1 0 011-1z"></path></svg>Planner
+        </button>
+        <button type="button" id="bottom-add-btn" class="flex flex-col items-center gap-0.5 text-white -mt-4" aria-label="Add expense">
+          <span class="w-14 h-14 rounded-full bg-brand-600 shadow-lg flex items-center justify-center border-4 border-slate-900">
+            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 5v14M5 12h14"></path></svg>
+          </span>
+          <span class="pb-1 text-slate-300">Add</span>
+        </button>
+        <button type="button" data-btab="accounts" class="py-2 flex flex-col items-center gap-0.5 text-slate-400">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M5 6h14a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2zM7 15h3"></path></svg>Accounts
+        </button>
+        <button type="button" data-btab="data" class="py-2 flex flex-col items-center gap-0.5 text-slate-400">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h10"></path></svg>Entries
+        </button>
+      </nav>
+      <div id="toast" class="hidden fixed left-1/2 -translate-x-1/2 bottom-24 md:bottom-8 z-50 bg-slate-800 text-white text-sm px-4 py-2 rounded-full shadow-lg border border-slate-700"></div>
     </main>
   </div>
 
@@ -1579,7 +1608,7 @@ service cloud.firestore {
     }[c]));
 
     function formatMoney(n) {
-      const v = Number(n ?? 0);
+      const v = (Math.round(Number(n ?? 0) * 100) / 100) || 0;   // cents only; avoids "-$0.00" from float residue
       return v.toLocaleString(undefined, { style: "currency", currency: "USD" });
     }
 
@@ -1681,6 +1710,7 @@ service cloud.firestore {
     const routeData = $("#route-data");
     const contentScroll = $("#app-content-scroll");
 
+    let _refreshTimer = null;
     function setRoute(route) {
       ui.activeRoute = route;
       routeDashboard.classList.toggle("hidden", route !== "dashboard");
@@ -1697,7 +1727,14 @@ service cloud.firestore {
             : (active ? "nav-active" : "nav-inactive"));
       });
 
-      if (currentUser) refreshAllViews();
+      $$("[data-btab]").forEach(b => {
+        const on = b.dataset.btab === route;
+        b.classList.toggle("text-brand-500", on);
+        b.classList.toggle("text-slate-400", !on);
+      });
+      if (route === "data" && !ui.editing.transactionId && !txnDateTouched) { const dEl = $("#txn-date"); if (dEl) dEl.value = toISODate(new Date()); }
+
+      if (currentUser) { clearTimeout(_refreshTimer); _refreshTimer = null; refreshAllViewsNow(); }
     }
 
     $$("[data-route]").forEach(btn => {
@@ -1969,68 +2006,95 @@ service cloud.firestore {
       });
     }
 
-    // ----- Other Assets insights (dashboard) -----
+    // ----- True net worth + asset insights (dashboard) -----
     let assetDoughnut = null, assetTotalChart = null, assetGroupChart = null;
+    let assetRange = "90", assetChartTimer = null;
+    const BANK_GROUP = "Bank accounts";
     const fmtAxisDate = (ms) => new Date(ms).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "2-digit" });
+    const assetGroupColor = (g) => g === ASSET_UNGROUPED ? "#94a3b8" : (g === BANK_GROUP ? "#14b8a6" : categoryColor(g));
+
+    // Net worth components as of any date (same rules as the live Daily Net Worth number).
+    // Other Liabilities have no dated history, so their current total is used for every date.
+    function netWorthPartsAsOf(iso, hist, liabTotal) {
+      const todayISO = toISODate(new Date());
+      const bank = (state.bankAccounts || []).reduce((s, b) => s + computeBankAccountBalance(b, iso), 0);
+      const cards = (state.creditCards || []).reduce((s, c) => s + computeCreditCardBalance(c, iso), 0);
+      const other = hist.reduce((s, x) => s + (iso === todayISO ? assetCurrent(x.h).value : (assetValueOn(x.h, iso) ?? 0)), 0);
+      const to = parseISODateLocal(iso);
+      const incStart = (state.incomes || []).map(i => i.date).filter(Boolean).sort()[0];
+      const billStart = (state.bills || []).map(b => b.date).filter(Boolean).sort()[0];
+      const unrouted = (incStart && incStart <= iso)
+        ? generateIncomeOccurrences(parseISODateLocal(incStart), to).reduce((s, o) => !o.bankAccountId ? s + Number(o.amount || 0) : s, 0) : 0;
+      const unassignedBills = (billStart && billStart <= iso)
+        ? generateBillOccurrences(parseISODateLocal(billStart), to).reduce((s, o) => (resolveBillBankId(o) || o.payMethod === "credit") ? s : s + Number(o.amount || 0), 0) : 0;
+      const adj = unrouted - unassignedBills;
+      const assets = bank + other + adj;
+      const owed = cards + liabTotal;
+      return { bank, other, cards, adj, assets, owed, net: assets - owed };
+    }
+
+    function scheduleAssetCharts() {
+      clearTimeout(assetChartTimer);
+      assetChartTimer = setTimeout(drawAssetCharts, 120);
+    }
+
+    document.querySelectorAll("[data-asset-range]").forEach(btn => {
+      btn.addEventListener("click", () => { assetRange = btn.dataset.assetRange; drawAssetCharts(); });
+    });
 
     function renderAssetInsights() {
       const card = $("#asset-insights-card");
       if (!card) return;
-      const assets = state.assets || [];
-      const todayISO = toISODate(new Date());
-      const hist = assets.map(a => ({ a, h: assetHistory(a), group: assetGroupName(a) }));
-      const total = hist.reduce((s, x) => s + assetCurrent(x.h).value, 0);
+      const hist = (state.assets || []).map(a => ({ a, h: assetHistory(a), group: assetGroupName(a) }));
       const liabTotal = (state.liabilities || []).reduce((s, l) => s + Number(l.value || 0), 0);
-      const net = total - liabTotal;
-      $("#asset-ins-total").textContent = formatMoney(total);
-      const netEl = $("#asset-ins-net");
-      netEl.textContent = formatMoney(net);
-      netEl.className = "text-lg font-bold " + (net >= 0 ? "text-emerald-700" : "text-rose-700");
+      const d = computeDailyNetWorth();   // same figure as the big Net Worth number
+      const otherTotal = hist.reduce((s, x) => s + assetCurrent(x.h).value, 0);
+      const hasAnything = hist.length > 0 || (state.bankAccounts || []).length > 0 || (state.creditCards || []).length > 0 || (state.liabilities || []).length > 0;
 
-      // current value by group
+      $("#asset-ins-bank").textContent = formatMoney(d.bankTotal);
+      $("#asset-ins-total").textContent = formatMoney(otherTotal);
+      $("#asset-ins-owed").textContent = formatMoney(d.liabilitiesTotal);
+      $("#asset-ins-owed-sub").textContent = `Cards ${formatMoney(d.creditTotal)} · Other liabilities ${formatMoney(d.manualLiabilitiesTotal)}`;
+      const netEl = $("#asset-ins-net");
+      netEl.textContent = formatMoney(d.netWorth);
+      netEl.className = "text-lg font-bold " + (d.netWorth >= 0 ? "text-emerald-700" : "text-rose-700");
+      $("#asset-ins-net-sub").textContent = Math.abs(d.netCashflowAdj) >= 0.5
+        ? `Includes ${d.netCashflowAdj >= 0 ? "+" : "−"}${formatMoney(Math.abs(d.netCashflowAdj))} of income/bills with no bank chosen` : "";
+
+      // change since first recorded Other Asset value
+      const chSub = $("#asset-ins-change-sub");
+      const recDates = Array.from(new Set(hist.flatMap(x => x.h.map(e => e.date)))).sort();
+      if (hist.length && recDates.length > 1) {
+        const first = hist.reduce((s, x) => s + (assetValueOn(x.h, recDates[0]) ?? 0), 0);
+        const diff = otherTotal - first;
+        chSub.textContent = first !== 0 ? `${diff >= 0 ? "+" : "−"}${formatMoney(Math.abs(diff))} (${diff >= 0 ? "+" : "−"}${Math.abs((diff / Math.abs(first)) * 100).toFixed(1)}%) since ${recDates[0]}` : "";
+      } else chSub.textContent = hist.length ? "Add values on more dates to see change" : "";
+
+      $("#asset-ins-empty").classList.toggle("hidden", hasAnything);
+      $("#asset-ins-charts").classList.toggle("hidden", !hasAnything);
+      document.querySelectorAll("[data-asset-range]").forEach(btn => {
+        const on = btn.dataset.assetRange === assetRange;
+        btn.className = "px-3 py-1.5 " + (on ? "bg-brand-600 text-white" : "bg-slate-100 text-slate-700");
+      });
+
+      // current value by group (Other Assets groups + bank accounts)
       const byGroup = new Map();
       for (const x of hist) byGroup.set(x.group, (byGroup.get(x.group) || 0) + assetCurrent(x.h).value);
+      if ((state.bankAccounts || []).length) byGroup.set(BANK_GROUP, d.bankTotal);
       const groups = Array.from(byGroup.entries()).sort((p, q) => q[1] - p[1]);
-      $("#asset-ins-groups").textContent = String(groups.length);
-
-      const emptyEl = $("#asset-ins-empty"), chartsEl = $("#asset-ins-charts"), errEl = $("#asset-ins-error");
-      emptyEl.classList.toggle("hidden", assets.length > 0);
-      chartsEl.classList.toggle("hidden", assets.length === 0);
-
-      // timeline: every date any asset was valued, plus today; each asset carries its latest value forward
-      const dateSet = new Set([todayISO]);
-      for (const x of hist) for (const e of x.h) dateSet.add(e.date);
-      const dates = Array.from(dateSet).sort();
-      const totals = dates.map(d => hist.reduce((s, x) => s + (assetValueOn(x.h, d) ?? 0), 0));
-      const groupNames = groups.map(g => g[0]);
-      const perGroup = groupNames.map(g => dates.map(d => hist.filter(x => x.group === g).reduce((s, x) => s + (assetValueOn(x.h, d) ?? 0), 0)));
-
-      // change since first record
-      const chEl = $("#asset-ins-change"), chSub = $("#asset-ins-change-sub");
-      const firstIdx = dates.findIndex(d => d <= todayISO);
-      const nowIdx = dates.lastIndexOf(todayISO);
-      if (assets.length && dates.length > 1 && firstIdx >= 0 && nowIdx > firstIdx && totals[firstIdx] !== 0) {
-        const diff = totals[nowIdx] - totals[firstIdx];
-        const pct = (diff / Math.abs(totals[firstIdx])) * 100;
-        chEl.textContent = (diff >= 0 ? "+" : "−") + formatMoney(Math.abs(diff));
-        chEl.className = "text-lg font-bold " + (diff >= 0 ? "text-emerald-700" : "text-rose-700");
-        chSub.textContent = `${diff >= 0 ? "+" : "−"}${Math.abs(pct).toFixed(1)}% since ${dates[firstIdx]}`;
-      } else {
-        chEl.textContent = "—"; chEl.className = "text-lg font-bold text-slate-400";
-        chSub.textContent = assets.length ? "Add values on more dates to see change" : "";
-      }
-      $("#asset-trend-note").textContent = dates.length < 2 ? "Only one date recorded so far — edit an asset with a new date and value to build the trend." : "";
-
-      // group breakdown list
-      const colorFor = (g) => (g === ASSET_UNGROUPED ? "#94a3b8" : categoryColor(g));
       const posTotal = groups.reduce((s, g) => s + Math.max(0, g[1]), 0);
       $("#asset-group-breakdown").innerHTML = groups.map(([g, v]) => `
         <div class="flex items-center justify-between gap-3">
-          <span class="inline-flex items-center gap-2 text-slate-700"><span class="inline-block w-2.5 h-2.5 rounded-full" style="background:${colorFor(g)}"></span>${escapeHtml(g)}</span>
+          <span class="inline-flex items-center gap-2 text-slate-700"><span class="inline-block w-2.5 h-2.5 rounded-full" style="background:${assetGroupColor(g)}"></span>${escapeHtml(g)}</span>
           <span class="font-semibold text-slate-800">${formatMoney(v)} <span class="text-xs text-slate-400 font-normal">${posTotal > 0 && v > 0 ? ((v / posTotal) * 100).toFixed(1) + "%" : ""}</span></span>
         </div>`).join("");
 
-      if (!assets.length) return;
+      if (hasAnything) scheduleAssetCharts();
+    }
+
+    function drawAssetCharts() {
+      const errEl = $("#asset-ins-error");
+      if (!currentUser) return;
       if (typeof Chart === "undefined") {
         errEl.textContent = "Charts couldn't load (Chart.js is unavailable). Totals above still work.";
         errEl.classList.remove("hidden");
@@ -2039,11 +2103,52 @@ service cloud.firestore {
       errEl.classList.add("hidden");
       if (routeDashboard.classList.contains("hidden")) return;   // draw charts only while the dashboard is visible
 
-      // --- doughnut: current value by group ---
+      const todayISO = toISODate(new Date());
+      const hist = (state.assets || []).map(a => ({ a, h: assetHistory(a), group: assetGroupName(a) }));
+      const liabTotal = (state.liabilities || []).reduce((s, l) => s + Number(l.value || 0), 0);
+      const d = computeDailyNetWorth();
+
+      // ----- timeline: sampled days in the chosen range + every date an asset value was recorded -----
+      const earliestCandidates = [
+        ...hist.flatMap(x => x.h.map(e => e.date)),
+        ...(state.incomes || []).map(i => i.date), ...(state.bills || []).map(b => b.date),
+        ...(state.transactions || []).map(t => t.date)
+      ].filter(Boolean).sort();
+      const earliest = earliestCandidates[0] || todayISO;
+      let startISO;
+      if (assetRange === "all") startISO = earliest < todayISO ? earliest : toISODate(addDays(parseISODateLocal(todayISO), -30));
+      else startISO = toISODate(addDays(parseISODateLocal(todayISO), -Number(assetRange)));
+      if (startISO > todayISO) startISO = todayISO;
+      const spanDays = Math.max(1, Math.round((parseISODateLocal(todayISO) - parseISODateLocal(startISO)) / 86400000));
+      const step = Math.max(1, Math.ceil(spanDays / 70));
+      const dateSet = new Set([todayISO, startISO]);
+      for (let i = 0; i <= spanDays; i += step) dateSet.add(toISODate(addDays(parseISODateLocal(startISO), i)));
+      for (const x of hist) for (const e of x.h) if (e.date >= startISO && e.date <= todayISO) dateSet.add(e.date);
+      const dates = Array.from(dateSet).filter(x => x >= startISO && x <= todayISO).sort();
+      const xs = dates.map(x => parseISODateLocal(x).getTime());
+
+      const parts = dates.map(x => netWorthPartsAsOf(x, hist, liabTotal));
+      const r2 = (n) => Math.round(n * 100) / 100;
+
+      // net worth change over the range
+      const nwSub = $("#asset-ins-net-sub");
+      if (parts.length > 1) {
+        const diff = parts[parts.length - 1].net - parts[0].net;
+        const base = Math.abs(parts[0].net);
+        const txt = `${diff >= 0 ? "+" : "−"}${formatMoney(Math.abs(diff))}${base > 0 ? ` (${diff >= 0 ? "+" : "−"}${Math.abs(diff / base * 100).toFixed(1)}%)` : ""} since ${dates[0]}`;
+        const extra = nwSub.textContent.startsWith("Includes") ? nwSub.textContent : "";
+        nwSub.innerHTML = `${escapeHtml(txt)}${extra ? "<br>" + escapeHtml(extra) : ""}`;
+      }
+
+      // ----- doughnut (current values) -----
+      const byGroup = new Map();
+      for (const x of hist) byGroup.set(x.group, (byGroup.get(x.group) || 0) + assetCurrent(x.h).value);
+      if ((state.bankAccounts || []).length) byGroup.set(BANK_GROUP, d.bankTotal);
+      const groups = Array.from(byGroup.entries()).sort((p, q) => q[1] - p[1]);
       const pieGroups = groups.filter(g => g[1] > 0);
       const pieLabels = pieGroups.map(g => g[0]);
-      const pieData = pieGroups.map(g => Math.round(g[1] * 100) / 100);
-      const pieColors = pieGroups.map(g => colorFor(g[0]));
+      const pieData = pieGroups.map(g => r2(g[1]));
+      const pieColors = pieGroups.map(g => assetGroupColor(g[0]));
       if (!assetDoughnut) {
         assetDoughnut = new Chart($("#asset-doughnut"), {
           type: "doughnut",
@@ -2066,19 +2171,18 @@ service cloud.firestore {
         assetDoughnut.update();
       }
 
-      // --- shared time-axis options (numeric x so uneven dates are spaced truthfully) ---
-      const xs = dates.map(d => parseISODateLocal(d).getTime());
+      // ----- shared options (numeric x so uneven dates are spaced truthfully) -----
       const xMin = xs.length > 1 ? xs[0] : xs[0] - 86400000;
       const xMax = xs.length > 1 ? xs[xs.length - 1] : xs[0] + 86400000;
-      const mkOptions = (stacked) => ({
+      const mkOptions = (stacked, showLegend, beginAtZero) => ({
         responsive: true, maintainAspectRatio: false,
         interaction: { mode: "index", intersect: false },
         scales: {
           x: { type: "linear", min: xMin, max: xMax, grid: { display: false }, ticks: { maxTicksLimit: 7, callback: (v) => fmtAxisDate(v) } },
-          y: { stacked, beginAtZero: true, ticks: { callback: (v) => "$" + Number(v).toLocaleString() } }
+          y: { stacked, beginAtZero, ticks: { callback: (v) => "$" + Number(v).toLocaleString() } }
         },
         plugins: {
-          legend: { display: stacked, position: "bottom", labels: { boxWidth: 12, font: { family: "Inter" } } },
+          legend: { display: showLegend, position: "bottom", labels: { boxWidth: 12, font: { family: "Inter" } } },
           tooltip: { callbacks: {
             title: (items) => (items.length ? fmtAxisDate(items[0].parsed.x) : ""),
             label: (ctx) => ` ${ctx.dataset.label}: ${formatMoney(ctx.parsed.y)}`
@@ -2086,31 +2190,39 @@ service cloud.firestore {
         }
       });
 
-      // --- total over time ---
-      const totalData = xs.map((x, i) => ({ x, y: Math.round(totals[i] * 100) / 100 }));
-      const totalDs = [{ label: "Total other assets", data: totalData, borderColor: "#10b981", backgroundColor: "rgba(16,185,129,.18)", fill: true, tension: 0.2, pointRadius: 3, borderWidth: 2 }];
+      // ----- true net worth over time -----
+      const line = (label, key, color, w, fill) => ({
+        label, data: xs.map((x, i) => ({ x, y: r2(parts[i][key]) })),
+        borderColor: color, backgroundColor: fill ? "rgba(99,102,241,.15)" : color, fill: !!fill,
+        tension: 0.2, pointRadius: dates.length > 40 ? 0 : 2, borderWidth: w
+      });
+      const nwDs = [line("Net worth", "net", "#818cf8", 3, true), line("Total assets", "assets", "#10b981", 2, false), line("Money owed", "owed", "#f43f5e", 2, false)];
       if (!assetTotalChart) {
-        assetTotalChart = new Chart($("#asset-total-trend"), { type: "line", data: { datasets: totalDs }, options: mkOptions(false) });
+        assetTotalChart = new Chart($("#asset-total-trend"), { type: "line", data: { datasets: nwDs }, options: mkOptions(false, true, false) });
       } else {
-        assetTotalChart.data.datasets = totalDs;
-        assetTotalChart.options = mkOptions(false);
+        assetTotalChart.data.datasets = nwDs;
+        assetTotalChart.options = mkOptions(false, true, false);
         assetTotalChart.update();
       }
+      $("#asset-trend-note").textContent = "Other Liabilities are shown at today's amounts for every date (they have no dated history).";
 
-      // --- by group over time (stacked) ---
-      const groupDs = groupNames.map((g, gi) => {
-        const c = colorFor(g);
+      // ----- by group over time (stacked): Other Asset groups + bank accounts -----
+      const groupNames = groups.map(g => g[0]);
+      const groupDs = groupNames.map(g => {
+        const c = assetGroupColor(g);
+        const data = dates.map((dt, i) => g === BANK_GROUP ? parts[i].bank
+          : hist.filter(x => x.group === g).reduce((s, x) => s + (dt === todayISO ? assetCurrent(x.h).value : (assetValueOn(x.h, dt) ?? 0)), 0));
         return {
           label: g, borderColor: c, backgroundColor: /^#[0-9a-f]{6}$/i.test(c) ? c + "66" : c,
-          data: xs.map((x, i) => ({ x, y: Math.round(perGroup[gi][i] * 100) / 100 })),
-          fill: true, tension: 0.2, pointRadius: 2, borderWidth: 2
+          data: xs.map((x, i) => ({ x, y: r2(data[i]) })),
+          fill: true, tension: 0.2, pointRadius: 0, borderWidth: 2
         };
       });
       if (!assetGroupChart) {
-        assetGroupChart = new Chart($("#asset-group-trend"), { type: "line", data: { datasets: groupDs }, options: mkOptions(true) });
+        assetGroupChart = new Chart($("#asset-group-trend"), { type: "line", data: { datasets: groupDs }, options: mkOptions(true, true, true) });
       } else {
         assetGroupChart.data.datasets = groupDs;
-        assetGroupChart.options = mkOptions(true);
+        assetGroupChart.options = mkOptions(true, true, true);
         assetGroupChart.update();
       }
     }
@@ -2311,8 +2423,8 @@ service cloud.firestore {
     }
 
     // "As of today" — future-dated incomes/transactions do not inflate the current balance.
-    function computeBankAccountBalance(bank) {
-      const todayISO = toISODate(new Date());
+    function computeBankAccountBalance(bank, asOfISO) {
+      const todayISO = asOfISO || toISODate(new Date());
       let balance = Number(bank.startingBalance || 0);
 
       // Incomes (one-time + every recurring occurrence dated today or earlier) routed to this bank.
@@ -2472,8 +2584,8 @@ service cloud.firestore {
     });
 
     // "As of today" — future-dated transactions do not inflate the current balance owed.
-    function computeCreditCardBalance(card) {
-      const todayISO = toISODate(new Date());
+    function computeCreditCardBalance(card, asOfISO) {
+      const todayISO = asOfISO || toISODate(new Date());
       let balance = Number(card.startingBalance || 0);
       for (const t of state.transactions || []) {
         if (t.cardType !== "credit" || t.cardId !== card.id) continue;
@@ -2757,12 +2869,26 @@ service cloud.firestore {
       const select = $("#txn-card-select");
       if (!cardTypeSel || !select) return;
 
+      if (!updateTxnCardOptions._init && (state.creditCards.length || state.debitCards.length)) {
+        updateTxnCardOptions._init = true;
+        const last = loadTxnDefaults();
+        if (last && (last.cardType === "debit" || last.cardType === "credit") && !ui.editing.transactionId) cardTypeSel.value = last.cardType;
+      }
       const cardType = cardTypeSel.value;
       const list = (cardType === "debit" ? state.debitCards : state.creditCards)
         .slice().sort((a,b) => (a.name||"").localeCompare(b.name||""));
       const prev = select.value;
       select.innerHTML = `<option value="">Select a card…</option>` + list.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join("");
       if (list.some(c => c.id === prev)) select.value = prev;
+      if (!select.value && !ui.editing.transactionId) {
+        const last = loadTxnDefaults();
+        const recent = (state.transactions || [])
+          .filter(t => t.cardType === cardType && list.some(c => c.id === t.cardId))
+          .sort((x, y) => ((y.date || "") !== (x.date || "")) ? ((y.date || "") < (x.date || "") ? -1 : 1) : ((y.createdAt?.seconds || 0) - (x.createdAt?.seconds || 0)))[0];
+        if (last && last.cardType === cardType && list.some(c => c.id === last.cardId)) select.value = last.cardId;
+        else if (recent) select.value = recent.cardId;          // default to the card you used most recently
+        else if (list.length === 1) select.value = list[0].id;
+      }
 
       const hint = $("#txn-card-hint");
       if (hint) {
@@ -2815,6 +2941,7 @@ service cloud.firestore {
       const sourceBankAccountId = (cardType === "credit" && txnType === "payoff") ? $("#txn-source-bank").value : null;
 
       if (!cardId) { alert("Please select a card."); return; }
+      if (!(amount > 0)) { alert("Enter an amount greater than 0."); $("#txn-amount").focus(); return; }
       const cardList = cardType === "debit" ? state.debitCards : state.creditCards;
       const card = cardList.find(c => c.id === cardId);
       if (!card) { alert("Please select a valid card."); return; }
@@ -2842,13 +2969,111 @@ service cloud.firestore {
         } else {
           await addDoc(userCol("transactions"), payload);
         }
+        const savedMsg = `Saved ${formatMoney(payload.amount)} · ${payload.description}`;
         $("#txn-amount").value = "";
         $("#txn-desc").value = "";
         $("#txn-category").value = "";
+        rememberTxnDefaults(cardType, cardId);
+        showToast(savedMsg);
+        $("#txn-amount").focus();   // ready for the next expense (card + date stay as they were)
       } catch (err) {
         alert(err?.message || "Failed to save transaction");
       }
     });
+
+    // ----- Quick-add helpers: remembered card, category chips, description autofill, toast -----
+    let txnDateTouched = false;
+    const TXN_LAST_KEY = "finhub.txn.last";
+    function loadTxnDefaults() { try { return JSON.parse(localStorage.getItem(TXN_LAST_KEY) || "null"); } catch (e) { return null; } }
+    function rememberTxnDefaults(cardType, cardId) { try { localStorage.setItem(TXN_LAST_KEY, JSON.stringify({ cardType, cardId })); } catch (e) { /* storage may be unavailable */ } }
+    let _toastTimer = null;
+    function showToast(msg) {
+      const t = $("#toast");
+      if (!t) return;
+      t.textContent = msg; t.classList.remove("hidden");
+      clearTimeout(_toastTimer);
+      _toastTimer = setTimeout(() => t.classList.add("hidden"), 2200);
+    }
+    $("#txn-date").addEventListener("input", () => { txnDateTouched = true; });
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible" && !txnDateTouched && !ui.editing.transactionId) {
+        const dEl = $("#txn-date"); if (dEl && dEl.value) dEl.value = toISODate(new Date());
+      }
+    });
+
+    // Top categories from your recent expenses become one-tap chips; recent descriptions feed autocomplete.
+    function renderTxnQuickHelpers() {
+      const chips = $("#txn-cat-chips");
+      if (!chips) return;
+      const cutoff = toISODate(addDays(new Date(), -90));
+      const counts = new Map();
+      const descs = new Map();
+      const txns = (state.transactions || []).slice().sort((x, y) => (y.date || "") < (x.date || "") ? -1 : 1);
+      for (const t of txns) {
+        if (t.txnType !== "expense") continue;
+        const d = (t.description || "").trim();
+        if (d && !descs.has(d.toLowerCase()) && descs.size < 60) descs.set(d.toLowerCase(), d);
+        const c = (t.category || "").trim();
+        if (c && (t.date || "") >= cutoff) { const k = categoryLabel(c); counts.set(k, (counts.get(k) || 0) + 1); }
+      }
+      const top = Array.from(counts.entries()).sort((x, y) => y[1] - x[1]).map(x => x[0]).slice(0, 6);
+      for (const c of DEFAULT_CATEGORIES) { if (top.length >= 6) break; if (!top.includes(c)) top.push(c); }
+      const sig = top.join("|");
+      if (chips.dataset.sig !== sig) {
+        chips.dataset.sig = sig;
+        chips.innerHTML = top.map(c => `<button type="button" data-cat-chip="${escapeHtml(c)}" class="px-3 py-1.5 rounded-full text-xs border border-slate-300 text-slate-700 hover:bg-slate-100">${escapeHtml(c)}</button>`).join("");
+        chips.querySelectorAll("[data-cat-chip]").forEach(b => b.addEventListener("click", () => {
+          $("#txn-category").value = b.dataset.catChip;
+          markTxnChip();
+        }));
+      }
+      const dl = $("#txn-desc-options");
+      if (dl) {
+        const html = Array.from(descs.values()).map(d => `<option value="${escapeHtml(d)}"></option>`).join("");
+        if (dl.dataset.sig !== html) { dl.innerHTML = html; dl.dataset.sig = html; }
+      }
+      markTxnChip();
+      if (!$("#txn-card-select").value && !ui.editing.transactionId) updateTxnCardOptions();   // pick a default card once data has loaded
+
+      // today / month spending line
+      const sumEl = $("#txn-today-summary");
+      if (sumEl) {
+        const todayISO = toISODate(new Date()), ym = todayISO.slice(0, 7);
+        let today = 0, month = 0;
+        for (const r of getLedgerBaseRows().rows) {
+          if (!r.date) continue;
+          const a = rowSpend(r);
+          if (!a) continue;
+          if (r.date === todayISO) today += a;
+          if (r.date.slice(0, 7) === ym) month += a;
+        }
+        sumEl.textContent = `Spent today ${formatMoney(today)} · this month ${formatMoney(month)}`;
+      }
+    }
+    function markTxnChip() {
+      const v = ($("#txn-category").value || "").trim().toLowerCase();
+      document.querySelectorAll("#txn-cat-chips [data-cat-chip]").forEach(b => {
+        const on = b.dataset.catChip.toLowerCase() === v;
+        b.classList.toggle("bg-brand-600", on); b.classList.toggle("text-white", on); b.classList.toggle("border-brand-600", on);
+      });
+    }
+    $("#txn-category").addEventListener("input", markTxnChip);
+    // Re-using a description fills its last category (only if you haven't picked one yet)
+    $("#txn-desc").addEventListener("change", () => {
+      const v = $("#txn-desc").value.trim().toLowerCase();
+      if (!v || $("#txn-category").value.trim()) return;
+      const hit = (state.transactions || []).filter(t => t.txnType === "expense" && (t.description || "").trim().toLowerCase() === v && (t.category || "").trim())
+        .sort((x, y) => (y.date || "") < (x.date || "") ? -1 : 1)[0];
+      if (hit) { $("#txn-category").value = hit.category; markTxnChip(); }
+    });
+
+    $("#bottom-add-btn").addEventListener("click", () => {
+      setRoute("data");
+      $("#mobile-nav")?.classList.add("hidden");
+      const sc = $("#app-content-scroll"); if (sc) sc.scrollTo({ top: 0 });
+      $("#txn-amount").focus();
+    });
+    $$("[data-btab]").forEach(b => b.addEventListener("click", () => setRoute(b.dataset.btab)));
 
     $("#txn-cancel-edit-btn").addEventListener("click", () => {
       ui.editing.transactionId = null;
@@ -4772,7 +4997,13 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
       }
     }
 
+    // Snapshots from several collections arrive back-to-back; batch them into one repaint.
     function refreshAllViews() {
+      if (_refreshTimer) return;
+      _refreshTimer = setTimeout(() => { _refreshTimer = null; refreshAllViewsNow(); }, 30);
+    }
+
+    function refreshAllViewsNow() {
       renderAssets();
       renderLiabilities();
       renderBankAccounts();
@@ -4781,6 +5012,7 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
       renderIncomes();
       renderBills();
       updateCategoryDatalist(); populatePayoffCardOptions();   // NEW
+      renderTxnQuickHelpers();
       renderTransactionsLedger();
 
       if (!routeDashboard.classList.contains("hidden")) {
@@ -5009,6 +5241,21 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
       }
       const income90 = sum(generateIncomeOccurrences(winStart, t0));
 
+      // Runway window: start at your first logged transaction (bills alone would otherwise inflate or deflate the average),
+      // at most 90 days back and at least 14 days wide.
+      const firstTxn = (state.transactions || []).map(t => t.date).filter(Boolean).sort()[0];
+      let runStart = winStart;
+      if (firstTxn && parseISODateLocal(firstTxn) > runStart) runStart = parseISODateLocal(firstTxn);
+      if (runStart > addDays(t0, -13)) runStart = addDays(t0, -13);
+      const runStartISO = toISODate(runStart);
+      const runDays = Math.round((t0 - runStart) / 86400000) + 1;
+      let runSpend = 0;
+      for (const r of rows) {
+        if (!r.date || r.date < runStartISO || r.date > todayISO) continue;
+        const a = rowSpend(r);
+        if (a && !isSave(r)) runSpend += a;
+      }
+
       // This month vs last month (to the same day)
       const y = t0.getFullYear(), m = t0.getMonth(), day = t0.getDate();
       const mStart = new Date(y, m, 1), mEnd = new Date(y, m + 1, 0);
@@ -5053,7 +5300,7 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
       }
       const acctTotals = computeAccountsTotals();
       const bank = acctTotals.bankTotal - acctTotals.spokenFor;   // true cash: bank minus revolving card balances owed
-      const monthlySpend = spend90 / (effDays / 30.4);
+      const monthlySpend = runSpend / (runDays / 30.4);
       const nw = computeDailyNetWorth();
 
       const hi = (v, g, w) => v >= g ? "good" : (v >= w ? "warn" : "bad");   // higher is better
@@ -5083,7 +5330,7 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
         { label: "Credit utilization", value: util === null ? "—" : P(util), status: util === null ? null : lo(util, 0.3, 0.5),
           sub: util === null ? "Add credit limits to your cards" : formatMoney(cardBal) + " of " + formatMoney(cardLim) + ". Target under 30%" },
         { label: "Cash runway", value: runway === null ? "—" : runway.toFixed(1) + " mo", status: runway === null ? null : hi(runway, 6, 3),
-          sub: "(Bank cash − card balances owed: " + formatMoney(bank) + ") ÷ average monthly spending. Target 3–6+ months" },
+          sub: "(Bank cash − card balances owed: " + formatMoney(bank) + ") ÷ average monthly spending over the last " + runDays + " days. Target 3–6+ months" },
         { label: "Debt-to-assets", value: dta === null ? "—" : P(dta), status: dta === null ? null : lo(dta, 0.3, 0.6),
           sub: formatMoney(nw.liabilitiesTotal) + " owed vs " + formatMoney(nw.assetsTotal) + " owned" }
       ];
