@@ -351,7 +351,7 @@
           <!-- KPIs -->
           <div class="mt-4 bg-white rounded-2xl border border-slate-200 shadow-sm p-5" id="kpi-card">
             <h3 class="text-lg font-semibold text-slate-900">Key Metrics</h3>
-            <p class="text-sm text-slate-500 mt-1">Green = on track, amber = watch, red = needs attention. Rolling 90 days unless noted. Categories named like investing, savings, retirement, 401k, Roth, IRA or brokerage count as savings, not spending.</p>
+            <p class="text-sm text-slate-500 mt-1">Green = on track, amber = watch, red = needs attention. Rolling 90 days unless noted. Click or tap any tile to see how it's calculated. Categories named like investing, savings, retirement, 401k, Roth, IRA or brokerage count as savings, not spending.</p>
             <div id="kpi-grid" class="mt-4 grid grid-cols-2 lg:grid-cols-4 gap-3"></div>
           </div>
 
@@ -5556,6 +5556,46 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
 // ===== Key metrics (Dashboard) =====
     const KPI_SAVE_RX = /invest|saving|retire|401|roth|\bira\b|brokerage/i;
 
+    // Click-to-explain: each Key Metrics tile carries a `detail` object that this modal renders.
+    let kpiTiles = [];
+    function openKpiDetail(t) {
+      if (!t || !t.detail) return;
+      const old = $("#kpi-detail-modal");
+      if (old) old.remove();
+      const d = t.detail;
+      const overlay = document.createElement("div");
+      overlay.id = "kpi-detail-modal";
+      overlay.className = "fixed inset-0 z-50 flex items-center justify-center p-4";
+      overlay.style.background = "rgba(0,0,0,.6)";
+      const rowsHtml = (d.rows || []).map(r => r[1] === null
+        ? `<div class="text-xs font-semibold text-slate-500 uppercase tracking-wide mt-4 mb-1">${escapeHtml(r[0])}</div>`
+        : `<div class="flex items-start justify-between gap-4 py-1.5 border-b border-slate-100 text-sm"><span class="text-slate-600">${escapeHtml(r[0])}</span><span class="text-right ${r[2] ? "font-bold text-slate-900" : "text-slate-800"}">${escapeHtml(r[1])}</span></div>`).join("");
+      const listHtml = (d.list && d.list.length) ? `
+          <div class="text-xs font-semibold text-slate-500 uppercase tracking-wide mt-4 mb-1">${escapeHtml(d.listTitle || "Breakdown")}</div>
+          ${d.list.map(r => `<div class="flex items-start justify-between gap-4 py-1 text-sm"><span class="text-slate-600">${escapeHtml(r[0])}</span><span class="text-right text-slate-800">${escapeHtml(r[1])}</span></div>`).join("")}` : "";
+      overlay.innerHTML = `
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-xl p-5 w-full max-w-lg max-h-[90vh] overflow-y-auto" role="dialog" aria-modal="true">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <div class="text-xs text-slate-500">${escapeHtml(t.label)}</div>
+              <div class="text-2xl font-bold text-slate-900 mt-0.5">${escapeHtml(t.value)}</div>
+            </div>
+            <button type="button" data-kpi-close class="px-3 py-1 rounded-lg border border-slate-300 text-slate-700 text-sm hover:bg-slate-50">Close</button>
+          </div>
+          ${d.formula ? `<div class="mt-3 text-sm bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-700"><span class="font-semibold">Formula:</span> ${escapeHtml(d.formula)}</div>` : ""}
+          <div class="mt-3">${rowsHtml}</div>
+          ${listHtml}
+          ${d.note ? `<p class="text-xs text-slate-500 mt-4">${escapeHtml(d.note)}</p>` : ""}
+        </div>`;
+      document.body.appendChild(overlay);
+      const close = () => { overlay.remove(); document.removeEventListener("keydown", onKey); };
+      const onKey = (e) => { if (e.key === "Escape") close(); };
+      document.addEventListener("keydown", onKey);
+      overlay.addEventListener("click", (e) => { if (e.target === overlay) close(); });
+      overlay.querySelector("[data-kpi-close]").addEventListener("click", close);
+      overlay.querySelector("[data-kpi-close]").focus();
+    }
+
     function renderKpis() {
       const box = $("#kpi-grid");
       if (!box) return;
@@ -5595,12 +5635,34 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
         if (a && !isSave(r)) runSpend += a;
       }
 
+      // Where your income goes: ALL logged data (from the first logged transaction, at least 14 days wide),
+      // so it gets more accurate as more is logged. Fixed + regular + saved = 100% of income by construction.
+      let alloc = null;
+      if (firstTxn) {
+        let aStart = parseISODateLocal(firstTxn);
+        if (aStart > addDays(t0, -13)) aStart = addDays(t0, -13);
+        const aStartISO = toISODate(aStart);
+        const aDays = Math.round((t0 - aStart) / 86400000) + 1;
+        let aFixed = 0, aReg = 0, aInv = 0;
+        for (const r of rows) {
+          if (!r.date || r.date < aStartISO || r.date > todayISO) continue;
+          const a = rowSpend(r);
+          if (!a) continue;
+          if (isSave(r)) aInv += a;
+          else if (r.kind === "bill") aFixed += a;
+          else aReg += a;
+        }
+        const aInc = sum(generateIncomeOccurrences(aStart, t0));
+        alloc = { startISO: aStartISO, days: aDays, income: aInc, fixed: aFixed, reg: aReg, inv: aInv };
+      }
+
       // This month vs last month (to the same day)
       const y = t0.getFullYear(), m = t0.getMonth(), day = t0.getDate();
       const mStart = new Date(y, m, 1), mEnd = new Date(y, m + 1, 0);
       const ym = toISODate(mStart).slice(0, 7), prevYm = toISODate(new Date(y, m - 1, 1)).slice(0, 7);
       const monthIncome = sum(generateIncomeOccurrences(mStart, mEnd));
-      const monthCat = new Map();
+      const prevMonthIncome = sum(generateIncomeOccurrences(new Date(y, m - 1, 1), new Date(y, m, 0)));
+      const monthCat = new Map(), prevCat = new Map();
       let mtd = 0, prevMtd = 0;
       for (const r of rows) {
         if (!r.date) continue;
@@ -5611,31 +5673,44 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
           const c = categoryLabel(rowCategoryRaw(r));
           monthCat.set(c, (monthCat.get(c) || 0) + a);
           if (!isSave(r)) mtd += a;
-        } else if (rm === prevYm && Number(r.date.slice(8, 10)) <= day && !isSave(r)) {
-          prevMtd += a;
+        } else if (rm === prevYm && Number(r.date.slice(8, 10)) <= day) {
+          const pc = categoryLabel(rowCategoryRaw(r));
+          prevCat.set(pc, (prevCat.get(pc) || 0) + a);
+          if (!isSave(r)) prevMtd += a;
         }
       }
 
       // Budget pace
-      let bTot = 0, bSpent = 0;
+      let bTot = 0, bSpent = 0, pbTot = 0, pbSpent = 0;
+      const budRows = [];
       for (const b of state.budgets || []) {
         const v = Number(b.value) || 0;
         const amt = b.mode === "percent" ? monthIncome * v / 100 : v;
         if (amt > 0) { bTot += amt; bSpent += monthCat.get(categoryLabel(b.category)) || 0; }
+        const pamt = b.mode === "percent" ? prevMonthIncome * v / 100 : v;   // last month's own budget (percent budgets follow that month's income)
+        if (pamt > 0) { pbTot += pamt; pbSpent += prevCat.get(categoryLabel(b.category)) || 0; }
+        if (amt > 0 || pamt > 0) budRows.push({ cat: categoryLabel(b.category), amt, spent: monthCat.get(categoryLabel(b.category)) || 0, pamt, pspent: prevCat.get(categoryLabel(b.category)) || 0 });
       }
       const elapsed = day / mEnd.getDate();
 
       // Fixed costs (ALL bills this month, recurring and one-time, excluding card payoffs and investing)
-      const fixed = sum(generateBillOccurrences(mStart, mEnd)
-        .filter(o => !o.payoffCardId && !KPI_SAVE_RX.test(categoryLabel(o.category))));
+      const fixedOcc = generateBillOccurrences(mStart, mEnd)
+        .filter(o => !o.payoffCardId && !KPI_SAVE_RX.test(categoryLabel(o.category)));
+      const fixed = sum(fixedOcc);
+      // Annualized fixed costs: every bill scheduled over the next 12 months (same exclusions as above)
+      const fixedAnnualOcc = generateBillOccurrences(t0, addDays(t0, 364))
+        .filter(o => !o.payoffCardId && !KPI_SAVE_RX.test(categoryLabel(o.category)));
+      const fixedAnnual = sum(fixedAnnualOcc);
 
       // Cards, cash, net worth
       let cardBal = 0, cardLim = 0;
+      const cardRows = [];
       for (const c of state.creditCards || []) {
         if (isInstallment(c)) continue;   // installment plans are not revolving credit
         if (!c.creditLimit) continue;
         cardBal += Math.max(0, computeCreditCardBalance(c));
         cardLim += Number(c.creditLimit) || 0;
+        cardRows.push({ name: c.name || "Card", bal: Math.max(0, computeCreditCardBalance(c)), lim: Number(c.creditLimit) || 0 });
       }
       const acctTotals = computeAccountsTotals();
       const bank = acctTotals.bankTotal - acctTotals.spokenFor;   // true cash: bank minus revolving card balances owed
@@ -5652,37 +5727,250 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
       const dta = nw.assetsTotal > 0 ? nw.liabilitiesTotal / nw.assetsTotal : null;
       const vsPrev = prevMtd > 0 ? (mtd - prevMtd) / prevMtd : null;
       const pace = bTot > 0 ? bSpent / bTot : null;
+      const prevPace = (pbTot > 0 && prevCat.size > 0) ? pbSpent / pbTot : null;                 // last month's share of budget used by this same day
+      const paceVar = (pace !== null && prevPace !== null) ? pace - prevPace : null;   // percentage points vs last month
+
+      const fm = formatMoney;
+      const P1 = (x) => (x * 100).toFixed(1) + "%";
+      const pts = (x) => (x > 0 ? "+" : "") + (x * 100).toFixed(1) + " pts";
+      const groupBills = (occs, max) => {
+        const g = new Map();
+        for (const o of occs) {
+          const k = o.name || "Bill";
+          const e = g.get(k) || { total: 0, n: 0 };
+          e.total += Number(o.amount || 0); e.n += 1; g.set(k, e);
+        }
+        const arr = Array.from(g.entries()).sort((a, b) => b[1].total - a[1].total);
+        const list = arr.slice(0, max).map(([k, e]) => [k + (e.n > 1 ? " ×" + e.n : ""), fm(e.total)]);
+        if (arr.length > max) list.push(["+ " + (arr.length - max) + " more", fm(arr.slice(max).reduce((s, [, e]) => s + e.total, 0))]);
+        return list;
+      };
+
+      // Where your income goes (all logged data, normalised to a 30-day average)
+      const A = alloc && alloc.income > 0 ? (() => {
+        const saved = alloc.income - alloc.fixed - alloc.reg;
+        const f = Math.round(alloc.fixed / alloc.income * 1000) / 10;
+        const r = Math.round(alloc.reg / alloc.income * 1000) / 10;
+        const s = Math.round((100 - f - r) * 10) / 10;      // saved = whatever is left, so the three always total 100%
+        return { ...alloc, saved, cash: saved - alloc.inv, f, r, s, k: 30 / alloc.days };
+      })() : null;
+      let allocTile;
+      if (A) {
+        const f0 = Math.round(A.f), r0 = Math.round(A.r), s0 = 100 - f0 - r0;
+        const tot = Math.max(A.income, A.fixed + A.reg);
+        const wf = Math.max(0, A.fixed) / tot * 100, wr = Math.max(0, A.reg) / tot * 100, ws = Math.max(0, A.saved) / tot * 100;
+        const rk = { good: 0, warn: 1, bad: 2 };
+        const sSt = hi(A.s / 100, 0.2, 0.1), fSt = lo(A.f / 100, 0.5, 0.65);
+        const parts = [
+          { l: "Fixed", c: "#6366f1", p: f0, v: A.fixed * A.k },
+          { l: "Regular", c: "#f59e0b", p: r0, v: A.reg * A.k },
+          { l: "Saved", c: "#10b981", p: s0, v: A.saved * A.k }
+        ];
+        allocTile = {
+          label: "Where your income goes", wide: true,
+          value: "Fixed " + f0 + "% · Regular " + r0 + "% · Saved " + s0 + "%",
+          status: rk[sSt] >= rk[fSt] ? sSt : fSt,
+          body: `<div class="mt-2 flex h-2 rounded-full overflow-hidden bg-slate-200">
+              <div style="width:${wf}%;background:#6366f1"></div><div style="width:${wr}%;background:#f59e0b"></div><div style="width:${ws}%;background:#10b981"></div></div>
+            <div class="mt-3 grid grid-cols-3 gap-2">${parts.map(i => `<div>
+              <div class="text-[11px] text-slate-500 flex items-center gap-1"><span style="display:inline-block;width:8px;height:8px;border-radius:9999px;background:${i.c}"></span>${i.l}</div>
+              <div class="text-xl font-bold text-slate-900">${i.p}%</div>
+              <div class="text-[11px] text-slate-400">${escapeHtml(fm(i.v))} / 30 days</div></div>`).join("")}</div>`,
+          sub: "Share of income, averaged over all " + A.days + " days of logged data (since " + A.startISO + "). Fixed + regular + saved = 100%",
+          detail: {
+            formula: "Fixed + Regular spending + Saved = 100% of income (Saved = Income − Fixed − Regular)",
+            rows: [
+              ["Window", A.startISO + " to " + todayISO + " (" + A.days + " days, all logged data)"],
+              ["Total income", fm(A.income)],
+              ["Fixed bills (excl. card payoffs and investing)", fm(A.fixed) + " · " + A.f.toFixed(1) + "%"],
+              ["Regular spending (purchases net of refunds)", fm(A.reg) + " · " + A.r.toFixed(1) + "%"],
+              ["Saved (income − fixed − regular)", fm(A.saved) + " · " + A.s.toFixed(1) + "%", true],
+              ["   of which invested", fm(A.inv) + " · " + P1(A.inv / A.income)],
+              ["   of which cash left over", fm(A.cash) + " · " + P1(A.cash / A.income)],
+              ["Total", "100.0%", true],
+              ["30-day average (totals ÷ " + A.days + " days × 30)", null],
+              ["Income", fm(A.income * A.k)],
+              ["Fixed bills", fm(A.fixed * A.k)],
+              ["Regular spending", fm(A.reg * A.k)],
+              ["Saved", fm(A.saved * A.k), true]
+            ],
+            note: "Uses every day since your first logged transaction (at least 14 days), so it sharpens as you log more. Fixed = bills; regular = everyday purchases; investing and savings categories count as saved. Green when saved is 20%+ and fixed is 50% or less; red when saved is under 10% or fixed is over 65%; otherwise amber. If spending exceeds income, saved goes negative."
+          }
+        };
+      } else {
+        allocTile = {
+          label: "Where your income goes", wide: true, value: "—", status: null,
+          sub: firstTxn ? "Needs income entries" : "Log transactions to see where your income goes",
+          detail: { formula: "Fixed + Regular spending + Saved = 100% of income", rows: [["Status", firstTxn ? "No scheduled income found yet" : "No transactions logged yet"]],
+            note: "Needs at least one logged transaction and an income entry. Uses all logged data from your first transaction (at least 14 days)." }
+        };
+      }
 
       const tiles = [
         { label: "Savings rate", value: save === null ? "—" : P(save), status: save === null ? null : hi(save, 0.2, 0.1),
-          sub: save === null ? "Needs income entries" : "Income kept after spending (investing counts as saved). Target 20%+" },
+          sub: save === null ? "Needs income entries" : "Income kept after spending (investing counts as saved). Target 20%+",
+          detail: {
+            formula: "(Income − Spending) ÷ Income",
+            rows: [
+              ["Window", winStartISO + " to " + todayISO + " (last 90 days)"],
+              ["Income", fm(income90)],
+              ["Spending (bills + purchases, net of refunds)", fm(spend90)],
+              ["Income − spending", fm(income90 - spend90), true],
+              ["   included above: invested / saved", fm(invest90)],
+              ["Savings rate", save === null ? "—" : P1(save), true]
+            ],
+            note: "Card payoffs are transfers, not spending. Investing and savings categories count as kept, not spent. Green at 20%+, amber 10–20%, red under 10%."
+          } },
         { label: "Investing rate", value: inv === null ? "—" : P(inv), status: inv === null ? null : hi(inv, 0.15, 0.05),
-          sub: formatMoney(invest90) + " invested, last 90 days. Target 15%+" },
+          sub: fm(invest90) + " invested, last 90 days. Target 15%+",
+          detail: {
+            formula: "Invested ÷ Income",
+            rows: [
+              ["Window", winStartISO + " to " + todayISO + " (last 90 days)"],
+              ["Invested / saved", fm(invest90)],
+              ["Income", fm(income90)],
+              ["Investing rate", inv === null ? "—" : P1(inv), true]
+            ],
+            note: "Counts spending in categories named like investing, savings, retirement, 401k, Roth, IRA or brokerage. Green at 15%+, amber 5–15%, red under 5%."
+          } },
         { label: "Budget pace (this month)", value: pace === null ? "—" : P(pace) + " used",
-          status: pace === null ? null : (pace <= elapsed ? "good" : (pace <= elapsed + 0.1 ? "warn" : "bad")),
-          sub: pace === null ? "Set budgets to track pace" : P(elapsed) + " of the month gone · " + formatMoney(bSpent) + " of " + formatMoney(bTot) },
+          status: pace === null ? null
+            : (pace >= 1 ? "bad"                                           // budget fully used (or over): always red
+            : (paceVar !== null ? (paceVar <= 0.05 ? "good" : (paceVar <= 0.10 ? "warn" : "bad"))
+            : (pace <= elapsed ? "good" : (pace <= elapsed + 0.1 ? "warn" : "bad")))),   // no last-month data: old rule
+          sub: pace === null ? "Set budgets to track pace"
+            : (paceVar !== null
+              ? "Last month was " + P(prevPace) + " by this day · " + (paceVar > 0 ? "+" : "") + (paceVar * 100).toFixed(0) + " pts vs last month · " + fm(bSpent) + " of " + fm(bTot)
+              : P(elapsed) + " of the month gone · " + fm(bSpent) + " of " + fm(bTot)),
+          detail: {
+            formula: "This month's % of budget used − last month's % of budget used by the same day",
+            rows: [
+              ["Day of month", day + " of " + mEnd.getDate() + " (" + P1(elapsed) + " of the month)"],
+              ["This month: spent of budget", fm(bSpent) + " of " + fm(bTot) + (pace === null ? "" : " = " + P1(pace)), true],
+              ["Last month by day " + day, pbTot > 0 ? fm(pbSpent) + " of " + fm(pbTot) + (prevPace === null ? "" : " = " + P1(prevPace)) : "—"],
+              ["Difference vs last month", paceVar === null ? "No last-month data (falls back to % of month gone)" : pts(paceVar), true]
+            ],
+            listTitle: "By budget: this month (spent / budget) · last month by this day",
+            list: budRows.slice().sort((a, b) => b.amt - a.amt).map(b => [b.cat, fm(b.spent) + " / " + fm(b.amt) + " · last " + fm(b.pspent) + " / " + fm(b.pamt)]),
+            note: "Green within 5 pts of last month's pace, amber 5–10 pts ahead, red more than 10 pts ahead. Always red once 100% of the budget is used. Percent-based budgets use that month's scheduled income."
+          } },
         { label: "Spending vs last month", value: vsPrev === null ? "—" : (vsPrev > 0 ? "+" : "") + P(vsPrev),
           status: vsPrev === null ? null : lo(vsPrev, 0, 0.1),
-          sub: formatMoney(mtd) + " so far vs " + formatMoney(prevMtd) + " by this day last month" },
+          sub: fm(mtd) + " so far vs " + fm(prevMtd) + " by this day last month",
+          detail: {
+            formula: "(This month so far − last month by this day) ÷ last month by this day",
+            rows: [
+              ["This month through day " + day, fm(mtd)],
+              ["Last month through day " + day, fm(prevMtd)],
+              ["Change", fm(mtd - prevMtd) + (vsPrev === null ? "" : " (" + (vsPrev > 0 ? "+" : "") + P1(vsPrev) + ")"), true]
+            ],
+            note: "Counts bills dated up to today plus purchases, net of refunds. Excludes card payoffs and investing. Green at 0% or less, amber up to +10%, red above."
+          } },
         { label: "Fixed-cost ratio", value: fix === null ? "—" : P(fix), status: fix === null ? null : lo(fix, 0.5, 0.65),
-          sub: formatMoney(fixed) + " in bills this month (recurring + one-time, excl. card payoffs). Target under 50% of income" },
+          sub: fm(fixed) + " in bills this month (recurring + one-time, excl. card payoffs). Target under 50% of income",
+          detail: {
+            formula: "Bills due this month ÷ Income scheduled this month",
+            rows: [
+              ["Bills due this month", fm(fixed)],
+              ["Income scheduled this month", fm(monthIncome)],
+              ["Fixed-cost ratio", fix === null ? "—" : P1(fix), true]
+            ],
+            listTitle: "Bills this month",
+            list: groupBills(fixedOcc, 15),
+            note: "Includes every bill dated this calendar month, including ones not yet due, recurring and one-time. Excludes card payoffs and investing. Green at 50% or less, amber up to 65%, red above."
+          } },
+        { label: "Est. annualized fixed cost", value: fixedAnnual > 0 ? fm(fixedAnnual) : "—", status: null,
+          sub: fixedAnnual > 0 ? "Bills scheduled over the next 12 months (recurring + one-time, excl. card payoffs and investing) · about " + fm(fixedAnnual / 12) + "/mo" : "Add bills to see this",
+          detail: {
+            formula: "Sum of every bill scheduled over the next 12 months",
+            rows: [
+              ["Window", todayISO + " to " + toISODate(addDays(t0, 364))],
+              ["Scheduled bills", fm(fixedAnnual), true],
+              ["Per month (÷ 12)", fm(fixedAnnual / 12)]
+            ],
+            listTitle: "Bills in the next 12 months",
+            list: groupBills(fixedAnnualOcc, 15),
+            note: "Respects recurring end dates and moved or skipped occurrences. Excludes card payoffs and investing categories."
+          } },
         { label: "Credit utilization", value: util === null ? "—" : P(util), status: util === null ? null : lo(util, 0.3, 0.5),
-          sub: util === null ? "Add credit limits to your cards" : formatMoney(cardBal) + " of " + formatMoney(cardLim) + ". Target under 30%" },
+          sub: util === null ? "Add credit limits to your cards" : fm(cardBal) + " of " + fm(cardLim) + ". Target under 30%",
+          detail: {
+            formula: "Card balances owed ÷ Total credit limits",
+            rows: [
+              ["Balances owed", fm(cardBal)],
+              ["Total credit limits", fm(cardLim)],
+              ["Utilization", util === null ? "—" : P1(util), true]
+            ],
+            listTitle: "By card",
+            list: cardRows.map(c => [c.name, fm(c.bal) + " of " + fm(c.lim) + " (" + P1(c.lim > 0 ? c.bal / c.lim : 0) + ")"]),
+            note: "Excludes installment plans and cards without a credit limit. Green at 30% or less, amber up to 50%, red above."
+          } },
         { label: "Cash runway", value: runway === null ? "—" : runway.toFixed(1) + " mo", status: runway === null ? null : hi(runway, 6, 3),
-          sub: "(Bank cash − card balances owed: " + formatMoney(bank) + ") ÷ average monthly spending over the last " + runDays + " days. Target 3–6+ months" },
+          sub: "(Bank cash − card balances owed: " + fm(bank) + ") ÷ average monthly spending over the last " + runDays + " days. Target 3–6+ months",
+          detail: {
+            formula: "(Bank cash − card balances owed) ÷ Average monthly spending",
+            rows: [
+              ["Bank accounts total", fm(acctTotals.bankTotal)],
+              ["Card balances owed (revolving)", fm(acctTotals.spokenFor)],
+              ["True cash", fm(bank), true],
+              ["Spending window", runStartISO + " to " + todayISO + " (" + runDays + " days)"],
+              ["Spending in window", fm(runSpend)],
+              ["Average monthly spending (÷ " + runDays + " days × 30.4)", fm(monthlySpend), true],
+              ["Runway", runway === null ? "—" : runway.toFixed(1) + " months", true]
+            ],
+            note: "The window starts at your first logged transaction (at most 90 days back, at least 14 days). Spending excludes card payoffs and investing. Negative cash counts as zero. Green at 6+ months, amber 3–6, red under 3."
+          } },
+        { label: "Est. annualized spend", value: monthlySpend > 0 ? fm(monthlySpend * 12) : "—", status: null,
+          sub: monthlySpend > 0 ? "Average monthly spending (" + fm(monthlySpend) + ") × 12, same last " + runDays + " days used for cash runway" : "Needs spending entries",
+          detail: {
+            formula: "Average monthly spending × 12",
+            rows: [
+              ["Spending window", runStartISO + " to " + todayISO + " (" + runDays + " days)"],
+              ["Spending in window", fm(runSpend)],
+              ["Average monthly spending (÷ " + runDays + " days × 30.4)", fm(monthlySpend)],
+              ["Estimated annualized spend (× 12)", monthlySpend > 0 ? fm(monthlySpend * 12) : "—", true]
+            ],
+            note: "Same window and average as Cash runway. Excludes bank-to-bank transfers, card payoffs and investing; includes bills and purchases, net of refunds."
+          } },
         { label: "Debt-to-assets", value: dta === null ? "—" : P(dta), status: dta === null ? null : lo(dta, 0.3, 0.6),
-          sub: formatMoney(nw.liabilitiesTotal) + " owed vs " + formatMoney(nw.assetsTotal) + " owned" }
+          sub: fm(nw.liabilitiesTotal) + " owed vs " + fm(nw.assetsTotal) + " owned",
+          detail: {
+            formula: "Total liabilities ÷ Total assets",
+            rows: [
+              ["Assets (bank accounts + manual assets)", fm(nw.assetsTotal)],
+              ["Liabilities (card balances incl. installments + manual)", fm(nw.liabilitiesTotal)],
+              ["Debt-to-assets", dta === null ? "—" : P1(dta), true]
+            ],
+            note: "Green at 30% or less, amber up to 60%, red above."
+          } },
+        allocTile
       ];
+      kpiTiles = tiles;
       const dot = { good: "#10b981", warn: "#f59e0b", bad: "#e11d48" };
-      box.innerHTML = tiles.map(t => `
-        <div class="bg-slate-50 rounded-xl border border-slate-200 p-4">
+      box.innerHTML = tiles.map((t, i) => `
+        <div data-kpi-idx="${i}" role="button" tabindex="0" title="Click for calculation details" class="${t.wide ? "col-span-2 " : ""}bg-slate-50 rounded-xl border border-slate-200 p-4 cursor-pointer hover:bg-white hover:border-slate-400 transition-colors">
           <div class="flex items-center justify-between gap-2">
             <div class="text-xs text-slate-500">${escapeHtml(t.label)}</div>
             <span style="display:inline-block;width:10px;height:10px;border-radius:9999px;background:${dot[t.status] || "#64748b"};"></span>
           </div>
-          <div class="text-xl font-bold text-slate-900 mt-1">${escapeHtml(t.value)}</div>
+          ${t.body ? t.body : `<div class="text-xl font-bold text-slate-900 mt-1">${escapeHtml(t.value)}</div>`}
           <div class="text-[11px] text-slate-400 mt-1">${escapeHtml(t.sub)}</div>
+          <div class="text-[10px] text-slate-400 mt-2">Tap for the math ›</div>
         </div>`).join("");
+      if (!box.dataset.kpiBound) {
+        box.dataset.kpiBound = "1";
+        box.addEventListener("click", (e) => {
+          const el = e.target.closest("[data-kpi-idx]");
+          if (el) openKpiDetail(kpiTiles[Number(el.dataset.kpiIdx)]);
+        });
+        box.addEventListener("keydown", (e) => {
+          if (e.key !== "Enter" && e.key !== " ") return;
+          const el = e.target.closest("[data-kpi-idx]");
+          if (!el) return;
+          e.preventDefault();
+          openKpiDetail(kpiTiles[Number(el.dataset.kpiIdx)]);
+        });
+      }
     }
 
     
