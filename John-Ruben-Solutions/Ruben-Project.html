@@ -121,6 +121,8 @@
     .badge-amber { background: rgba(245,158,11,.15); color: #fbbf24; border-color: rgba(245,158,11,.35); }
     .badge-brand { background: rgba(14,165,233,.15); color: #38bdf8; border-color: rgba(14,165,233,.35); }
     .badge-slate { background: rgba(148,163,184,.15); color: #cbd5e1; border-color: rgba(148,163,184,.3); }
+    #asset-range-btns button { background: rgba(148,163,184,.15); color: #cbd5e1; cursor: pointer; }
+    #asset-range-btns button[data-active="1"] { background: #0284c7; color: #fff; font-weight: 600; }
     #net-worth, #bank-cash-now, td.text-right { font-family: 'JetBrains Mono', 'Inter', monospace; }
     .nav-active { box-shadow: inset 0 0 0 1px rgba(14,165,233,.5), 0 0 18px rgba(14,165,233,.2); }
     *::-webkit-scrollbar { width: 10px; height: 10px; }
@@ -335,30 +337,25 @@
 
         <!-- ROUTE: DASHBOARD -->
         <section id="route-dashboard" class="hidden">
-          <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div class="flex items-center justify-between gap-4">
             <div>
-              <h2 class="text-2xl font-bold text-slate-900">Daily Net Worth</h2>
+              <h2 class="text-2xl font-bold text-slate-900">Dashboard</h2>
               <p class="text-slate-500 mt-1" id="dashboard-subtitle">Calculates in real-time from your entries.</p>
             </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full md:w-auto">
-              <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
-                <div class="text-xs text-slate-500">Today</div>
-                <div class="text-lg font-semibold" id="today-date"></div>
-              </div>
-              <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
-                <div class="text-xs text-slate-500">Assets (incl. banks)</div>
-                <div class="text-lg font-semibold text-emerald-700" id="total-assets"></div>
-              </div>
-              <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
-                <div class="text-xs text-slate-500">Liabilities (incl. cards)</div>
-                <div class="text-lg font-semibold text-rose-700" id="total-liabilities"></div>
-              </div>
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm px-4 py-2 text-right">
+              <div class="text-xs text-slate-500">Today</div>
+              <div class="text-sm font-semibold" id="today-date"></div>
             </div>
           </div>
 
-          <div class="mt-4 grid grid-cols-1 lg:grid-cols-3 gap-4">
-            <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+          <!-- KPIs -->
+          <div class="mt-4 bg-white rounded-2xl border border-slate-200 shadow-sm p-5" id="kpi-card">
+            <h3 class="text-lg font-semibold text-slate-900">Key Metrics</h3>
+            <p class="text-sm text-slate-500 mt-1">Green = on track, amber = watch, red = needs attention. Rolling 90 days unless noted. Categories named like investing, savings, retirement, 401k, Roth, IRA or brokerage count as savings, not spending.</p>
+            <div id="kpi-grid" class="mt-4 grid grid-cols-2 lg:grid-cols-4 gap-3"></div>
+          </div>
+
+            <div class="mt-4 bg-white rounded-2xl border border-slate-200 shadow-sm p-5" id="networth-card">
               <div class="flex items-start justify-between gap-4">
                 <div>
                   <h3 class="text-lg font-semibold text-slate-900">Net Worth (Daily)</h3>
@@ -377,7 +374,15 @@
                     <div class="text-xs text-slate-500">Net Worth</div>
                     <div class="text-4xl font-extrabold text-brand-900" id="net-worth"></div>
                   </div>
-                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3">
+                  <div class="grid grid-cols-2 gap-x-8 gap-y-3">
+                    <div>
+                      <div class="text-xs text-slate-500">Assets (incl. banks)</div>
+                      <div class="text-xl font-bold text-emerald-700" id="total-assets"></div>
+                    </div>
+                    <div>
+                      <div class="text-xs text-slate-500">Liabilities (incl. cards)</div>
+                      <div class="text-xl font-bold text-rose-700" id="total-liabilities"></div>
+                    </div>
                     <div>
                       <div class="text-xs text-slate-500" id="dash-default-bank-label">Default Bank Balance</div>
                       <div class="text-xl font-bold" id="dash-default-bank-balance"></div>
@@ -412,13 +417,14 @@
               </div>
             </div>
 
-            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5" id="asset-insights-card">
+
+            <div class="mt-4 bg-white rounded-2xl border border-slate-200 shadow-sm p-5" id="asset-insights-card">
               <div class="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <h3 class="text-lg font-semibold text-slate-900">True Net Worth — Assets, Money Owed &amp; Trends</h3>
                   <p class="text-sm text-slate-500 mt-1">Bank balances + Other Assets − credit cards − Other Liabilities. Recalculates daily from your income, bills and transactions. Other Assets use the dated values and groups you enter.</p>
                 </div>
-                <div class="inline-flex rounded-lg overflow-hidden border border-slate-200 text-xs" id="asset-range-btns">
+                <div class="inline-flex rounded-lg overflow-hidden border border-slate-200 text-xs" id="asset-range-btns" role="group" aria-label="Chart range">
                   <button type="button" data-asset-range="30" class="px-3 py-1.5 bg-slate-100 text-slate-700">30D</button>
                   <button type="button" data-asset-range="90" class="px-3 py-1.5 bg-slate-100 text-slate-700">90D</button>
                   <button type="button" data-asset-range="365" class="px-3 py-1.5 bg-slate-100 text-slate-700">1Y</button>
@@ -448,42 +454,24 @@
               </div>
               <div id="asset-ins-empty" class="hidden mt-4 text-sm text-slate-500">No accounts or assets yet. Add a bank account or an Other Asset (Data Entry) to see charts here.</div>
               <div id="asset-ins-error" class="hidden mt-4 text-sm text-amber-600"></div>
-              <div id="asset-ins-charts" class="mt-4 grid grid-cols-1 lg:grid-cols-5 gap-4">
-                <div class="lg:col-span-2 rounded-xl border border-slate-200 p-4">
+              <div id="asset-ins-charts" class="mt-4 grid grid-cols-1 lg:grid-cols-3 gap-4">
+                <div class="min-w-0 rounded-xl border border-slate-200 p-4">
                   <h4 class="text-sm font-semibold text-slate-900">Assets by group (incl. bank accounts)</h4>
-                  <div class="mt-3" style="position:relative;height:260px;"><canvas id="asset-doughnut"></canvas></div>
+                  <div class="mt-3 relative w-full" style="height:260px;"><canvas id="asset-doughnut"></canvas></div>
                   <div id="asset-group-breakdown" class="mt-3 space-y-1 text-sm"></div>
                 </div>
-                <div class="lg:col-span-3 rounded-xl border border-slate-200 p-4">
+                <div class="min-w-0 lg:col-span-2 rounded-xl border border-slate-200 p-4">
                   <h4 class="text-sm font-semibold text-slate-900">True net worth over time</h4>
-                  <div class="mt-3" style="position:relative;height:300px;"><canvas id="asset-total-trend"></canvas></div>
+                  <div class="mt-3 relative w-full" style="height:340px;"><canvas id="asset-total-trend"></canvas></div>
                   <div class="text-[11px] text-slate-400 mt-2" id="asset-trend-note"></div>
                 </div>
-                <div class="lg:col-span-5 rounded-xl border border-slate-200 p-4">
+                <div class="min-w-0 lg:col-span-3 rounded-xl border border-slate-200 p-4">
                   <h4 class="text-sm font-semibold text-slate-900">Asset value by group over time (incl. bank accounts)</h4>
-                  <div class="mt-3" style="position:relative;height:320px;"><canvas id="asset-group-trend"></canvas></div>
+                  <div class="mt-3 relative w-full" style="height:340px;"><canvas id="asset-group-trend"></canvas></div>
                 </div>
               </div>
             </div>
 
-            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-              <h3 class="text-lg font-semibold text-slate-900">Recent Activities</h3>
-              <p class="text-sm text-slate-500 mt-1">Quick glance of your latest entries.</p>
-              <div class="mt-4 space-y-3" id="recent-activity"></div>
-              <div class="mt-4 text-xs text-slate-500">
-                Stored securely per user UID in Firestore.
-              </div>
-            </div>
-          </div>
-
-          <!-- KPIs -->
-          <div class="mt-4 bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-            <h3 class="text-lg font-semibold text-slate-900">Key Metrics</h3>
-            <p class="text-sm text-slate-500 mt-1">Green = on track, amber = watch, red = needs attention. Rolling 90 days unless noted. Categories named like investing, savings, retirement, 401k, Roth, IRA or brokerage count as savings, not spending.</p>
-            <div id="kpi-grid" class="mt-4 grid grid-cols-2 lg:grid-cols-4 gap-3"></div>
-          </div>
-
-          
 <!-- Accounts & Cards summary widget -->
           <div class="mt-4 bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
             <div class="flex items-center justify-between gap-3 flex-wrap">
@@ -498,6 +486,33 @@
             </div>
             <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3" id="dashboard-accounts-summary"></div>
             <div class="mt-4" id="dashboard-accounts-list"></div>
+          </div>
+
+          <!-- CURRENT PERIOD (always the planner period that contains today) -->
+          <div class="mt-4 bg-white rounded-2xl border border-slate-200 shadow-sm p-5" id="current-period-card">
+            <div class="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h3 class="text-lg font-semibold text-slate-900" id="cp-title">Current Period</h3>
+                <p class="text-sm text-slate-500 mt-1" id="cp-range"></p>
+              </div>
+              <div class="text-right">
+                <div class="text-xs text-slate-500">Balance view</div>
+                <div class="text-sm font-semibold text-slate-800" id="cp-view"></div>
+              </div>
+            </div>
+            <div class="mt-4 grid grid-cols-2 lg:grid-cols-4 gap-3" id="cp-tiles"></div>
+            <div class="mt-4" id="cp-progress"></div>
+            <div class="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <div class="min-w-0">
+                <h4 class="text-sm font-semibold text-slate-900">✓ Already happened <span class="text-xs font-normal text-slate-500" id="cp-done-count"></span></h4>
+                <div class="mt-2 space-y-2" id="cp-done"></div>
+              </div>
+              <div class="min-w-0">
+                <h4 class="text-sm font-semibold text-slate-900">⏳ Coming up <span class="text-xs font-normal text-slate-500" id="cp-next-count"></span></h4>
+                <div class="mt-2 space-y-2" id="cp-next"></div>
+              </div>
+            </div>
+            <div class="mt-3 text-[11px] text-slate-400">Updates automatically as dates pass. Balances follow the Balance view chosen on the Period Planner; credit card spending is shown but only reduces the spoken-for balance, not the bank balance.</div>
           </div>
         </section>
 
@@ -533,6 +548,12 @@
                          class="w-full border border-slate-300 rounded-lg px-3 py-2.5 outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-shadow">
                 </div>
 
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 mb-1" for="planner-bank-view">Balance view (bank)</label>
+                  <select id="planner-bank-view" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none"></select>
+                  <p class="text-[11px] text-slate-500 mt-1">The Projected Balance column and every line's "Balance after" follow this choice. Credit card spending is never subtracted — only card payoffs and bank-paid items — so nothing is counted twice.</p>
+                </div>
+
                 <div class="flex items-end gap-2">
                   <button id="recalc-planner-btn"
                           class="w-full bg-brand-600 hover:bg-brand-700 text-white font-medium py-2.5 rounded-lg transition-colors shadow-md">
@@ -555,7 +576,7 @@
               </div>
 
               <div class="mt-4 overflow-x-auto">
-                <table class="min-w-[1000px] w-full text-sm">
+                <table class="min-w-[1120px] w-full text-sm">
                   <thead>
                     <tr class="bg-slate-50">
                       <th class="text-left px-4 py-3 font-semibold text-slate-600"><button type="button" data-sort-table="period" data-sort-key="date" class="inline-flex items-center gap-1 hover:text-slate-900">Period <span data-sort-ind class="text-xs text-slate-400">↕</span></button></th>
@@ -564,6 +585,7 @@
                       <th class="text-right px-4 py-3 font-semibold text-slate-600"><button type="button" data-sort-table="period" data-sort-key="net" class="inline-flex items-center gap-1 hover:text-slate-900">Net <span data-sort-ind class="text-xs text-slate-400">↕</span></button></th>
                       
                       <th class="text-right px-4 py-3 font-semibold text-slate-600" title="Default bank's balance today, plus planned flows after today that use it or have no bank chosen (or minus its flows since the period ended, for past periods)"><button type="button" data-sort-table="period" data-sort-key="projected" class="inline-flex items-center gap-1 hover:text-slate-900"><span id="period-projected-label">Projected Balance</span> <span data-sort-ind class="text-xs text-slate-400">↕</span></button></th>
+                      <th class="text-right px-4 py-3 font-semibold text-slate-600" title="Projected bank balance minus what you will owe on credit cards at that point (card purchases, refunds and payoffs all counted)"><button type="button" data-sort-table="period" data-sort-key="spoken" class="inline-flex items-center gap-1 hover:text-slate-900">Spoken-For Balance <span data-sort-ind class="text-xs text-slate-400">↕</span></button></th>
                     </tr>
                   </thead>
                   <tbody id="period-table-body"></tbody>
@@ -957,6 +979,48 @@
                 <div class="text-sm text-slate-500 mt-2" id="txn-today-summary"></div>
               </div>
             </form>
+          </div>
+
+          <!-- BANK TRANSFERS -->
+          <div class="mt-4 bg-white rounded-2xl border border-slate-200 shadow-sm p-5" id="transfer-card">
+            <div class="flex items-center justify-between gap-3 flex-wrap">
+              <div>
+                <h3 class="text-lg font-semibold text-slate-900">🔁 Transfer Between Bank Accounts</h3>
+                <p class="text-sm text-slate-500 mt-1">Moves money from one of your accounts to another. It isn't income or spending, so your total cash and net worth stay the same.</p>
+              </div>
+              <div id="transfer-editing-banner" class="hidden text-sm bg-amber-50 text-amber-700 border border-amber-200 rounded-lg px-3 py-1.5 flex items-center gap-2">
+                Editing a transfer
+                <button type="button" id="transfer-cancel-edit-btn" class="font-semibold underline">Cancel</button>
+              </div>
+            </div>
+            <div id="transfer-need-banks" class="hidden mt-3 text-sm text-amber-600">Add at least two bank accounts (Accounts &amp; Cards) to record transfers.</div>
+            <form id="transfer-form" class="mt-4 grid grid-cols-2 lg:grid-cols-6 gap-3">
+              <div class="col-span-2 lg:col-span-1">
+                <label class="block text-sm font-medium text-slate-700 mb-1" for="transfer-amount">Amount</label>
+                <input type="number" id="transfer-amount" required step="0.01" min="0.01" inputmode="decimal" placeholder="0.00" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-xl font-bold focus:ring-2 focus:ring-brand-500 outline-none">
+              </div>
+              <div class="col-span-1 lg:col-span-1">
+                <label class="block text-sm font-medium text-slate-700 mb-1" for="transfer-from">From</label>
+                <select id="transfer-from" required class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none"></select>
+              </div>
+              <div class="col-span-1 lg:col-span-1">
+                <label class="block text-sm font-medium text-slate-700 mb-1" for="transfer-to">To</label>
+                <select id="transfer-to" required class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none"></select>
+              </div>
+              <div class="col-span-1">
+                <label class="block text-sm font-medium text-slate-700 mb-1" for="transfer-date">Date</label>
+                <input type="date" id="transfer-date" required class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+              </div>
+              <div class="col-span-1 lg:col-span-2">
+                <label class="block text-sm font-medium text-slate-700 mb-1" for="transfer-note">Note (optional)</label>
+                <input type="text" id="transfer-note" placeholder="Move to savings, fund bills…" autocomplete="off" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+              </div>
+              <div class="col-span-2 lg:col-span-6 flex flex-wrap items-center gap-2">
+                <button type="submit" class="w-full lg:w-auto bg-brand-600 hover:bg-brand-700 text-white font-semibold px-6 py-3.5 lg:py-2.5 rounded-xl lg:rounded-lg text-base shadow-md">Save Transfer</button>
+                <button type="button" id="transfer-swap-btn" class="px-4 py-2.5 rounded-lg border border-slate-300 text-slate-700 text-sm">⇄ Swap</button>
+              </div>
+            </form>
+            <div id="transfer-list" class="mt-4 space-y-2"></div>
           </div>
 
           <!-- TRANSACTION LEDGER -->
@@ -1552,6 +1616,7 @@ service cloud.firestore {
       transactions: [],
       payoffOverrides: [],
       budgets: [],
+      transfers: [],
     };
 
     let ui = {
@@ -1783,6 +1848,10 @@ service cloud.firestore {
       const txnQ = query(userCol("transactions"), orderBy("date", "desc"));
       unsubscribers.push(onSnapshot(userCol("payoffOverrides"), (snap) => {
         state.payoffOverrides = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        refreshAllViews();
+      }));
+      unsubscribers.push(onSnapshot(query(userCol("transfers"), orderBy("date", "desc")), (snap) => {
+        state.transfers = snap.docs.map(d => ({ id: d.id, ...d.data() }));
         refreshAllViews();
       }));
       unsubscribers.push(onSnapshot(userCol("budgets"), (snap) => {
@@ -2038,8 +2107,17 @@ service cloud.firestore {
       assetChartTimer = setTimeout(drawAssetCharts, 120);
     }
 
-    document.querySelectorAll("[data-asset-range]").forEach(btn => {
-      btn.addEventListener("click", () => { assetRange = btn.dataset.assetRange; drawAssetCharts(); });
+    function syncAssetRangeBtns() {
+      document.querySelectorAll("[data-asset-range]").forEach(btn => {
+        if (btn.dataset.assetRange === assetRange) btn.setAttribute("data-active", "1"); else btn.removeAttribute("data-active");
+      });
+    }
+    $("#asset-range-btns").addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-asset-range]");
+      if (!btn) return;
+      assetRange = btn.dataset.assetRange;
+      syncAssetRangeBtns();
+      drawAssetCharts();
     });
 
     function renderAssetInsights() {
@@ -2072,10 +2150,7 @@ service cloud.firestore {
 
       $("#asset-ins-empty").classList.toggle("hidden", hasAnything);
       $("#asset-ins-charts").classList.toggle("hidden", !hasAnything);
-      document.querySelectorAll("[data-asset-range]").forEach(btn => {
-        const on = btn.dataset.assetRange === assetRange;
-        btn.className = "px-3 py-1.5 " + (on ? "bg-brand-600 text-white" : "bg-slate-100 text-slate-700");
-      });
+      syncAssetRangeBtns();
 
       // current value by group (Other Assets groups + bank accounts)
       const byGroup = new Map();
@@ -2118,7 +2193,9 @@ service cloud.firestore {
       let startISO;
       if (assetRange === "all") startISO = earliest < todayISO ? earliest : toISODate(addDays(parseISODateLocal(todayISO), -30));
       else startISO = toISODate(addDays(parseISODateLocal(todayISO), -Number(assetRange)));
-      if (startISO > todayISO) startISO = todayISO;
+      if (startISO < earliest && earliest < todayISO) startISO = earliest;   // don't pad the chart with days before any data exists
+      const minStart = toISODate(addDays(parseISODateLocal(todayISO), -13));
+      if (startISO > minStart) startISO = minStart;                          // always show at least two weeks
       const spanDays = Math.max(1, Math.round((parseISODateLocal(todayISO) - parseISODateLocal(startISO)) / 86400000));
       const step = Math.max(1, Math.ceil(spanDays / 70));
       const dateSet = new Set([todayISO, startISO]);
@@ -2204,7 +2281,7 @@ service cloud.firestore {
         assetTotalChart.options = mkOptions(false, true, false);
         assetTotalChart.update();
       }
-      $("#asset-trend-note").textContent = "Other Liabilities are shown at today's amounts for every date (they have no dated history).";
+      $("#asset-trend-note").textContent = `Showing ${startISO} → today${startISO === earliest ? " (your earliest data)" : ""}. Other Liabilities are shown at today's amounts for every date (they have no dated history).`;
 
       // ----- by group over time (stacked): Other Asset groups + bank accounts -----
       const groupNames = groups.map(g => g[0]);
@@ -2451,6 +2528,13 @@ service cloud.firestore {
         if (t.txnType === "payoff" && t.sourceBankAccountId === bank.id) {
           balance -= Number(t.amount || 0);
         }
+      }
+      // Transfers between your own bank accounts: money leaves one, arrives in the other (net worth is unchanged).
+      for (const t of state.transfers || []) {
+        if (!t.date || t.date > todayISO) continue;
+        const amt = Number(t.amount || 0);
+        if (t.fromBankId === bank.id) balance -= amt;
+        if (t.toBankId === bank.id) balance += amt;
       }
       return balance;
     }
@@ -2978,6 +3062,93 @@ service cloud.firestore {
         $("#txn-amount").focus();   // ready for the next expense (card + date stay as they were)
       } catch (err) {
         alert(err?.message || "Failed to save transaction");
+      }
+    });
+
+    // ===== Bank-to-bank transfers =====
+    function renderTransfers() {
+      const list = $("#transfer-list");
+      if (!list) return;
+      const banks = (state.bankAccounts || []).slice().sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+      const enough = banks.length >= 2;
+      $("#transfer-need-banks").classList.toggle("hidden", enough);
+      $("#transfer-form").classList.toggle("hidden", !enough);
+      const fromSel = $("#transfer-from"), toSel = $("#transfer-to");
+      const prevFrom = fromSel.value, prevTo = toSel.value;
+      const opts = banks.map(b => `<option value="${b.id}">${escapeHtml(b.name)}</option>`).join("");
+      if (fromSel.dataset.sig !== opts) {
+        fromSel.innerHTML = opts; toSel.innerHTML = opts; fromSel.dataset.sig = opts;
+        const def = getDefaultBank();
+        fromSel.value = banks.some(b => b.id === prevFrom) ? prevFrom : (def ? def.id : (banks[0] || {}).id);
+        toSel.value = banks.some(b => b.id === prevTo) ? prevTo : ((banks.find(b => b.id !== fromSel.value) || {}).id || "");
+      }
+      if (!$("#transfer-date").value) $("#transfer-date").value = toISODate(new Date());
+
+      const nameOf = (id, fallback) => ((state.bankAccounts || []).find(b => b.id === id) || {}).name || fallback || "Deleted account";
+      const rows = (state.transfers || []).slice().sort((a, b) => (b.date || "") < (a.date || "") ? -1 : ((b.date || "") > (a.date || "") ? 1 : 0)).slice(0, 15);
+      list.innerHTML = rows.length ? rows.map(t => `
+        <div class="flex flex-wrap items-center justify-between gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2">
+          <div class="min-w-[180px] flex-1">
+            <div class="text-sm font-medium text-slate-800">${escapeHtml(nameOf(t.fromBankId, t.fromName))} → ${escapeHtml(nameOf(t.toBankId, t.toName))}</div>
+            <div class="text-xs text-slate-500">${escapeHtml(t.date || "")}${t.date > toISODate(new Date()) ? " · scheduled" : ""}${t.note ? " · " + escapeHtml(t.note) : ""}</div>
+          </div>
+          <div class="text-sm font-semibold text-slate-700">${formatMoney(t.amount)}</div>
+          <div class="inline-flex items-center gap-3">
+            <button type="button" class="text-brand-600 hover:underline text-sm" data-tr-edit="${t.id}">Edit</button>
+            <button type="button" class="text-rose-600 hover:underline text-sm" data-tr-del="${t.id}">Delete</button>
+          </div>
+        </div>`).join("") : `<div class="text-sm text-slate-500">No transfers yet.</div>`;
+      list.querySelectorAll("[data-tr-edit]").forEach(b => b.addEventListener("click", () => {
+        const t = (state.transfers || []).find(x => x.id === b.dataset.trEdit);
+        if (!t) return;
+        ui.editing.transferId = t.id;
+        $("#transfer-amount").value = t.amount; $("#transfer-from").value = t.fromBankId; $("#transfer-to").value = t.toBankId;
+        $("#transfer-date").value = t.date || toISODate(new Date()); $("#transfer-note").value = t.note || "";
+        $("#transfer-editing-banner").classList.remove("hidden");
+        $("#transfer-card").scrollIntoView({ behavior: "smooth", block: "start" });
+      }));
+      list.querySelectorAll("[data-tr-del]").forEach(b => b.addEventListener("click", async () => {
+        if (!confirm("Delete this transfer? Both account balances will be adjusted back.")) return;
+        try { await deleteDoc(doc(db, "users", currentUser.uid, "transfers", b.dataset.trDel)); }
+        catch (err) { alert(err?.message || "Failed to delete transfer"); }
+      }));
+    }
+
+    function resetTransferForm() {
+      ui.editing.transferId = null;
+      $("#transfer-amount").value = ""; $("#transfer-note").value = "";
+      $("#transfer-editing-banner").classList.add("hidden");
+    }
+    $("#transfer-cancel-edit-btn").addEventListener("click", resetTransferForm);
+    $("#transfer-swap-btn").addEventListener("click", () => {
+      const f = $("#transfer-from").value; $("#transfer-from").value = $("#transfer-to").value; $("#transfer-to").value = f;
+    });
+    $("#transfer-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      if (!currentUser) return;
+      const amount = Number($("#transfer-amount").value);
+      const fromBankId = $("#transfer-from").value, toBankId = $("#transfer-to").value;
+      const date = $("#transfer-date").value;
+      if (!(amount > 0)) { alert("Enter an amount greater than 0."); return; }
+      if (!fromBankId || !toBankId) { alert("Choose both accounts."); return; }
+      if (fromBankId === toBankId) { alert("Choose two different accounts."); return; }
+      const nameOf = id => ((state.bankAccounts || []).find(b => b.id === id) || {}).name || "";
+      const payload = {
+        date, amount: Math.round(amount * 100) / 100, fromBankId, toBankId,
+        fromName: nameOf(fromBankId), toName: nameOf(toBankId),
+        note: $("#transfer-note").value.trim(), createdAt: serverTimestamp()
+      };
+      try {
+        if (ui.editing.transferId) {
+          delete payload.createdAt;
+          await setDoc(doc(db, "users", currentUser.uid, "transfers", ui.editing.transferId), payload, { merge: true });
+        } else {
+          await addDoc(userCol("transfers"), payload);
+        }
+        showToast(`Transferred ${formatMoney(payload.amount)} · ${payload.fromName} → ${payload.toName}`);
+        resetTransferForm();
+      } catch (err) {
+        alert(err?.message || "Failed to save transfer");
       }
     });
 
@@ -3670,7 +3841,7 @@ service cloud.firestore {
       income: { source: i => lc(i.source), date: i => i.date || "", bank: i => bankNameById(i.bankAccountId), recurrence: recurrenceKey, amount: i => num(i.amount) },
       bills: { name: b => lc(b.name), category: b => lc(b.category), date: b => b.date || "", recurrence: recurrenceKey, amount: b => num(b.amount) },
       planned: { card: p => lc(p.cardName), closes: p => p.statementDate || "", due: p => p.dueDate || "", check: p => (p.billDiff == null ? 9999 : Math.abs(p.billDiff)), paydate: p => p.date || "", bank: p => bankNameById(p.bankId), stmt: p => num(p.stmtBal), amount: p => p.skipped ? 0 : num(p.amount) },
-      period: { date: r => r.i, income: r => r.income, expense: r => r.expense, net: r => r.net, carry: r => r.carry, projected: r => (r.projected == null ? -Infinity : r.projected) }
+      period: { date: r => r.i, income: r => r.income, expense: r => r.expense, net: r => r.net, carry: r => r.carry, projected: r => (r.projected == null ? -Infinity : r.projected), spoken: r => (r.spoken == null ? -Infinity : r.spoken) }
     };
     const DESC_FIRST_KEYS = new Set(["balance", "amount", "value", "income", "expense", "net", "carry", "date", "stmt"]);
 
@@ -4579,7 +4750,8 @@ service cloud.firestore {
             date: occ.date, originalDate: occ.originalDate,
             name: occ.name || "Bill",
             sub: [occ.installment ? "Installment" : "", occ.category, payLabel ? `via ${payLabel}` : "", occ.recurring ? "recurring" : "one-time"].filter(Boolean).join(" · "),
-            amount: amt, flow: onCredit ? "cc" : "out", onCredit, bankId: resolveBillBankId(occ)
+            amount: amt, flow: onCredit ? "cc" : "out", onCredit, bankId: resolveBillBankId(occ),
+            cardId: occ.payCardId || null, payoffCardId: occ.payoffCardId || null
           });
         }
       }
@@ -4603,10 +4775,24 @@ service cloud.firestore {
             kind: "txn", id: t.id, recurring: false, key: null,
             date: t.date, originalDate: t.date,
             name: t.description || "Transaction", sub: t.cardName || "",
-            amount: amt, flow, txnType: t.txnType, cardType: t.cardType,
+            amount: amt, flow, txnType: t.txnType, cardType: t.cardType, cardId: t.cardId || null,
             bankId: t.cardType === "debit" ? resolveDebitTxnBankId(t) : (t.txnType === "payoff" ? (t.sourceBankAccountId || null) : null)
           });
         }
+      }
+
+      // Transfers between your own banks: shown in the list but never counted as cash in / out.
+      for (const t of state.transfers || []) {
+        if (!t.date) continue;
+        const idx = assignToPeriod(t.date, periods);
+        if (idx < 0) continue;
+        const nm = (id, fb) => ((state.bankAccounts || []).find(b => b.id === id) || {}).name || fb || "Deleted account";
+        periodItems[idx].push({
+          kind: "transfer", id: t.id, recurring: false, key: null,
+          date: t.date, originalDate: t.date,
+          name: `Transfer: ${nm(t.fromBankId, t.fromName)} → ${nm(t.toBankId, t.toName)}`, sub: t.note || "",
+          amount: Number(t.amount || 0), flow: "transfer", fromBankId: t.fromBankId, toBankId: t.toBankId
+        });
       }
 
       if (periods.length) {
@@ -4622,7 +4808,7 @@ service cloud.firestore {
             sub: (pp.mode === "eom"
               ? `Month-end zero-out · pay balance on ${pp.dueDate}`
               : `Due ${pp.dueDate} · statement ${pp.statementDate} · ${pp.mode === "full" ? "pay in full" : "0% APR fixed amount"}`) + (ppBank ? ` · from ${ppBank.name}` : ""),
-            amount: pp.amount, flow: "out", txnType: "payoff", cardType: "credit", bankId: pp.bankId || null
+            amount: pp.amount, flow: "out", txnType: "payoff", cardType: "credit", bankId: pp.bankId || null, cardId: pp.cardId
           });
         }
       }
@@ -4630,25 +4816,82 @@ service cloud.firestore {
       return { periodCashIn, periodCashOut, periodCCSpend, periodItems };
     }
 
+    function plannerBankSelection() {
+      const banks = state.bankAccounts || [];
+      let v = ui.planner.bankSel || "default";
+      if (v !== "default" && v !== "all" && !banks.some(b => b.id === v)) v = "default";
+      if (v === "all") {
+        return { kind: "all", ok: banks.length > 0, label: "All banks", now: banks.reduce((s, b) => s + computeBankAccountBalance(b), 0), bank: null, isDefault: false };
+      }
+      const def = getDefaultBank();
+      const bank = v === "default" ? def : banks.find(b => b.id === v);
+      return { kind: "one", ok: !!bank, label: bank ? bank.name : "", now: bank ? computeBankAccountBalance(bank) : null, bank, isDefault: !!(bank && def && bank.id === def.id) };
+    }
+
+    // Signed effect of a planner item on what you owe across revolving credit cards (installment plans excluded).
+    function plannerCardNetFor(it) {
+      const amt = Number(it.amount || 0);
+      const isRev = (id) => { const c = (state.creditCards || []).find(x => x.id === id); return !!c && !isInstallment(c); };
+      if (it.flow === "cc") return (it.cardId && isRev(it.cardId)) ? amt : 0;               // purchase on a card: owe more
+      if (it.flow === "cc-refund") return (it.cardId && isRev(it.cardId)) ? -amt : 0;       // refund: owe less
+      if (it.txnType === "payoff") return isRev(it.cardId) ? -amt : 0;                       // payoff: owe less (bank pays it)
+      if (it.kind === "bill" && it.payoffCardId) return isRev(it.payoffCardId) ? -amt : 0;   // bill that pays a card
+      return 0;
+    }
+
+    // Signed effect of a planner item on the selected bank view, or null when it doesn't touch it.
+    function plannerNetFor(it, sel, todayISO) {
+      const amt = Number(it.amount || 0);
+      if (it.flow === "transfer") {
+        if (sel.kind === "all") return 0;
+        if (it.fromBankId === sel.bank.id) return -amt;
+        if (it.toBankId === sel.bank.id) return amt;
+        return null;
+      }
+      if (it.flow !== "in" && it.flow !== "out") return null;   // credit card spend / refunds never touch a bank
+      const n = it.flow === "in" ? amt : -amt;
+      if (sel.kind === "all") {
+        if (it.bankId) return (state.bankAccounts || []).some(b => b.id === it.bankId) ? n : null;
+        return it.date > todayISO ? n : null;
+      }
+      if (it.bankId) return it.bankId === sel.bank.id ? n : null;
+      return (it.date > todayISO && sel.isDefault) ? n : null;   // upcoming items with no bank chosen are assumed to use the default bank
+    }
+
     function computePlanner() {
       const periods = buildPeriods();
       const { periodCashIn, periodCashOut, periodCCSpend, periodItems } = computePeriodCashFlows(periods);
 
-      // Projected bank balance, anchored to today's live bank total (starting balances + everything logged so far).
-      // End of period i = bank today + cash flows dated after today up to period end
-      //                   − cash flows dated after period end up to today (for periods already over).
+      // ----- Bank view: default bank, one bank, or all banks combined -----
+      // Balances are anchored to today's live bank balance. Items dated after today add to it going forward;
+      // items dated today or earlier are walked backwards from it. Credit card spending/refunds never touch a bank
+      // (only payoffs and bank-paid items do), and transfers move money between banks without changing the combined total.
+      const sel = plannerBankSelection();
       const defaultBank = getDefaultBank();
-      const bankNow = defaultBank ? computeBankAccountBalance(defaultBank) : null;
       const todayISOp = toISODate(new Date());
-      const netOf = it => it.flow === "in" ? Number(it.amount || 0) : (it.flow === "out" ? -Number(it.amount || 0) : 0);
+      const netFor = (it) => plannerNetFor(it, sel, todayISOp);
+
+      const flat = [];
+      periodItems.forEach(list => list.forEach(it => flat.push(it)));
+      const cardNow = computeAccountsTotals().spokenFor;   // what you owe on revolving cards today
+      const cardNet = (it) => plannerCardNetFor(it);
+      if (sel.ok) {
+        let bank = sel.now, card = cardNow;
+        for (const it of flat) {
+          if (it.date <= todayISOp) continue;
+          bank += (netFor(it) ?? 0); card += cardNet(it);
+          it.balAfter = bank; it.cardAfter = card; it.spokenAfter = bank - card;
+        }
+        bank = sel.now; card = cardNow;
+        for (let k = flat.length - 1; k >= 0; k--) {
+          const it = flat[k];
+          if (it.date > todayISOp) continue;
+          it.balAfter = bank; it.cardAfter = card; it.spokenAfter = bank - card;
+          bank -= (netFor(it) ?? 0); card -= cardNet(it);
+        }
+      } else flat.forEach(it => { it.balAfter = null; it.cardAfter = null; it.spokenAfter = null; });
       const allItems = [];
-      // Flows tied to the default bank always count. Upcoming flows with NO bank chosen (e.g. a bill whose "Pay with" is blank)
-      // are assumed to come out of / go into the default bank too, so edits to them move the projected balance.
-      periodItems.forEach(list => list.forEach(it => {
-        const n = netOf(it);
-        if (!n || !defaultBank) return;
-        if (it.bankId === defaultBank.id || (!it.bankId && it.date > todayISOp)) allItems.push({ date: it.date, n });
-      }));
+      if (sel.ok) flat.forEach(it => { const n = netFor(it) ?? 0, c = cardNet(it); if (n || c) allItems.push({ date: it.date, n, c }); });
 
       let carry = 0;
       const rows = [];
@@ -4658,15 +4901,16 @@ service cloud.firestore {
         const net = income - exp;
         carry += net;
         const endISO = periods[i].endISO;
-        let projected = null;
-        if (defaultBank) {
-          projected = bankNow;
+        let projected = null, cardEnd = null, spoken = null;
+        if (sel.ok) {
+          projected = sel.now; cardEnd = cardNow;
           for (const it of allItems) {
-            if (it.date > todayISOp && it.date <= endISO) projected += it.n;
-            else if (it.date > endISO && it.date <= todayISOp) projected -= it.n;
+            if (it.date > todayISOp && it.date <= endISO) { projected += it.n; cardEnd += it.c; }
+            else if (it.date > endISO && it.date <= todayISOp) { projected -= it.n; cardEnd -= it.c; }
           }
+          spoken = projected - cardEnd;
         }
-        rows.push({ i, period: periods[i], income, expense: exp, ccSpend: periodCCSpend[i], net, carry, projected, items: periodItems[i] });
+        rows.push({ i, period: periods[i], income, expense: exp, ccSpend: periodCCSpend[i], net, carry, projected, cardEnd, spoken, items: periodItems[i] });
       }
 
       const today = parseISODateLocal(toISODate(new Date()));
@@ -4677,7 +4921,7 @@ service cloud.firestore {
         if (monthKey(r.period.endISO) === nextMonthKey) { carryNextMonth = r.carry; break; }
       }
 
-      return { periods, rows, carryNextMonth, defaultBank };
+      return { periods, rows, carryNextMonth, defaultBank, bankSel: sel };
     }
 
     // Current-period metrics for the Dashboard: pulls straight from the planner rows.
@@ -4709,6 +4953,8 @@ service cloud.firestore {
             newDate: newISO !== item.originalDate ? newISO : null,
             deleted: false, updatedAt: serverTimestamp()
           }, { merge: true });
+        } else if (item.kind === "transfer") {
+          await setDoc(doc(db, "users", currentUser.uid, "transfers", item.id), { date: newISO }, { merge: true });
         } else if (item.kind === "txn") {
           await setDoc(doc(db, "users", currentUser.uid, "transactions", item.id), { date: newISO }, { merge: true });
         } else if (item.kind === "income" || item.kind === "bill") {
@@ -4820,6 +5066,7 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
     function plannerItemBadges(it) {
       if (it.kind === "income") return `<span class="badge badge-emerald">Income</span>`;
       if (it.kind === "bill") return `<span class="badge badge-amber">Bill</span>` + (it.onCredit ? ` <span class="badge badge-brand">Credit Card</span>` : "");
+      if (it.kind === "transfer") return `<span class="badge badge-slate">Transfer</span>`;
       return txnTypeBadge({ txnType: it.txnType }) + " " + cardTypeBadge({ cardType: it.cardType });
     }
 
@@ -4827,6 +5074,7 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
       switch (it.flow) {
         case "in": return `<span class="font-semibold text-emerald-700">+${formatMoney(it.amount)}</span>`;
         case "out": return `<span class="font-semibold text-rose-700">−${formatMoney(it.amount)}</span>`;
+        case "transfer": return `<span class="font-semibold text-slate-600">⇄ ${formatMoney(it.amount)}</span>`;
         case "cc": return `<span class="font-semibold text-slate-500" title="Credit card spend — billed later">${formatMoney(it.amount)} <span class="text-[10px] font-normal">CC</span></span>`;
         default: return `<span class="font-semibold text-slate-500" title="Credit card refund">−${formatMoney(it.amount)} <span class="text-[10px] font-normal">CC</span></span>`;
       }
@@ -4836,23 +5084,31 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
       const planner = computePlanner();
       const carryNextMonth = planner.carryNextMonth;
       const rows = applySort("period", planner.rows);
+      const bsel = planner.bankSel;
+      const viewSel = $("#planner-bank-view");
+      if (viewSel) {
+        const html = `<option value="default">Default bank${planner.defaultBank ? " — " + escapeHtml(planner.defaultBank.name) : " (none set)"}</option><option value="all">All banks combined</option>`
+          + (state.bankAccounts || []).slice().sort((a, b) => (a.name || "").localeCompare(b.name || "")).map(b => `<option value="${b.id}">${escapeHtml(b.name)}</option>`).join("");
+        if (viewSel.dataset.sig !== html) { viewSel.innerHTML = html; viewSel.dataset.sig = html; }
+        viewSel.value = ui.planner.bankSel && Array.from(viewSel.options).some(o => o.value === ui.planner.bankSel) ? ui.planner.bankSel : "default";
+      }
       const projTh = $("#period-projected-label");
-      if (projTh) projTh.textContent = planner.defaultBank ? `Projected Balance — ${planner.defaultBank.name}` : "Projected Balance (set a default bank)";
+      if (projTh) projTh.textContent = bsel.ok ? `Projected Balance — ${bsel.label}` : "Projected Balance (set a default bank)";
       {
         const todayP = toISODate(new Date());
         const cur = planner.rows.find(r => todayP >= r.period.startISO && todayP <= r.period.endISO);
         const valEl = $("#current-period-projected"), subEl = $("#current-period-projected-sub");
         if (valEl) {
-          if (!planner.defaultBank) {
+          if (!bsel.ok) {
             valEl.textContent = "Set a default bank"; valEl.className = "text-sm font-semibold text-slate-400";
             subEl.textContent = "";
           } else if (!cur || cur.projected == null) {
             valEl.textContent = "—"; valEl.className = "text-xl font-bold text-slate-400";
-            subEl.textContent = planner.defaultBank.name;
+            subEl.textContent = bsel.label;
           } else {
             valEl.textContent = formatMoney(cur.projected);
             valEl.className = "text-xl font-bold " + (cur.projected >= 0 ? "text-emerald-700" : "text-rose-700");
-            subEl.textContent = `${planner.defaultBank.name} · by ${cur.period.endISO}`;
+            subEl.textContent = `${bsel.label} · by ${cur.period.endISO} · spoken-for ${formatMoney(cur.spoken)}`;
           }
         }
       }
@@ -4862,7 +5118,7 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
       plannerItemLookup = new Map();
 
       if (!rows.length) {
-        tbody.innerHTML = `<tr><td colspan="5" class="px-4 py-4 text-center text-slate-500">No periods to display.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" class="px-4 py-4 text-center text-slate-500">No periods to display.</td></tr>`;
         return;
       }
 
@@ -4887,6 +5143,7 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
           </td>
           <td class="px-4 py-3 text-right font-semibold ${netClass}">${formatMoney(r.net)}</td>
           <td class="px-4 py-3 text-right font-bold ${r.projected == null ? "text-slate-400" : (r.projected >= 0 ? "text-emerald-700" : "text-rose-700")}">${r.projected == null ? "—" : formatMoney(r.projected)}</td>
+          <td class="px-4 py-3 text-right font-bold ${r.spoken == null ? "text-slate-400" : (r.spoken >= 0 ? "text-emerald-700" : "text-rose-700")}">${r.spoken == null ? "—" : formatMoney(r.spoken)}${r.cardEnd != null && r.cardEnd > 0.004 ? `<div class="text-[11px] text-slate-400 font-normal">cards owed ${formatMoney(r.cardEnd)}</div>` : ""}</td>
         `;
         tbody.appendChild(tr);
 
@@ -4905,6 +5162,10 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
                     ${it.sub ? `<div class="text-xs text-slate-500 mt-0.5">${escapeHtml(it.sub)}</div>` : ""}
                   </div>
                   <div class="text-sm">${plannerItemAmount(it)}</div>
+                  <div class="text-right min-w-[210px]">
+                    ${it.balAfter == null ? "" : `<div class="text-[11px] text-slate-400">Bank after <span class="text-sm font-bold ${it.balAfter >= 0 ? "text-emerald-700" : "text-rose-700"}">${formatMoney(it.balAfter)}</span></div>
+                      <div class="text-[11px] text-slate-400">Spoken-for <span class="text-sm font-bold ${it.spokenAfter >= 0 ? "text-emerald-700" : "text-rose-700"}">${formatMoney(it.spokenAfter)}</span>${it.flow === "cc" || it.flow === "cc-refund" ? ` <span class="text-[10px]">(card spend)</span>` : ""}</div>`}
+                  </div>
                   <div class="flex items-center gap-2">
                     <input type="date" value="${escapeHtml(it.date)}" data-planner-date="${lookupId}"
                            class="border border-slate-300 rounded-lg px-2 py-1 text-sm">
@@ -4914,7 +5175,9 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
             }).join("")
           : `<div class="text-sm text-slate-500">No transactions in this period.</div>`;
 
-        detailTr.innerHTML = `<td colspan="5" class="px-4 py-3 bg-slate-50"><div class="space-y-2">${itemsHtml}</div></td>`;
+        detailTr.innerHTML = `<td colspan="6" class="px-4 py-3 bg-slate-50">
+          ${bsel.ok ? `<div class="text-[11px] text-slate-500 mb-2">Balances for <strong>${escapeHtml(bsel.label)}</strong>. <strong>Bank</strong> = actual cash (card spending isn't subtracted; card payoffs are). <strong>Spoken-for</strong> = bank minus what you owe on credit cards.</div>` : ""}
+          <div class="space-y-2">${itemsHtml}</div></td>`;
         tbody.appendChild(detailTr);
       }
 
@@ -4942,6 +5205,78 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
       $("#period-summary").textContent = `Showing ${rows.length} periods (${ui.planner.horizonDays} days).`;
     }
 
+    // Dashboard: the planner period that contains today (or the next one), split into done vs. coming up.
+    function renderCurrentPeriod() {
+      const card = $("#current-period-card");
+      if (!card) return;
+      const planner = computePlanner();
+      const bsel = planner.bankSel;
+      const todayISO = toISODate(new Date());
+      let row = planner.rows.find(r => todayISO >= r.period.startISO && todayISO <= r.period.endISO);
+      let isNext = false;
+      if (!row) { row = planner.rows.find(r => r.period.startISO > todayISO); isNext = !!row; }
+      $("#cp-view").textContent = bsel.ok ? bsel.label : "Set a default bank";
+      if (!row) {
+        $("#cp-title").textContent = "Current Period";
+        $("#cp-range").textContent = "No planner period covers today yet — add an income with a date to build periods.";
+        $("#cp-tiles").innerHTML = ""; $("#cp-progress").innerHTML = "";
+        $("#cp-done").innerHTML = ""; $("#cp-next").innerHTML = ""; $("#cp-done-count").textContent = ""; $("#cp-next-count").textContent = "";
+        return;
+      }
+      $("#cp-title").textContent = isNext ? "Next Period" : `Current Period (#${row.i + 1})`;
+      $("#cp-range").textContent = `${row.period.startISO} → ${row.period.endISO}`;
+
+      const money = (v, cls) => v == null ? `<span class="text-slate-400">—</span>` : `<span class="${cls || (v >= 0 ? "text-emerald-700" : "text-rose-700")}">${formatMoney(v)}</span>`;
+      const tile = (label, valHtml, sub) => `<div class="bg-slate-50 rounded-xl border border-slate-200 p-4"><div class="text-xs text-slate-500">${label}</div><div class="text-lg font-bold">${valHtml}</div>${sub ? `<div class="text-[11px] text-slate-400 mt-0.5">${sub}</div>` : ""}</div>`;
+      $("#cp-tiles").innerHTML =
+        tile("Cash in (period)", money(row.income, "text-emerald-700")) +
+        tile("Cash out (period)", money(row.expense, "text-rose-700"), row.ccSpend ? `+ ${formatMoney(row.ccSpend)} on cards` : "") +
+        tile("Bank balance at period end", money(row.projected), bsel.ok ? escapeHtml(bsel.label) : "") +
+        tile("Spoken-for at period end", money(row.spoken), row.cardEnd != null && row.cardEnd > 0.004 ? `cards owed ${formatMoney(row.cardEnd)}` : "");
+
+      // progress through the period
+      const startMs = parseISODateLocal(row.period.startISO).getTime(), endMs = parseISODateLocal(row.period.endISO).getTime();
+      const days = Math.round((endMs - startMs) / 86400000) + 1;
+      const dayNo = Math.min(days, Math.max(0, Math.round((parseISODateLocal(todayISO).getTime() - startMs) / 86400000) + 1));
+      $("#cp-progress").innerHTML = isNext
+        ? `<div class="text-xs text-slate-500">Starts ${escapeHtml(row.period.startISO)}</div>`
+        : `<div class="flex items-center justify-between text-xs text-slate-500"><span>Day ${dayNo} of ${days}</span><span>${Math.max(0, days - dayNo)} day${days - dayNo === 1 ? "" : "s"} left</span></div>
+           <div class="mt-1 h-2 rounded-full bg-slate-200 overflow-hidden"><div class="h-full bg-brand-600" style="width:${Math.round((dayNo / days) * 100)}%"></div></div>`;
+
+      const fmtDay = (iso) => parseISODateLocal(iso).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+      const line = (it, done) => {
+        const sign = it.flow === "in" ? "text-emerald-700" : (it.flow === "out" ? "text-rose-700" : "text-slate-500");
+        return `<div class="rounded-lg border ${done ? "border-slate-200 bg-slate-50" : "border-brand-500/40 bg-white"} px-3 py-2">
+          <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0">
+              <div class="text-sm font-medium text-slate-800 truncate">${escapeHtml(it.name)} ${plannerItemBadges(it)}</div>
+              <div class="text-xs text-slate-500">${escapeHtml(fmtDay(it.date))}${it.sub ? " · " + escapeHtml(it.sub) : ""}</div>
+            </div>
+            <div class="text-sm shrink-0 ${sign}">${plannerItemAmount(it)}</div>
+          </div>
+          ${it.balAfter == null ? "" : `<div class="mt-1 text-[11px] text-slate-400">Bank after <span class="font-semibold ${it.balAfter >= 0 ? "text-emerald-700" : "text-rose-700"}">${formatMoney(it.balAfter)}</span> · Spoken-for <span class="font-semibold ${it.spokenAfter >= 0 ? "text-emerald-700" : "text-rose-700"}">${formatMoney(it.spokenAfter)}</span></div>`}
+        </div>`;
+      };
+      const items = row.items.slice().sort((x, y) => x.date < y.date ? -1 : (x.date > y.date ? 1 : 0));
+      const done = items.filter(it => it.date <= todayISO).reverse();   // newest first
+      const next = items.filter(it => it.date > todayISO);
+      $("#cp-done-count").textContent = `(${done.length})`;
+      $("#cp-next-count").textContent = `(${next.length})`;
+      $("#cp-done").innerHTML = done.length ? done.map(it => line(it, true)).join("") : `<div class="text-sm text-slate-500">Nothing yet this period.</div>`;
+      $("#cp-next").innerHTML = next.length ? next.map(it => line(it, false)).join("") : `<div class="text-sm text-slate-500">Nothing else scheduled this period.</div>`;
+    }
+
+    // Keep "current period" honest: when the calendar day changes, repaint (works for tabs left open overnight).
+    let _lastDayISO = toISODate(new Date());
+    function checkDayRollover() {
+      const d = toISODate(new Date());
+      if (d === _lastDayISO) return;
+      _lastDayISO = d;
+      if (currentUser) refreshAllViews();
+    }
+    setInterval(checkDayRollover, 60000);
+    document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") checkDayRollover(); });
+
     function renderRecentActivity() {
       const box = $("#recent-activity");
       const items = [];
@@ -4961,6 +5296,9 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
       for (const t of state.transactions || []) {
         const label = t.txnType === "payoff" ? "Payoff" : (t.txnType === "credit" ? "Credit/Refund" : "Expense");
         items.push({ type: label, date: t.date || "", text: `${t.cardName} (${t.cardType === "debit" ? "Debit" : "Credit"}) — ${t.description} on ${t.date} (${formatMoney(t.amount)})` });
+      }
+      for (const t of state.transfers || []) {
+        items.push({ type: "Transfer", date: t.date || "", text: `Transfer: ${t.fromName || "?"} → ${t.toName || "?"} on ${t.date} (${formatMoney(t.amount)})` });
       }
       for (const b of state.bankAccounts || []) {
         items.push({ type: "Bank Account", date: b.createdAt?.toDate?.()?.toISOString?.() || new Date().toISOString(), text: `Added/Updated bank account: ${b.name}` });
@@ -5013,11 +5351,12 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
       renderBills();
       updateCategoryDatalist(); populatePayoffCardOptions();   // NEW
       renderTxnQuickHelpers();
+      renderTransfers();
       renderTransactionsLedger();
 
       if (!routeDashboard.classList.contains("hidden")) {
         renderDashboard();
-        renderRecentActivity(); renderKpis();
+        renderCurrentPeriod(); renderKpis();
       }
       if (!routePeriod.classList.contains("hidden")) renderPlanner();
       if (!routeAccounts.classList.contains("hidden")) { renderAccountsSummary(); renderPlannedPayoffs(); }
@@ -5824,6 +6163,8 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
     $("#txn-card-select").addEventListener("change", applyPayoffDefaultBank);
     $("#txn-type").addEventListener("change", applyPayoffDefaultBank);
 
+    $("#planner-bank-view").addEventListener("change", (e) => { ui.planner.bankSel = e.target.value; renderPlanner(); });
+
     // ---------- Month-End Zero-Out quick actions ----------
     function renderZeroOutBar() {
       const el = $("#zero-out-bar");
@@ -6197,7 +6538,7 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
         state = {
           assets: [], liabilities: [], incomes: [], incomeOverrides: [], bills: [], billOverrides: [],
           bankAccounts: [], creditCards: [], debitCards: [], transactions: [],
-          payoffOverrides: [], budgets: []
+          payoffOverrides: [], budgets: [], transfers: []
         };
         ui.expandedBillIds = new Set();
         ui.expandedIncomeIds = new Set();
