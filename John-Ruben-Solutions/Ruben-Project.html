@@ -1013,6 +1013,13 @@
               <h3 class="text-lg font-semibold text-slate-900">Transaction Ledger</h3>
               <div class="text-sm text-slate-500" id="txn-ledger-summary"></div>
             </div>
+            <div class="mt-3 flex flex-wrap items-center gap-2">
+              <button type="button" id="ledger-export-btn" class="bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-3 py-2 rounded-lg transition-colors">Export to Excel</button>
+              <button type="button" id="ledger-import-btn" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium px-3 py-2 rounded-lg transition-colors">Import from Excel</button>
+              <button type="button" id="ledger-template-btn" class="text-sm text-brand-600 hover:underline px-1">Download import template</button>
+              <input type="file" id="ledger-import-file" accept=".xlsx" class="hidden">
+              <span class="text-xs text-slate-400">Export covers the full ledger (all dates, ignoring the filters below). Import accepts only the template format.</span>
+            </div>
 
             <!-- NEW: search + period + custom date range filters -->
             <div class="mt-4 p-3 rounded-xl bg-slate-50 border border-slate-200">
@@ -1309,7 +1316,7 @@
                     <label class="block text-xs font-medium text-slate-600 mb-1" for="bill-installment-balance">Remaining balance (as of first due date)</label>
                     <input type="number" id="bill-installment-balance" step="0.01" min="0" placeholder="e.g. 4800"
                            class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
-                    <p class="text-[11px] text-slate-500 mt-1">Repeats automatically until the balance is paid. Paying extra on an upcoming payment (Bills → Upcoming → Edit) shortens the plan; skipping one extends it. Leave blank to set your own end date.</p>
+                    <p class="text-[11px] text-slate-500 mt-1">Repeats automatically until the balance is paid. Paying extra on an upcoming payment (Bills → Occurrences → Upcoming → Edit) shortens the plan; skipping one extends it. Leave blank to set your own end date.</p>
                   </div>
                 </div>
                 
@@ -1560,7 +1567,8 @@ service cloud.firestore {
       orderBy,
       onSnapshot,
       serverTimestamp,
-      getDocs
+      getDocs,
+      writeBatch
     } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     // ===== Firebase Config (as provided) =====
@@ -3053,6 +3061,272 @@ service cloud.firestore {
       } catch (err) {
         alert(err?.message || "Failed to save transaction");
       }
+    });
+
+    // ===== Excel export / import of the transaction ledger =====
+    // One fixed format. Export writes it, the template is its empty version, and import accepts nothing else.
+    const LEDGER_COLS = ["Date", "Source", "Card / Account", "Card Type", "Type", "Description", "Category", "Amount", "Pay-From Bank"];
+    const XLSX_URLS = [
+      "https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js",
+      "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"
+    ];
+
+    function loadScriptOnce(src) {
+      return new Promise((resolve, reject) => {
+        const s = document.createElement("script");
+        s.src = src; s.onload = resolve; s.onerror = () => reject(new Error("load failed"));
+        document.head.appendChild(s);
+      });
+    }
+    async function ensureXlsx() {
+      if (window.XLSX) return window.XLSX;
+      for (const u of XLSX_URLS) {
+        try { await loadScriptOnce(u); if (window.XLSX) return window.XLSX; } catch (e) { /* try the next source */ }
+      }
+      throw new Error("Couldn't load the Excel library. Check your internet connection and try again.");
+    }
+
+    // Every ledger row (all transactions + every bill occurrence dated today or earlier), oldest first.
+    function buildLedgerAOA() {
+      const bankName = (id) => ((state.bankAccounts || []).find(b => b.id === id) || {}).name || "";
+      const typeLabel = { expense: "Expense", credit: "Refund", payoff: "Payoff" };
+      const out = [];
+      for (const r of getLedgerBaseRows().rows) {
+        if (r.kind === "bill") {
+          const o = r.occ;
+          out.push([o.date, "Bill", billPayLabel(o) || "", "", "Bill", o.name || "", o.category || "", Number(o.amount) || 0, ""]);
+        } else {
+          const t = r.t;
+          out.push([t.date || "", "Transaction", t.cardName || "", t.cardType === "debit" ? "Debit" : "Credit",
+            typeLabel[t.txnType] || "Expense", t.description || "", t.txnType === "payoff" ? "" : (t.category || ""),
+            Number(t.amount) || 0, t.txnType === "payoff" ? bankName(t.sourceBankAccountId) : ""]);
+        }
+      }
+      out.sort((a, b) => a[0] < b[0] ? -1 : (a[0] > b[0] ? 1 : 0));
+      return [LEDGER_COLS, ...out];
+    }
+
+    function ledgerWorkbook(XLSX, aoa) {
+      const ws = XLSX.utils.aoa_to_sheet(aoa);
+      ws["!cols"] = [{ wch: 12 }, { wch: 13 }, { wch: 24 }, { wch: 10 }, { wch: 10 }, { wch: 40 }, { wch: 20 }, { wch: 12 }, { wch: 22 }];
+      for (let r = 1; r < aoa.length; r++) {
+        const c = ws[XLSX.utils.encode_cell({ r, c: 7 })];
+        if (c) c.z = "#,##0.00";
+      }
+      ws["!autofilter"] = { ref: XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: Math.max(aoa.length - 1, 0), c: LEDGER_COLS.length - 1 } }) };
+      const info = [
+        ["Ledger import format"],
+        [""],
+        ["Import reads only the sheet named \"Ledger\". Keep the header row exactly as it is, in the same order."],
+        ["Date: YYYY-MM-DD (a real Excel date also works)."],
+        ["Source: Transaction (imported) or Bill (skipped: bills come from the Bills tab)."],
+        ["Card / Account: the name of a card on your Cards tab. It must match the Card Type."],
+        ["Card Type: Credit or Debit."],
+        ["Type: Expense, Refund or Payoff. Payoff is for Credit cards only."],
+        ["Description: free text."],
+        ["Category: free text. Leave blank for a Payoff."],
+        ["Amount: a positive number."],
+        ["Pay-From Bank: the name of one of your bank accounts. Required for a Payoff, blank otherwise."],
+        [""],
+        ["If any row has a problem, nothing is imported and every problem is listed. Rows identical to a transaction you already have are skipped, so re-importing an export is safe."]
+      ];
+      const ws2 = XLSX.utils.aoa_to_sheet(info);
+      ws2["!cols"] = [{ wch: 120 }];
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Ledger");
+      XLSX.utils.book_append_sheet(wb, ws2, "Read Me");
+      return wb;
+    }
+
+    function ledgerTxnKey(date, cardType, cardId, txnType, description, category, amount) {
+      return [date, cardType, cardId, txnType || "expense", String(description || "").trim().toLowerCase(),
+        String(category || "").trim().toLowerCase(), Math.round(Number(amount) * 100)].join("|");
+    }
+
+    // Validates a whole sheet (array of rows, header first) against the one allowed format. Pure: no writes.
+    function parseLedgerAOA(aoa, ctx) {
+      const res = { headerError: null, toImport: [], errors: [], duplicates: 0, billsIgnored: 0, blankRows: 0 };
+      const norm = (v) => String(v ?? "").trim();
+      const hdr = (aoa[0] || []).map(norm);
+      const headerOk = LEDGER_COLS.every((c, i) => (hdr[i] || "").toLowerCase() === c.toLowerCase()) && hdr.slice(LEDGER_COLS.length).every(h => h === "");
+      if (!headerOk) {
+        res.headerError = "The header row doesn't match the import format. Row 1 of the \"Ledger\" sheet must be exactly: " + LEDGER_COLS.join(" | ") + ".";
+        return res;
+      }
+      if (aoa.length - 1 > 5000) { res.headerError = "Too many rows: import up to 5,000 at a time."; return res; }
+
+      const parseDateCell = (v) => {
+        const pad = (n) => String(n).padStart(2, "0");
+        const valid = (y, m, d) => { const dt = new Date(y, m - 1, d); return dt.getFullYear() === y && dt.getMonth() === m - 1 && dt.getDate() === d; };
+        if (typeof v === "number" && isFinite(v)) {                       // real Excel date (serial number)
+          const dt = new Date(Date.UTC(1899, 11, 30) + Math.floor(v) * 86400000);
+          const y = dt.getUTCFullYear(), m = dt.getUTCMonth() + 1, d = dt.getUTCDate();
+          return (y >= 1990 && y <= 2100) ? `${y}-${pad(m)}-${pad(d)}` : null;
+        }
+        const s = norm(v);
+        const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+        return (m && valid(+m[1], +m[2], +m[3])) ? s : null;
+      };
+
+      // Transactions you already have (a multiset, so identical rows are matched one-for-one)
+      const have = new Map();
+      for (const t of ctx.existing) {
+        const k = ledgerTxnKey(t.date, t.cardType === "debit" ? "debit" : "credit", t.cardId, t.txnType, t.description, t.category, t.amount);
+        have.set(k, (have.get(k) || 0) + 1);
+      }
+
+      for (let i = 1; i < aoa.length; i++) {
+        const row = aoa[i] || [];
+        const rowNum = i + 1;
+        if (row.every(c => norm(c) === "")) { res.blankRows++; continue; }
+        const [dateV, srcV, cardV, ctV, typeV, descV, catV, amtV, bankV] = row;
+        const src = norm(srcV).toLowerCase();
+        if (src === "bill") { res.billsIgnored++; continue; }
+
+        const errs = [];
+        if (src !== "transaction") errs.push('Source must be "Transaction" (or "Bill", which is skipped)');
+        const date = parseDateCell(dateV);
+        if (!date) errs.push("Date must be YYYY-MM-DD or a real Excel date");
+
+        const ct = norm(ctV).toLowerCase();
+        if (ct !== "credit" && ct !== "debit") errs.push('Card Type must be "Credit" or "Debit"');
+        let card = null;
+        if (ct === "credit" || ct === "debit") {
+          const name = norm(cardV).toLowerCase();
+          const found = (ct === "debit" ? ctx.debit : ctx.credit).filter(c => String(c.name || "").trim().toLowerCase() === name);
+          if (!name) errs.push("Card / Account is required");
+          else if (found.length === 0) errs.push(`No ${ct} card named "${norm(cardV)}"`);
+          else if (found.length > 1) errs.push(`More than one ${ct} card is named "${norm(cardV)}"`);
+          else card = found[0];
+        }
+
+        const txnType = ({ expense: "expense", refund: "credit", payoff: "payoff" })[norm(typeV).toLowerCase()];
+        if (!txnType) errs.push('Type must be "Expense", "Refund" or "Payoff"');
+        if (txnType === "payoff" && ct === "debit") errs.push("Payoff is only for credit cards");
+
+        let bank = null;
+        const bn = norm(bankV);
+        if (txnType === "payoff") {
+          const found = ctx.banks.filter(b => String(b.name || "").trim().toLowerCase() === bn.toLowerCase());
+          if (!bn) errs.push("Pay-From Bank is required for a Payoff");
+          else if (found.length === 0) errs.push(`No bank account named "${bn}"`);
+          else if (found.length > 1) errs.push(`More than one bank account is named "${bn}"`);
+          else bank = found[0];
+        } else if (bn) {
+          errs.push("Pay-From Bank is only used for a Payoff");
+        }
+
+        const category = norm(catV);
+        if (txnType === "payoff" && category) errs.push("Category must be blank for a Payoff");
+        const amount = (typeof amtV === "number" && isFinite(amtV)) ? Math.round(amtV * 100) / 100 : NaN;
+        if (!(amount > 0)) errs.push("Amount must be a number greater than 0");
+
+        if (errs.length) { res.errors.push({ row: rowNum, msg: errs.join("; ") }); continue; }
+
+        const description = norm(descV);
+        const key = ledgerTxnKey(date, ct, card.id, txnType, description, category, amount);
+        if ((have.get(key) || 0) > 0) { have.set(key, have.get(key) - 1); res.duplicates++; continue; }
+        res.toImport.push({
+          date, amount, description, cardType: ct, cardId: card.id, cardName: card.name, txnType,
+          sourceBankAccountId: bank ? bank.id : null,
+          bankAccountId: ct === "debit" ? (card.bankAccountId || null) : null,
+          category
+        });
+      }
+      return res;
+    }
+
+    function openLedgerImportPreview(res, fileName) {
+      const old = $("#ledger-import-modal");
+      if (old) old.remove();
+      const overlay = document.createElement("div");
+      overlay.id = "ledger-import-modal";
+      overlay.className = "fixed inset-0 z-50 flex items-center justify-center p-4";
+      overlay.style.background = "rgba(0,0,0,.6)";
+      const blocked = !!res.headerError || res.errors.length > 0;
+      const canImport = !blocked && res.toImport.length > 0;
+      const line = (label, n, cls) => `<div class="flex justify-between py-1.5 border-b border-slate-100 text-sm"><span class="text-slate-600">${label}</span><span class="font-semibold ${cls || "text-slate-800"}">${n}</span></div>`;
+      const errList = res.errors.slice(0, 15).map(e => `<li>Row ${e.row}: ${escapeHtml(e.msg)}</li>`).join("") +
+        (res.errors.length > 15 ? `<li>…and ${res.errors.length - 15} more rows with problems</li>` : "");
+      overlay.innerHTML = `
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-xl p-5 w-full max-w-lg max-h-[90vh] overflow-y-auto" role="dialog" aria-modal="true">
+          <h3 class="text-lg font-semibold text-slate-900">Import preview</h3>
+          <div class="text-xs text-slate-500 mt-0.5">${escapeHtml(fileName)}</div>
+          ${res.headerError ? `<div class="mt-3 text-sm text-rose-700 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2">${escapeHtml(res.headerError)}</div>` : `
+          <div class="mt-3">
+            ${line("Ready to import", res.toImport.length, res.toImport.length ? "text-emerald-700" : "")}
+            ${line("Already in your ledger (skipped)", res.duplicates)}
+            ${line("Bill rows (skipped)", res.billsIgnored)}
+            ${line("Rows with problems", res.errors.length, res.errors.length ? "text-rose-700" : "")}
+          </div>
+          ${res.errors.length ? `<div class="mt-3 text-sm text-rose-700"><div class="font-semibold mb-1">Nothing was imported. Fix these rows and try again:</div><ul class="list-disc pl-5 space-y-0.5">${errList}</ul></div>` : ""}
+          ${(!res.errors.length && !res.toImport.length) ? `<div class="mt-3 text-sm text-slate-600">There is nothing new to import.</div>` : ""}`}
+          <div class="mt-4 flex justify-end gap-2">
+            <button type="button" data-imp-cancel class="px-3 py-2 rounded-lg border border-slate-300 text-slate-700 text-sm hover:bg-slate-50">${canImport ? "Cancel" : "Close"}</button>
+            ${canImport ? `<button type="button" data-imp-go class="px-3 py-2 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium">Import ${res.toImport.length} transaction${res.toImport.length === 1 ? "" : "s"}</button>` : ""}
+          </div>
+        </div>`;
+      document.body.appendChild(overlay);
+      const close = () => { overlay.remove(); document.removeEventListener("keydown", onKey); };
+      const onKey = (e) => { if (e.key === "Escape") close(); };
+      document.addEventListener("keydown", onKey);
+      overlay.addEventListener("click", (e) => { if (e.target === overlay) close(); });
+      overlay.querySelector("[data-imp-cancel]").addEventListener("click", close);
+      const go = overlay.querySelector("[data-imp-go]");
+      if (go) go.addEventListener("click", async () => {
+        go.disabled = true; go.textContent = "Importing…";
+        try {
+          const CHUNK = 400;
+          for (let i = 0; i < res.toImport.length; i += CHUNK) {
+            const batch = writeBatch(db);
+            for (const p of res.toImport.slice(i, i + CHUNK)) batch.set(doc(userCol("transactions")), { ...p, createdAt: serverTimestamp() });
+            await batch.commit();
+          }
+          close();
+          showToast(`Imported ${res.toImport.length} transaction${res.toImport.length === 1 ? "" : "s"}`);
+        } catch (err) {
+          go.disabled = false; go.textContent = `Import ${res.toImport.length} transactions`;
+          alert(err?.message || "Import failed. Nothing further was imported.");
+        }
+      });
+    }
+
+    $("#ledger-export-btn").addEventListener("click", async () => {
+      if (!currentUser) { alert("Please sign in first."); return; }
+      try {
+        const XLSX = await ensureXlsx();
+        XLSX.writeFile(ledgerWorkbook(XLSX, buildLedgerAOA()), `ledger-export-${toISODate(new Date())}.xlsx`);
+      } catch (err) { alert(err?.message || "Export failed"); }
+    });
+    $("#ledger-template-btn").addEventListener("click", async () => {
+      try {
+        const XLSX = await ensureXlsx();
+        XLSX.writeFile(ledgerWorkbook(XLSX, [LEDGER_COLS]), "ledger-import-template.xlsx");
+      } catch (err) { alert(err?.message || "Couldn't create the template"); }
+    });
+    $("#ledger-import-btn").addEventListener("click", () => {
+      if (!currentUser) { alert("Please sign in first."); return; }
+      $("#ledger-import-file").click();
+    });
+    $("#ledger-import-file").addEventListener("change", async (e) => {
+      const file = e.target.files && e.target.files[0];
+      e.target.value = "";
+      if (!file || !currentUser) return;
+      try {
+        const XLSX = await ensureXlsx();
+        const wb = XLSX.read(await file.arrayBuffer(), { type: "array" });
+        const ws = wb.Sheets["Ledger"];
+        if (!ws) {
+          openLedgerImportPreview({ headerError: 'This file has no sheet named "Ledger". Download the import template to see the required format.', toImport: [], errors: [], duplicates: 0, billsIgnored: 0 }, file.name);
+          return;
+        }
+        const aoa = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: "" });
+        const res = parseLedgerAOA(aoa, {
+          credit: state.creditCards || [], debit: state.debitCards || [],
+          banks: state.bankAccounts || [], existing: state.transactions || []
+        });
+        openLedgerImportPreview(res, file.name);
+      } catch (err) { alert(err?.message || "Couldn't read that file. Use an .xlsx file in the import format."); }
     });
 
     // ===== Bank-to-bank transfers =====
@@ -4559,7 +4833,7 @@ service cloud.firestore {
           <td class="px-3 py-2 text-right font-semibold text-rose-700">${formatMoney(b.amount)}</td>
           <td class="px-3 py-2 text-right">
             <div class="inline-flex items-center gap-2 flex-wrap justify-end">
-              ${b.isRecurring ? `<button class="text-brand-600 hover:underline text-sm" data-action="toggle-occ" data-id="${b.id}">Upcoming</button>` : ""}
+              ${b.isRecurring ? `<button class="text-brand-600 hover:underline text-sm" data-action="toggle-occ" data-id="${b.id}">Occurrences</button>` : ""}
               <button class="text-brand-600 hover:underline text-sm" data-action="edit" data-id="${b.id}">Edit</button>
               <button class="text-rose-600 hover:underline text-sm" data-action="del" data-id="${b.id}">Delete</button>
             </div>
@@ -4600,22 +4874,54 @@ service cloud.firestore {
     }
 
     function renderBillOccurrences(billId) {
+      renderBillOccurrencesCore(billId);
+      decorateBillOccurrences(billId);
+    }
+
+    // Upcoming / Past toggle for recurring bills (same behaviour as recurring incomes)
+    function decorateBillOccurrences(billId) {
+      const container = $(`#bill-occ-content-${billId}`);
+      if (!container) return;
+      ui.billOccMode = ui.billOccMode || {};
+      const mode = ui.billOccMode[billId] === "past" ? "past" : "upcoming";
+      const bar = document.createElement("div");
+      bar.className = "flex items-center gap-2 mb-3";
+      const mk = (m, label) =>
+        `<button type="button" data-occ-mode="${m}" class="px-3 py-1 rounded-lg text-xs font-semibold border ${mode === m ? "bg-brand-600 text-white border-brand-600" : "bg-white text-slate-700 border-slate-300"}">${label}</button>`;
+      bar.innerHTML = mk("upcoming", "Upcoming") + mk("past", "Past");
+      container.insertBefore(bar, container.firstChild);
+      bar.querySelectorAll("[data-occ-mode]").forEach(b => {
+        b.addEventListener("click", () => {
+          ui.billOccMode[billId] = b.dataset.occMode;
+          renderBillOccurrences(billId);
+        });
+      });
+    }
+
+    function renderBillOccurrencesCore(billId) {
       const bill = state.bills.find(b => b.id === billId);
       const container = $(`#bill-occ-content-${billId}`);
       if (!bill || !container) return;
 
       const today = parseISODateLocal(toISODate(new Date()));
       const horizonEnd = addDays(today, plannerHorizonDays());
-      const occurrences = generateBillOccurrences(today, horizonEnd).filter(o => o.billId === billId).slice(0, 12);
+      const occMode = ((ui.billOccMode || {})[billId] === "past") ? "past" : "upcoming";
+      const occurrences = occMode === "past"
+        ? generateBillOccurrences(parseISODateLocal(bill.date), addDays(today, -1)).filter(o => o.billId === billId).reverse()
+        : generateBillOccurrences(today, horizonEnd).filter(o => o.billId === billId).slice(0, 12);
 
       if (!occurrences.length) {
-        container.innerHTML = `<div class="text-slate-500">No upcoming occurrences in the current planner horizon.</div>`;
+        container.innerHTML = occMode === "past"
+          ? `<div class="text-slate-500">No past occurrences yet — this bill starts today or later.</div>`
+          : `<div class="text-slate-500">No upcoming occurrences in the current planner horizon.</div>`;
         return;
       }
 
       container.innerHTML = `
-        <div class="text-xs font-semibold text-slate-600 mb-2">Next occurrences — edit the amount or date, or skip a specific date</div>
-        <div class="space-y-2">
+        <div class="text-xs font-semibold text-slate-600 mb-2">${occMode === "past"
+          ? "Past occurrences (newest first) — correct what was actually paid, change the date, or skip one that never happened"
+          : "Next occurrences — edit the amount or date, or skip a specific date"}</div>
+        <div class="space-y-2"${occMode === "past" ? ' style="max-height:22rem;overflow-y:auto;padding-right:4px"' : ""}>
           ${occurrences.map(o => `
             <div class="flex items-center justify-between gap-3 bg-white border border-slate-200 rounded-lg px-3 py-2" data-occ-row="${o.occurrenceKey}">
               <div class="text-sm text-slate-700">
