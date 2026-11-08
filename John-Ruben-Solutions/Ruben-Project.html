@@ -1337,6 +1337,8 @@
                   <select id="bill-recurrence-type" class="hidden w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none mt-1">
                     <option value="monthly">Monthly (on this due date's day)</option>
                     <option value="biweekly">Bi-Weekly (every 14 days)</option>
+                    <option value="quarterly">Quarterly (every 3 months, on this due date's day)</option>
+                    <option value="annual">Annual (every year, on this due date)</option>
                   </select>
                   <div id="bill-end-wrap" class="hidden mt-2">
                     <label class="block text-xs font-medium text-slate-600 mb-1" for="bill-end-date">Ends on (optional)</label>
@@ -3829,7 +3831,8 @@ service cloud.firestore {
     // ===== Generic table sorting (all tables except the Transaction Ledger, which has its own) =====
     const lc = (v) => String(v ?? "").toLowerCase();
     const bankNameById = (id) => lc((state.bankAccounts || []).find(b => b.id === id)?.name);
-    const recurrenceKey = (x) => !x.isRecurring ? "one-time" : (x.recurrenceType === "biweekly" ? "bi-weekly" : "monthly");
+    const normRecur = (v) => ["monthly", "biweekly", "quarterly", "annual"].includes(v) ? v : "monthly";
+    const recurrenceKey = (x) => !x.isRecurring ? "one-time" : ({ biweekly: "bi-weekly", quarterly: "quarterly", annual: "annual" }[x.recurrenceType] || "monthly");
     const num = (v) => Number(v) || 0;
     const SORT_GETTERS = {
       assets: { name: a => lc(a.name), value: a => num(a.value) },
@@ -4104,12 +4107,16 @@ service cloud.firestore {
         }
       } else {
         const day = startDate.getDate();
+        const step = recurrenceType === "annual" ? 12 : (recurrenceType === "quarterly" ? 3 : 1);   // months between occurrences
         const first = startDate > scanStart ? startDate : scanStart;
         let cursor = new Date(first.getFullYear(), first.getMonth(), 1);
         let guard = 0;
         while (cursor <= scanEnd && guard < 600) {
-          const occ = clampedMonthDate(cursor.getFullYear(), cursor.getMonth(), day);
-          if (occ >= startDate && occ >= scanStart && occ <= scanEnd) cb(occ);
+          const sinceStart = (cursor.getFullYear() - startDate.getFullYear()) * 12 + (cursor.getMonth() - startDate.getMonth());
+          if (sinceStart >= 0 && sinceStart % step === 0) {
+            const occ = clampedMonthDate(cursor.getFullYear(), cursor.getMonth(), day);
+            if (occ >= startDate && occ >= scanStart && occ <= scanEnd) cb(occ);
+          }
           cursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
           guard++;
         }
@@ -4265,7 +4272,8 @@ service cloud.firestore {
       const n = Math.max(1, Math.ceil(balance / amount - 1e-9));
       const d0 = parseISODateLocal(firstISO);
       if (recurrenceType === "biweekly") return toISODate(addDays(d0, 14 * (n - 1)));
-      return toISODate(new Date(d0.getFullYear(), d0.getMonth() + n, 0));   // last day of the month holding the final payment
+      const step = recurrenceType === "annual" ? 12 : (recurrenceType === "quarterly" ? 3 : 1);
+      return toISODate(new Date(d0.getFullYear(), d0.getMonth() + step * (n - 1) + 1, 0));   // last day of the month holding the final payment
     }
 
     $("#bill-recurring").addEventListener("change", () => {
@@ -4423,7 +4431,7 @@ service cloud.firestore {
       const isInstallment = $("#bill-installment").checked;
       const instBal = Number($("#bill-installment-balance").value);
       const isRecurring = $("#bill-recurring").checked || isInstallment;
-      const recurrenceType = isRecurring ? ($("#bill-recurrence-type").value === "biweekly" ? "biweekly" : "monthly") : null;
+      const recurrenceType = isRecurring ? normRecur($("#bill-recurrence-type").value) : null;
       let endDate = isRecurring ? ($("#bill-end-date").value || null) : null;
       if (isInstallment && instBal > 0 && amount > 0) endDate = null;   // the balance drives when the plan ends
       if (endDate && endDate < date) { alert("The end date can't be before the bill's first due date."); return; }
@@ -4457,7 +4465,7 @@ service cloud.firestore {
         $("#bill-pay-with").value = ""; if ($("#bill-payoff-card")) $("#bill-payoff-card").value = "";
         $("#bill-recurring").checked = false;
         $("#bill-installment").checked = false; $("#bill-installment-balance").value = ""; $("#bill-installment-wrap").classList.add("hidden");
-        $("#bill-recurrence-type").classList.add("hidden"); setEditBanner("#bill-editing-banner", false);
+        $("#bill-recurrence-type").classList.add("hidden"); $("#bill-recurrence-type").value = "monthly"; setEditBanner("#bill-editing-banner", false);
         $("#bill-end-wrap").classList.add("hidden"); $("#bill-end-date").value = "";
       } catch (err) {
         alert(err?.message || "Failed to save bill");
@@ -4479,7 +4487,7 @@ service cloud.firestore {
       $("#bill-recurrence-type").classList.toggle("hidden", !item.isRecurring);
       $("#bill-end-wrap").classList.toggle("hidden", !item.isRecurring);
       $("#bill-end-date").value = (item.isRecurring && item.endDate) ? item.endDate : "";
-      if (item.isRecurring) $("#bill-recurrence-type").value = item.recurrenceType === "biweekly" ? "biweekly" : "monthly";
+      if (item.isRecurring) $("#bill-recurrence-type").value = normRecur(item.recurrenceType);
       $("#bill-name")?.scrollIntoView?.({ behavior: "smooth", block: "center" });
     }
 
@@ -4500,7 +4508,7 @@ service cloud.firestore {
         const st = installmentStatus(p, todayISO);
         const amt = Number(p.amount || 0);
         if (st) totalRem += st.remaining;
-        const cadence = p.recurrenceType === "biweekly" ? "every 2 weeks" : "monthly";
+        const cadence = ({ biweekly: "every 2 weeks", quarterly: "quarterly", annual: "annually" }[p.recurrenceType]) || "monthly";
         const tr = document.createElement("tr");
         tr.innerHTML = `
           <td class="px-3 py-2 font-medium text-slate-800">${escapeHtml(p.name)}
@@ -4541,7 +4549,10 @@ service cloud.firestore {
         }
         const recurLabel = !b.isRecurring
           ? "One-time"
-          : ((b.recurrenceType === "biweekly" ? "Bi-Weekly" : `Monthly (day ${parseISODateLocal(b.date).getDate()})`) + ((instEnd || b.endDate) ? ` · ends ${escapeHtml(instEnd || b.endDate)}` : ""));
+          : ((b.recurrenceType === "biweekly" ? "Bi-Weekly"
+              : b.recurrenceType === "quarterly" ? `Quarterly (day ${parseISODateLocal(b.date).getDate()})`
+              : b.recurrenceType === "annual" ? `Annual (${parseISODateLocal(b.date).toLocaleString("en-US", { month: "short" })} ${parseISODateLocal(b.date).getDate()})`
+              : `Monthly (day ${parseISODateLocal(b.date).getDate()})`) + ((instEnd || b.endDate) ? ` · ends ${escapeHtml(instEnd || b.endDate)}` : ""));
 
         const tr = document.createElement("tr");
         tr.innerHTML = `
@@ -5378,7 +5389,7 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
       ui.editing.billId = null;
       $("#bill-name").value = ""; $("#bill-category").value = ""; $("#bill-amount").value = "";
       $("#bill-pay-with").value = ""; $("#bill-recurring").checked = false;
-      $("#bill-recurrence-type").classList.add("hidden");
+      $("#bill-recurrence-type").classList.add("hidden"); $("#bill-recurrence-type").value = "monthly";
       $("#bill-end-wrap").classList.add("hidden"); $("#bill-end-date").value = "";
       setEditBanner("#bill-editing-banner", false);
     });
@@ -5620,7 +5631,8 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
       }
       const income90 = sum(generateIncomeOccurrences(winStart, t0));
 
-      // Fallback 90-day window (used until at least 1 full calendar month of data has completed)
+      // Runway window: start at your first logged transaction (bills alone would otherwise inflate or deflate the average),
+      // at most 90 days back and at least 14 days wide.
       const firstTxn = (state.transactions || []).map(t => t.date).filter(Boolean).sort()[0];
       let runStart = winStart;
       if (firstTxn && parseISODateLocal(firstTxn) > runStart) runStart = parseISODateLocal(firstTxn);
@@ -5652,33 +5664,40 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
         const aInc = sum(generateIncomeOccurrences(aStart, aEnd));
         return { startISO: aStartISO, endISO: aEndISO, days: aDays, income: aInc, fixed: aFixed, reg: aReg, inv: aInv };
       };
-      let alloc = null, allocMonths = null, fullMonthsPer = [];
+      // Credit card balances still owed on the last day of a month (revolving cards only: installment plans can't be zeroed out)
+      const cardsOwedAt = (iso) => (state.creditCards || []).filter(c => !isInstallment(c))
+        .reduce((s, c) => s + Math.max(0, computeCreditCardBalance(c, iso)), 0);
+      let alloc = null, allocMonths = null, perAll = [];
       if (firstTxn) {
-        // All logged data: from the first logged transaction (at least 14 days), so it keeps sharpening as more is logged
-        let aStart = parseISODateLocal(firstTxn);
-        if (aStart > addDays(t0, -13)) aStart = addDays(t0, -13);
-        alloc = computeAlloc(aStart, Math.round((t0 - aStart) / 86400000) + 1);
-        // Completed calendar months. A month only counts once it has fully ended. The month of the very first
-        // logged transaction is skipped unless that transaction was on the 1st; every later month counts in full.
+        // Eligible months: a month only counts once it has fully ended. The month of the very first logged
+        // transaction is skipped unless that transaction was on the 1st; every later month counts in full.
         const first = parseISODateLocal(firstTxn);
         let ms = new Date(first.getFullYear(), first.getMonth(), 1);
         if (first.getDate() !== 1) ms = new Date(ms.getFullYear(), ms.getMonth() + 1, 1);
         const thisMonthStart = new Date(t0.getFullYear(), t0.getMonth(), 1);
         const elig = [];
         for (let d = ms; d < thisMonthStart; d = new Date(d.getFullYear(), d.getMonth() + 1, 1)) elig.push(d);
-        fullMonthsPer = elig.map(d => {
+        perAll = elig.map(d => {
           const end = new Date(d.getFullYear(), d.getMonth() + 1, 0);
-          return { label: monthLabel(d), ...computeAlloc(d, end.getDate(), end) };
+          return { label: monthLabel(d), ...computeAlloc(d, end.getDate(), end), cardBal: cardsOwedAt(toISODate(end)) };
         });
-        const last3 = fullMonthsPer.slice(-3);
-        if (last3.length) {
-          const tot = (k) => last3.reduce((s, x) => s + x[k], 0);
-          allocMonths = {
-            startISO: last3[0].startISO, endISO: last3[last3.length - 1].endISO, days: tot("days"), months: last3.length,
-            income: tot("income"), fixed: tot("fixed"), reg: tot("reg"), inv: tot("inv"), perMonth: last3
+        const agg = (per) => {
+          if (!per.length) return null;
+          const tot = (k) => per.reduce((s, x) => s + x[k], 0);
+          return {
+            startISO: per[0].startISO, endISO: per[per.length - 1].endISO, days: tot("days"), months: per.length,
+            income: tot("income"), fixed: tot("fixed"), reg: tot("reg"), inv: tot("inv"), perMonth: per
           };
-        }
+        };
+        alloc = agg(perAll);                    // every eligible month
+        allocMonths = agg(perAll.slice(-3));    // the most recent 3 eligible months
       }
+
+      // Regular spending averaged over EVERY fully completed calendar month (same months as the all-months tile).
+      // Feeds Est. annualized spend and Cash runway. null until one full month exists.
+      let regMonthly = null;
+      const regPer = perAll.map(x => ({ label: x.label, reg: x.reg }));
+      if (regPer.length) regMonthly = regPer.reduce((s, x) => s + x.reg, 0) / regPer.length;
 
       // This month vs last month (to the same day)
       const y = t0.getFullYear(), m = t0.getMonth(), day = t0.getDate();
@@ -5726,7 +5745,7 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
         .filter(o => !o.payoffCardId && !KPI_SAVE_RX.test(categoryLabel(o.category)));
       const fixedAnnual = sum(fixedAnnualOcc);
 
-      // Cards, cash, net worth, and unified annualized/monthly spend
+      // Cards, cash, net worth
       let cardBal = 0, cardLim = 0;
       const cardRows = [];
       for (const c of state.creditCards || []) {
@@ -5738,17 +5757,12 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
       }
       const acctTotals = computeAccountsTotals();
       const bank = acctTotals.bankTotal - acctTotals.spokenFor;   // true cash: bank minus revolving card balances owed
-
-      const useFullMonths = fullMonthsPer.length > 0;
-      const fullMonthsCount = fullMonthsPer.length;
-      const totalFullMonthsReg = fullMonthsPer.reduce((s, x) => s + x.reg, 0);
-      const avgMonthlyReg = useFullMonths ? totalFullMonthsReg / fullMonthsCount : 0;
-      const annualizedReg = avgMonthlyReg * 12;
-      const fixedMonthly = fixedAnnual / 12;
-      const fallbackMonthlySpend = runSpend / (runDays / 30.4);
-      const annualizedSpend = useFullMonths ? (fixedAnnual + annualizedReg) : (fallbackMonthlySpend * 12);
-      const monthlySpend = annualizedSpend / 12;
-
+      const monthlySpend = runSpend / (runDays / 30.4);   // recent-days average: only used until one full calendar month exists
+      // Spending basis shared by Est. annualized spend and Cash runway:
+      // annualized fixed (bills scheduled next 12 months) + average regular spending per full calendar month x 12
+      const useMonths = regMonthly !== null;
+      const annualSpend = useMonths ? fixedAnnual + regMonthly * 12 : monthlySpend * 12;
+      const spendMonthly = annualSpend / 12;
       const nw = computeDailyNetWorth();
 
       const hi = (v, g, w) => v >= g ? "good" : (v >= w ? "warn" : "bad");   // higher is better
@@ -5756,7 +5770,7 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
       const save = income90 > 0 ? (income90 - spend90) / income90 : null;
       const inv = income90 > 0 ? invest90 / income90 : null;
       const util = cardLim > 0 ? cardBal / cardLim : null;
-      const runway = monthlySpend > 0 ? Math.max(0, bank) / monthlySpend : null;
+      const runway = spendMonthly > 0 ? Math.max(0, bank) / spendMonthly : null;
       const fix = monthIncome > 0 ? fixed / monthIncome : null;
       const dta = nw.assetsTotal > 0 ? nw.liabilitiesTotal / nw.assetsTotal : null;
       const vsPrev = prevMtd > 0 ? (mtd - prevMtd) / prevMtd : null;
@@ -5780,14 +5794,23 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
         return list;
       };
 
-      // Where your income goes: all-data tile + last-3-calendar-month tile, built by the same function so the format matches
+      // Where your income goes: all-data tile + last-90-days tile, built by the same function so the format matches
       const deriveAlloc = (al) => {
         if (!al || al.income <= 0) return null;
-        const saved = al.income - al.fixed - al.reg;
+        const cardSum = al.perMonth.reduce((s, m) => s + (m.cardBal || 0), 0);   // each month's end-of-month card balances, summed
+        const saved = al.income - al.fixed - al.reg - cardSum;
         const f = Math.round(al.fixed / al.income * 1000) / 10;
         const r = Math.round(al.reg / al.income * 1000) / 10;
-        const s = Math.round((100 - f - r) * 10) / 10;      // saved = whatever is left, so the three always total 100%
-        return { ...al, saved, cash: saved - al.inv, f, r, s, k: al.months ? 1 / al.months : 30 / al.days, unit: al.months ? "month" : "30 days" };
+        const c = Math.round(cardSum / al.income * 1000) / 10;
+        const s = Math.round((100 - f - r - c) * 10) / 10;      // saved = whatever is left, so the four always total 100%
+        // Split of saved, month by month: invested first, anything above that is cash left over
+        let netInv = 0, netCash = 0;
+        for (const m of al.perMonth) {
+          const sv = m.income - m.fixed - m.reg - (m.cardBal || 0);
+          const cash = Math.max(0, sv - m.inv);
+          netCash += cash; netInv += sv - cash;
+        }
+        return { ...al, saved, cardSum, netInv, netCash, f, r, c, s, k: al.months ? 1 / al.months : 30 / al.days, unit: al.months ? "month" : "30 days" };
       };
       const A = deriveAlloc(alloc), AM = deriveAlloc(allocMonths);
       const dd = (a, b) => { const d = Math.round((a - b) * 10) / 10; return (d > 0 ? "+" : "") + d.toFixed(1) + " pts"; };
@@ -5796,25 +5819,26 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
           return {
             label: cfg.label, wide: true, value: "—", status: null,
             sub: cfg.emptySub || (firstTxn ? "Needs income entries" : "Log transactions to see where your income goes"),
-            detail: { formula: "Fixed + Regular spending + Saved = 100% of income", rows: [["Status", firstTxn ? "No scheduled income found yet" : "No transactions logged yet"]], note: cfg.note }
+            detail: { formula: "Fixed + Regular spending + Cards owed + Saved = 100% of income", rows: [["Status", firstTxn ? "No scheduled income found yet" : "No transactions logged yet"]], note: cfg.note }
           };
         }
-        const f0 = Math.round(X.f), r0 = Math.round(X.r), s0 = 100 - f0 - r0;
-        const R = ref ? { f0: Math.round(ref.f), r0: Math.round(ref.r) } : null;
-        if (R) R.s0 = 100 - R.f0 - R.r0;
-        const tot = Math.max(X.income, X.fixed + X.reg);
-        const wf = Math.max(0, X.fixed) / tot * 100, wr = Math.max(0, X.reg) / tot * 100, ws = Math.max(0, X.saved) / tot * 100;
+        const f0 = Math.round(X.f), r0 = Math.round(X.r), c0 = Math.round(X.c), s0 = 100 - f0 - r0 - c0;
+        const R = ref ? { f0: Math.round(ref.f), r0: Math.round(ref.r), c0: Math.round(ref.c) } : null;
+        if (R) R.s0 = 100 - R.f0 - R.r0 - R.c0;
+        const tot = Math.max(X.income, X.fixed + X.reg + X.cardSum);
+        const wf = Math.max(0, X.fixed) / tot * 100, wr = Math.max(0, X.reg) / tot * 100, wc = Math.max(0, X.cardSum) / tot * 100, ws = Math.max(0, X.saved) / tot * 100;
         const rk = { good: 0, warn: 1, bad: 2 };
         const sSt = hi(X.s / 100, 0.2, 0.1), fSt = lo(X.f / 100, 0.5, 0.65);
         const dl = (d, upGood) => {
           if (d === null) return "";
-          const txt = d === 0 ? "same as all-time" : (d > 0 ? "+" : "−") + Math.abs(d) + " pt" + (Math.abs(d) === 1 ? "" : "s") + " vs all-time";
+          const txt = d === 0 ? "same as all-months avg" : (d > 0 ? "+" : "−") + Math.abs(d) + " pt" + (Math.abs(d) === 1 ? "" : "s") + " vs all-months avg";
           const col = d === 0 ? "#94a3b8" : ((upGood ? d > 0 : d < 0) ? "#059669" : "#e11d48");
           return `<div class="text-[11px]" style="color:${col}">${txt}</div>`;
         };
         const parts = [
           { l: "Fixed", c: "#6366f1", p: f0, v: X.fixed * X.k, d: R ? f0 - R.f0 : null, up: false },
           { l: "Regular", c: "#f59e0b", p: r0, v: X.reg * X.k, d: R ? r0 - R.r0 : null, up: false },
+          { l: "Cards owed", c: "#f43f5e", p: c0, v: X.cardSum * X.k, d: R ? c0 - R.c0 : null, up: false },
           { l: "Saved", c: "#10b981", p: s0, v: X.saved * X.k, d: R ? s0 - R.s0 : null, up: true }
         ];
         const rows = [
@@ -5822,160 +5846,74 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
           ["Total income", fm(X.income)],
           ["Fixed bills (excl. card payoffs and investing)", fm(X.fixed) + " · " + X.f.toFixed(1) + "%"],
           ["Regular spending (purchases net of refunds)", fm(X.reg) + " · " + X.r.toFixed(1) + "%"],
-          ["Saved (income − fixed − regular)", fm(X.saved) + " · " + X.s.toFixed(1) + "%", true],
-          ["   of which invested", fm(X.inv) + " · " + P1(X.inv / X.income)],
-          ["   of which cash left over", fm(X.cash) + " · " + P1(X.cash / X.income)],
+          ["Cards owed (balance on all cards on the last day of each month)", fm(X.cardSum) + " · " + X.c.toFixed(1) + "%"],
+          ["Saved (income − fixed − regular − cards owed)", fm(X.saved) + " · " + X.s.toFixed(1) + "%", true],
+          ["   of which invested", fm(X.netInv) + " · " + P1(X.netInv / X.income)],
+          ["   of which cash left over", fm(X.netCash) + " · " + P1(X.netCash / X.income)],
           ["Total", "100.0%", true],
           [X.months ? "Monthly average (totals ÷ " + X.months + " month" + (X.months === 1 ? "" : "s") + ")" : "30-day average (totals ÷ " + X.days + " days × 30)", null],
           ["Income", fm(X.income * X.k)],
           ["Fixed bills", fm(X.fixed * X.k)],
           ["Regular spending", fm(X.reg * X.k)],
+          ["Cards owed", fm(X.cardSum * X.k)],
           ["Saved", fm(X.saved * X.k), true]
         ];
         if (X.perMonth) {
-          rows.push(["Month by month (income · fixed / regular / saved)", null]);
+          rows.push(["Month by month (income · fixed / regular / cards owed / saved)", null]);
           for (const m of X.perMonth) {
-            const sv = m.income - m.fixed - m.reg;
+            const b = m.cardBal || 0, sv = m.income - m.fixed - m.reg - b;
             rows.push([m.label, m.income > 0
-              ? fm(m.income) + " · " + P1(m.fixed / m.income) + " / " + P1(m.reg / m.income) + " / " + P1(sv / m.income)
+              ? fm(m.income) + " · " + P1(m.fixed / m.income) + " / " + P1(m.reg / m.income) + " / " + P1(b / m.income) + " / " + P1(sv / m.income)
               : "no income scheduled"]);
           }
         }
         if (ref) {
-          rows.push(["Compared with all-time average (" + ref.days + " days)", null]);
+          rows.push(["Compared with the all-months average (" + ref.months + " month" + (ref.months === 1 ? "" : "s") + ")", null]);
           rows.push(["Fixed", X.f.toFixed(1) + "% vs " + ref.f.toFixed(1) + "% (" + dd(X.f, ref.f) + ")"]);
           rows.push(["Regular spending", X.r.toFixed(1) + "% vs " + ref.r.toFixed(1) + "% (" + dd(X.r, ref.r) + ")"]);
+          rows.push(["Cards owed", X.c.toFixed(1) + "% vs " + ref.c.toFixed(1) + "% (" + dd(X.c, ref.c) + ")"]);
           rows.push(["Saved", X.s.toFixed(1) + "% vs " + ref.s.toFixed(1) + "% (" + dd(X.s, ref.s) + ")"]);
         }
         return {
           label: cfg.label, wide: true,
-          value: "Fixed " + f0 + "% · Regular " + r0 + "% · Saved " + s0 + "%",
+          value: "Fixed " + f0 + "% · Regular " + r0 + "% · Cards owed " + c0 + "% · Saved " + s0 + "%",
           status: rk[sSt] >= rk[fSt] ? sSt : fSt,
           body: `<div class="mt-2 flex h-2 rounded-full overflow-hidden bg-slate-200">
-              <div style="width:${wf}%;background:#6366f1"></div><div style="width:${wr}%;background:#f59e0b"></div><div style="width:${ws}%;background:#10b981"></div></div>
-            <div class="mt-3 grid grid-cols-3 gap-2">${parts.map(i => `<div>
+              <div style="width:${wf}%;background:#6366f1"></div><div style="width:${wr}%;background:#f59e0b"></div><div style="width:${wc}%;background:#f43f5e"></div><div style="width:${ws}%;background:#10b981"></div></div>
+            <div class="mt-3 grid grid-cols-4 gap-2">${parts.map(i => `<div>
               <div class="text-[11px] text-slate-500 flex items-center gap-1"><span style="display:inline-block;width:8px;height:8px;border-radius:9999px;background:${i.c}"></span>${i.l}</div>
               <div class="text-xl font-bold text-slate-900">${i.p}%</div>
               <div class="text-[11px] text-slate-400">${escapeHtml(fm(i.v))} / ${X.unit}</div>${dl(i.d, i.up)}</div>`).join("")}</div>`,
           sub: cfg.sub(X),
-          detail: { formula: "Fixed + Regular spending + Saved = 100% of income (Saved = Income − Fixed − Regular)", rows, note: cfg.note }
+          detail: { formula: "Fixed + Regular spending + Cards owed + Saved = 100% of income (Saved = Income − Fixed − Regular − Cards owed)", rows, note: cfg.note }
         };
       };
       const allocAllTile = makeAllocTile(A, null, {
-        label: "Where your income goes",
-        windowText: (X) => X.startISO + " to " + todayISO + " (" + X.days + " days, all logged data)",
-        sub: (X) => "Share of income, averaged over all " + X.days + " days of logged data (since " + X.startISO + "). Fixed + regular + saved = 100%",
-        note: "Uses every day since your first logged transaction (at least 14 days), so it sharpens as you log more. Fixed = bills; regular = everyday purchases; investing and savings categories count as saved. Green when saved is 20%+ and fixed is 50% or less; red when saved is under 10% or fixed is over 65%; otherwise amber. If spending exceeds income, saved goes negative."
+        label: "Where your income goes (all full calendar months)",
+        emptySub: firstTxn ? "Needs at least one completed calendar month with income" : "Log transactions to see this",
+        windowText: (X) => X.perMonth[0].label + (X.months > 1 ? " – " + X.perMonth[X.months - 1].label : "") + " (" + X.months + " completed calendar month" + (X.months === 1 ? "" : "s") + ")",
+        sub: (X) => "Share of income averaged over all " + X.months + " completed calendar month" + (X.months === 1 ? "" : "s") + " (" + X.perMonth[0].label + (X.months > 1 ? " – " + X.perMonth[X.months - 1].label : "") + "). Fixed + regular + cards owed + saved = 100%",
+        note: "Uses every fully completed calendar month, so it sharpens as more months are logged; the current month joins once it is over. The month of your very first logged transaction is skipped unless it was on the 1st. Fixed = bills; regular = everyday purchases (net of refunds). Cards owed = the balance still owed on all credit cards (installment plans excluded) on the last day of each month, since leftover cash goes to paying cards down. Saved = income − fixed − regular − cards owed (investing counts as saved), split into invested and cash left over. Shares are each bucket's total across the months divided by total income, so the four add to 100%; dollars are the average per month. Green when saved is 20%+ and fixed is 50% or less; red when saved is under 10% or fixed is over 65%; otherwise amber. If saved is negative, you owed more than you kept."
       });
       const allocMonthsTile = makeAllocTile(AM, A, {
         label: "Where your income goes (last 3 calendar month average)",
         emptySub: firstTxn ? "Needs at least one completed calendar month with income" : "Log transactions to see this",
         windowText: (X) => X.perMonth.map(m => m.label).join(", ") + " (" + X.months + " completed calendar month" + (X.months === 1 ? "" : "s") + ")",
-        sub: (X) => "Share of income over the last " + X.months + " completed calendar month" + (X.months === 1 ? "" : "s") + " (" + X.perMonth[0].label + (X.months > 1 ? " – " + X.perMonth[X.months - 1].label : "") + ")" + (X.months < 3 ? " · fewer than 3 available so far" : "") + ". Compare with the all-data tile",
-        note: "Only calendar months that have fully ended count, so the current month joins once it is over. The month of your very first logged transaction is skipped unless it was on the 1st; every later month counts in full, even if nothing was logged on the 1st. It uses the most recent 3 eligible months (fewer until you have them). Shares are each bucket's total across those months divided by total income, so they add to 100%; dollars are the average per month. The change under each percentage compares with your all-time average: for fixed and regular, lower is better; for saved, higher is better. Dot color follows the same rule as the all-data tile."
+        sub: (X) => "Share of income over the last " + X.months + " completed calendar month" + (X.months === 1 ? "" : "s") + " (" + X.perMonth[0].label + (X.months > 1 ? " – " + X.perMonth[X.months - 1].label : "") + ")" + (X.months < 3 ? " · fewer than 3 available so far" : "") + ". Compare with the all-months tile",
+        note: "Same math as the all-months tile, limited to the most recent 3 eligible months (only fully ended calendar months count; your very first month is skipped unless it started on the 1st). Cards owed is the balance still owed on all credit cards (installment plans excluded) on the last day of each month, and it comes out of what you saved. The change under each percentage compares with the all-months average: for fixed, regular and cards owed, lower is better; for saved, higher is better. Dot color follows the same rule as the all-months tile."
       });
 
-      const fullMonthsListStr = useFullMonths
-        ? fullMonthsPer.map(m => m.label).join(", ") + " (" + fullMonthsCount + " completed calendar month" + (fullMonthsCount === 1 ? "" : "s") + ")"
-        : "";
-      const fullMonthsRangeStr = useFullMonths
-        ? (fullMonthsCount === 1 ? fullMonthsPer[0].label : fullMonthsPer[0].label + " – " + fullMonthsPer[fullMonthsCount - 1].label)
-        : "";
-
-      const runwayTile = useFullMonths ? {
-        label: "Cash runway",
-        value: runway === null ? "—" : runway.toFixed(1) + " mo",
-        status: runway === null ? null : hi(runway, 6, 3),
-        sub: "(Bank cash − card balances owed: " + fm(bank) + ") ÷ " + fm(monthlySpend) + "/mo (est. annualized spend ÷ 12). Target 3–6+ months",
-        detail: {
-          formula: "(Bank cash − card balances owed) ÷ (Est. annualized spend ÷ 12)",
-          rows: [
-            ["Bank accounts total", fm(acctTotals.bankTotal)],
-            ["Card balances owed (revolving)", fm(acctTotals.spokenFor)],
-            ["True cash", fm(bank), true],
-            ["Fixed part (Est. annualized fixed cost)", null],
-            ["Window", todayISO + " to " + toISODate(addDays(t0, 364))],
-            ["Scheduled bills (next 12 months)", fm(fixedAnnual)],
-            ["Monthly fixed cost (÷ 12)", fm(fixedMonthly)],
-            ["Regular part (" + fullMonthsCount + " completed calendar month" + (fullMonthsCount === 1 ? "" : "s") + ")", null],
-            ["Months used", fullMonthsListStr],
-            ["Total regular spending", fm(totalFullMonthsReg)],
-            ["Average monthly regular (÷ " + fullMonthsCount + ")", fm(avgMonthlyReg)],
-            ["Annualized regular (× 12)", fm(annualizedReg)],
-            ["Combined spending & runway", null],
-            ["Est. annualized spend (fixed + regular)", fm(annualizedSpend)],
-            ["Monthly spending (Est. annualized spend ÷ 12)", fm(monthlySpend), true],
-            ["Runway", runway === null ? "—" : runway.toFixed(1) + " months", true]
-          ],
-          listTitle: "Month-by-month regular spending",
-          list: fullMonthsPer.map(m => [m.label, fm(m.reg)]),
-          note: "Uses Est. annualized spend ÷ 12 as monthly spending: scheduled bills over the next 12 months (÷ 12) plus average regular spending across all completed calendar months. Excludes savings, investing, card payoffs, and bank-to-bank transfers. Negative cash counts as zero. Green at 6+ months, amber 3–6, red under 3."
-        }
-      } : {
-        label: "Cash runway",
-        value: runway === null ? "—" : runway.toFixed(1) + " mo",
-        status: runway === null ? null : hi(runway, 6, 3),
-        sub: "(90-day fallback until 1 full month ends) (Bank cash − card balances owed: " + fm(bank) + ") ÷ avg monthly spend over last " + runDays + " days. Target 3–6+ months",
-        detail: {
-          formula: "(Bank cash − card balances owed) ÷ Average monthly spending (90-day fallback)",
-          rows: [
-            ["Bank accounts total", fm(acctTotals.bankTotal)],
-            ["Card balances owed (revolving)", fm(acctTotals.spokenFor)],
-            ["True cash", fm(bank), true],
-            ["Spending window (90-day fallback)", runStartISO + " to " + todayISO + " (" + runDays + " days)"],
-            ["Spending in window", fm(runSpend)],
-            ["Average monthly spending (÷ " + runDays + " days × 30.4)", fm(monthlySpend), true],
-            ["Runway", runway === null ? "—" : runway.toFixed(1) + " months", true]
-          ],
-          note: "Using 90-day fallback until you have at least one completed calendar month of data. Spending excludes card payoffs, savings, and investing. Negative cash counts as zero. Green at 6+ months, amber 3–6, red under 3."
-        }
-      };
-
-      const annualSpendTile = useFullMonths ? {
-        label: "Est. annualized spend",
-        value: annualizedSpend > 0 ? fm(annualizedSpend) : "—",
-        status: null,
-        sub: annualizedSpend > 0
-          ? "Fixed " + fm(fixedAnnual) + " (next 12 mo) + Regular " + fm(annualizedReg) + " (" + fm(avgMonthlyReg) + "/mo avg over " + fullMonthsCount + " full mo × 12) · " + fm(monthlySpend) + "/mo"
-          : "Needs bills or spending entries",
-        detail: {
-          formula: "Est. annualized fixed cost + (Average monthly regular spending × 12)",
-          rows: [
-            ["Fixed part (Est. annualized fixed cost)", null],
-            ["Window", todayISO + " to " + toISODate(addDays(t0, 364))],
-            ["Scheduled bills (next 12 months)", fm(fixedAnnual)],
-            ["Monthly fixed cost (÷ 12)", fm(fixedMonthly)],
-            ["Regular part (" + fullMonthsCount + " completed calendar month" + (fullMonthsCount === 1 ? "" : "s") + ": " + fullMonthsRangeStr + ")", null],
-            ["Months used", fullMonthsListStr],
-            ["Total regular spending", fm(totalFullMonthsReg)],
-            ["Average monthly regular (÷ " + fullMonthsCount + ")", fm(avgMonthlyReg)],
-            ["Annualized regular (× 12)", fm(annualizedReg)],
-            ["Total", null],
-            ["Est. annualized spend (fixed + regular)", annualizedSpend > 0 ? fm(annualizedSpend) : "—", true],
-            ["Monthly spending (÷ 12, used by Cash runway)", monthlySpend > 0 ? fm(monthlySpend) : "—"]
-          ],
-          listTitle: "Month-by-month regular spending",
-          list: fullMonthsPer.map(m => [m.label, fm(m.reg)]),
-          note: "Fixed part uses Est. annualized fixed cost (every bill scheduled over the next 12 months, excluding card payoffs and investing). Regular part uses the same calculation as the last-3-calendar-month tile, but across every completed calendar month (skipping your very first month unless your first transaction was on the 1st). Savings and investing are excluded."
-        }
-      } : {
-        label: "Est. annualized spend",
-        value: monthlySpend > 0 ? fm(annualizedSpend) : "—",
-        status: null,
-        sub: monthlySpend > 0
-          ? "(90-day fallback until 1 full month ends) Average monthly spending (" + fm(monthlySpend) + ") × 12 over the last " + runDays + " days"
-          : "Needs spending entries",
-        detail: {
-          formula: "Average monthly spending × 12 (90-day fallback)",
-          rows: [
-            ["Spending window (90-day fallback)", runStartISO + " to " + todayISO + " (" + runDays + " days)"],
-            ["Spending in window", fm(runSpend)],
-            ["Average monthly spending (÷ " + runDays + " days × 30.4)", fm(monthlySpend)],
-            ["Estimated annualized spend (× 12)", monthlySpend > 0 ? fm(annualizedSpend) : "—", true]
-          ],
-          note: "Using 90-day fallback until you have at least one completed calendar month of data. Excludes bank-to-bank transfers, card payoffs, savings, and investing; includes bills and purchases, net of refunds."
-        }
-      };
+      const spendRows = useMonths ? [
+        ["Annualized fixed (bills scheduled next 12 months)", fm(fixedAnnual)],
+        ["Regular spending: average per full month (" + regPer.length + " month" + (regPer.length === 1 ? "" : "s") + ")", fm(regMonthly)],
+        ["Annualized regular (× 12)", fm(regMonthly * 12)],
+        ["Est. annualized spend", fm(annualSpend), true]
+      ] : [
+        ["No full calendar month yet, so using recent days", runStartISO + " to " + todayISO + " (" + runDays + " days)"],
+        ["Spending in window", fm(runSpend)],
+        ["Average monthly spending (÷ " + runDays + " days × 30.4)", fm(monthlySpend)],
+        ["Est. annualized spend (× 12)", fm(annualSpend), true]
+      ];
 
       const tiles = [
         allocAllTile,
@@ -6052,8 +5990,35 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
             list: cardRows.map(c => [c.name, fm(c.bal) + " of " + fm(c.lim) + " (" + P1(c.lim > 0 ? c.bal / c.lim : 0) + ")"]),
             note: "Excludes installment plans and cards without a credit limit. Green at 30% or less, amber up to 50%, red above."
           } },
-        runwayTile,
-        annualSpendTile,
+        { label: "Cash runway", value: runway === null ? "—" : runway.toFixed(1) + " mo", status: runway === null ? null : hi(runway, 6, 3),
+          sub: "(Bank cash − card balances owed: " + fm(bank) + ") ÷ monthly spending of " + fm(spendMonthly) + " (annualized spend ÷ 12). Target 3–6+ months",
+          detail: {
+            formula: "(Bank cash − card balances owed) ÷ (Est. annualized spend ÷ 12)",
+            rows: [
+              ["Bank accounts total", fm(acctTotals.bankTotal)],
+              ["Card balances owed (revolving)", fm(acctTotals.spokenFor)],
+              ["True cash", fm(bank), true],
+              ...spendRows,
+              ["Monthly spending (annualized ÷ 12)", fm(spendMonthly), true],
+              ["Runway", runway === null ? "—" : runway.toFixed(1) + " months", true]
+            ],
+            listTitle: useMonths ? "Regular spending by full calendar month" : undefined,
+            list: useMonths ? regPer.map(x => [x.label, fm(x.reg)]) : undefined,
+            note: "Uses the same spending number as Est. annualized spend. Negative cash counts as zero. Green at 6+ months, amber 3–6, red under 3."
+          } },
+        { label: "Est. annualized spend", value: annualSpend > 0 ? fm(annualSpend) : "—", status: null,
+          sub: annualSpend > 0
+            ? (useMonths
+              ? "Fixed " + fm(fixedAnnual) + " (bills, next 12 months) + regular " + fm(regMonthly * 12) + " (" + fm(regMonthly) + "/mo avg over " + regPer.length + " full month" + (regPer.length === 1 ? "" : "s") + ")"
+              : "Average monthly spending (" + fm(monthlySpend) + ") × 12, over the last " + runDays + " days (until a full calendar month exists)")
+            : "Needs spending entries",
+          detail: {
+            formula: useMonths ? "Annualized fixed + (Average regular spending per full calendar month × 12)" : "Average monthly spending × 12 (recent days, until one full calendar month exists)",
+            rows: spendRows,
+            listTitle: useMonths ? "Regular spending by full calendar month" : undefined,
+            list: useMonths ? regPer.map(x => [x.label, fm(x.reg)]) : undefined,
+            note: "Fixed is the same number as Est. annualized fixed cost: every bill scheduled over the next 12 months, excluding card payoffs and investing. Regular is everyday purchases (net of refunds) averaged over every fully completed calendar month; the month of your first logged transaction is skipped unless it was on the 1st. Savings, investing, card payoffs and bank-to-bank transfers are not spending and are left out."
+          } },
         { label: "Debt-to-assets", value: dta === null ? "—" : P(dta), status: dta === null ? null : lo(dta, 0.3, 0.6),
           sub: fm(nw.liabilitiesTotal) + " owed vs " + fm(nw.assetsTotal) + " owned",
           detail: {
