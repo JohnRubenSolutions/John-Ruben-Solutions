@@ -540,30 +540,14 @@
 
               <div class="mt-4 space-y-3">
                 <div>
-                  <label class="block text-sm font-medium text-slate-700 mb-1">
-                    Plan horizon (days)
-                  </label>
-                  <input type="number" id="planner-horizon-days" min="14" max="3650" step="14"
-                         value="180"
-                         class="w-full border border-slate-300 rounded-lg px-3 py-2.5 outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-shadow">
-                </div>
-
-                <div>
                   <label class="block text-sm font-medium text-slate-700 mb-1" for="planner-bank-view">Balance view (bank)</label>
                   <select id="planner-bank-view" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none"></select>
                   <p class="text-[11px] text-slate-500 mt-1">The Projected Balance column and every line's "Balance after" follow this choice. Credit card spending is never subtracted — only card payoffs and bank-paid items — so nothing is counted twice.</p>
                 </div>
 
-                <div class="flex items-end gap-2">
-                  <button id="recalc-planner-btn"
-                          class="w-full bg-brand-600 hover:bg-brand-700 text-white font-medium py-2.5 rounded-lg transition-colors shadow-md">
-                    Recalculate Planner
-                  </button>
-                </div>
-
                 <div class="text-xs text-slate-500 leading-relaxed">
                   Periods are built as 14-day blocks anchored from the earliest income date (or today if none).
-                  Recurring bills and recurring incomes are auto-projected across this horizon (stopping at their end date, if one is set).
+                  The planner always looks one year out from today. Recurring bills and recurring incomes are auto-projected across that year (stopping at their end date, if one is set).
                   Carry-forward rolls to the next period, then into subsequent months.
                 </div>
               </div>
@@ -1624,9 +1608,7 @@ service cloud.firestore {
     let ui = {
       mode: "signin", // or "register"
       activeRoute: "data",
-      planner: {
-        horizonDays: 180
-      },
+      planner: {},
       expandedBillIds: new Set(),
       expandedIncomeIds: new Set(),
       expandedPeriodKeys: new Set(),
@@ -1714,6 +1696,12 @@ service cloud.firestore {
     function clampedMonthDate(year, monthIdx, day) {
       const lastDay = new Date(year, monthIdx + 1, 0).getDate();
       return new Date(year, monthIdx, Math.min(day, lastDay));
+    }
+
+    // Planner horizon: always one year out from today's date (365 or 366 days), recalculated every time it is used.
+    function plannerHorizonDays() {
+      const t = parseISODateLocal(toISODate(new Date()));
+      return Math.round((clampedMonthDate(t.getFullYear() + 1, t.getMonth(), t.getDate()) - t) / 86400000);
     }
 
     // ===== DOM: Auth =====
@@ -4180,7 +4168,7 @@ service cloud.firestore {
       if (!income || !container) return;
 
       const today = parseISODateLocal(toISODate(new Date()));
-      const horizonEnd = addDays(today, ui.planner.horizonDays || 180);
+      const horizonEnd = addDays(today, plannerHorizonDays());
       const occMode = ((ui.incomeOccMode || {})[incomeId] === "past") ? "past" : "upcoming";
       const occurrences = occMode === "past"
         ? generateIncomeOccurrences(parseISODateLocal(income.date), addDays(today, -1)).filter(o => o.incomeId === incomeId).reverse()
@@ -4617,7 +4605,7 @@ service cloud.firestore {
       if (!bill || !container) return;
 
       const today = parseISODateLocal(toISODate(new Date()));
-      const horizonEnd = addDays(today, ui.planner.horizonDays || 180);
+      const horizonEnd = addDays(today, plannerHorizonDays());
       const occurrences = generateBillOccurrences(today, horizonEnd).filter(o => o.billId === billId).slice(0, 12);
 
       if (!occurrences.length) {
@@ -4700,7 +4688,7 @@ service cloud.firestore {
         const earliest = sortByDateAsc(incomes, "date")[0]?.date;
         if (earliest) anchorDate = parseISODateLocal(earliest);
       }
-      const horizonDays = ui.planner.horizonDays || 180;
+      const horizonDays = plannerHorizonDays();
       let first = anchorDate;
       if (today > anchorDate) {
         const n = Math.floor(Math.round((today - anchorDate) / 86400000) / 14);
@@ -5213,7 +5201,7 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
         });
       });
 
-      $("#period-summary").textContent = `Showing ${rows.length} periods (${ui.planner.horizonDays} days).`;
+      $("#period-summary").textContent = `Showing ${rows.length} periods (one year out from today).`;
     }
 
     // Dashboard: the planner period that contains today (or the next one), split into done vs. coming up.
@@ -6889,15 +6877,6 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
     });
 
     // ===== Planner controls =====
-    $("#planner-horizon-days").addEventListener("input", () => {
-      ui.planner.horizonDays = Number($("#planner-horizon-days").value || 180);
-    });
-
-    $("#recalc-planner-btn").addEventListener("click", () => {
-      ui.planner.horizonDays = Number($("#planner-horizon-days").value || 180);
-      renderPlanner();
-    });
-
     // ===== Auth state boot =====
     setAuthMode("signin");
     updateTxnCardOptions();
@@ -6933,13 +6912,10 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
       $("#bill-date").value = todayISO;
       $("#txn-date").value = todayISO;
 
-      ui.planner.horizonDays = Number($("#planner-horizon-days").value || 180);
       subscribeAll();
       refreshAllViews();
     });
 
-    // Initial render preview (before auth)
-    $("#planner-horizon-days").value = "180";
   </script>
 
   <!-- Optional: quick copy helper (not required) -->
