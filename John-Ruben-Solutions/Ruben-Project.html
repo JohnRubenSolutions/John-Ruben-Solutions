@@ -2080,6 +2080,17 @@ service cloud.firestore {
     const fmtAxisDate = (ms) => new Date(ms).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "2-digit" });
     const assetGroupColor = (g) => g === ASSET_UNGROUPED ? "#94a3b8" : (g === BANK_GROUP ? "#14b8a6" : categoryColor(g));
 
+    function computeBillInstallmentsRemaining(asOfISO) {
+      const iso = asOfISO || toISODate(new Date());
+      let total = 0;
+      for (const b of state.bills || []) {
+        if (!b.isInstallment) continue;
+        const st = installmentStatus(b, iso);
+        if (st && st.remaining > 0.004) total += st.remaining;
+      }
+      return total;
+    }
+
     // Net worth components as of any date (same rules as the live Daily Net Worth number).
     // Other Liabilities have no dated history, so their current total is used for every date.
     function netWorthPartsAsOf(iso, hist, liabTotal) {
@@ -2087,17 +2098,11 @@ service cloud.firestore {
       const bank = (state.bankAccounts || []).reduce((s, b) => s + computeBankAccountBalance(b, iso), 0);
       const cards = (state.creditCards || []).reduce((s, c) => s + computeCreditCardBalance(c, iso), 0);
       const other = hist.reduce((s, x) => s + (iso === todayISO ? assetCurrent(x.h).value : (assetValueOn(x.h, iso) ?? 0)), 0);
-      const to = parseISODateLocal(iso);
-      const incStart = (state.incomes || []).map(i => i.date).filter(Boolean).sort()[0];
-      const billStart = (state.bills || []).map(b => b.date).filter(Boolean).sort()[0];
-      const unrouted = (incStart && incStart <= iso)
-        ? generateIncomeOccurrences(parseISODateLocal(incStart), to).reduce((s, o) => !o.bankAccountId ? s + Number(o.amount || 0) : s, 0) : 0;
-      const unassignedBills = (billStart && billStart <= iso)
-        ? generateBillOccurrences(parseISODateLocal(billStart), to).reduce((s, o) => (resolveBillBankId(o) || o.payMethod === "credit") ? s : s + Number(o.amount || 0), 0) : 0;
-      const adj = unrouted - unassignedBills;
-      const assets = bank + other + adj;
-      const owed = cards + liabTotal;
-      return { bank, other, cards, adj, assets, owed, net: assets - owed };
+      const inst = computeBillInstallmentsRemaining(iso);
+      const adj = 0;
+      const assets = bank + other;
+      const owed = cards + liabTotal + inst;
+      return { bank, other, cards, inst, adj, assets, owed, net: assets - owed };
     }
 
     function scheduleAssetCharts() {
@@ -2125,12 +2130,12 @@ service cloud.firestore {
       const liabTotal = (state.liabilities || []).reduce((s, l) => s + Number(l.value || 0), 0);
       const d = computeDailyNetWorth();   // same figure as the big Net Worth number
       const otherTotal = hist.reduce((s, x) => s + assetCurrent(x.h).value, 0);
-      const hasAnything = hist.length > 0 || (state.bankAccounts || []).length > 0 || (state.creditCards || []).length > 0 || (state.liabilities || []).length > 0;
+      const hasAnything = hist.length > 0 || (state.bankAccounts || []).length > 0 || (state.creditCards || []).length > 0 || (state.liabilities || []).length > 0 || (state.bills || []).some(b => b.isInstallment);
 
       $("#asset-ins-bank").textContent = formatMoney(d.bankTotal);
       $("#asset-ins-total").textContent = formatMoney(otherTotal);
       $("#asset-ins-owed").textContent = formatMoney(d.liabilitiesTotal);
-      $("#asset-ins-owed-sub").textContent = `Cards ${formatMoney(d.creditTotal)} · Other liabilities ${formatMoney(d.manualLiabilitiesTotal)}`;
+      $("#asset-ins-owed-sub").textContent = `Cards ${formatMoney(d.creditTotal)} · Other liabilities ${formatMoney(d.manualLiabilitiesTotal)}${d.billInstallmentsTotal > 0.004 ? ` · Installments ${formatMoney(d.billInstallmentsTotal)}` : ""}`;
       const netEl = $("#asset-ins-net");
       netEl.textContent = formatMoney(d.netWorth);
       netEl.className = "text-lg font-bold " + (d.netWorth >= 0 ? "text-emerald-700" : "text-rose-700");
@@ -4358,7 +4363,7 @@ service cloud.firestore {
       if (recurrenceType === "biweekly") {
         let cursor = new Date(startDate);
         if (cursor < scanStart) {
-          const diffDays = Math.floor((scanStart - cursor) / 86400000);
+          const diffDays = Math.round((scanStart - cursor) / 86400000);
           cursor = addDays(startDate, Math.floor(diffDays / 14) * 14);
         }
         let guard = 0;
@@ -5155,12 +5160,13 @@ service cloud.firestore {
       }
       if (it.flow !== "in" && it.flow !== "out") return null;   // credit card spend / refunds never touch a bank
       const n = it.flow === "in" ? amt : -amt;
+      const isPending = it.date > todayISO || it.kind === "payoffplan";
       if (sel.kind === "all") {
         if (it.bankId) return (state.bankAccounts || []).some(b => b.id === it.bankId) ? n : null;
-        return it.date > todayISO ? n : null;
+        return isPending ? n : null;
       }
       if (it.bankId) return it.bankId === sel.bank.id ? n : null;
-      return (it.date > todayISO && sel.isDefault) ? n : null;   // upcoming items with no bank chosen are assumed to use the default bank
+      return (isPending && sel.isDefault) ? n : null;   // upcoming items with no bank chosen are assumed to use the default bank
     }
 
     function computePlanner() {
@@ -5168,13 +5174,13 @@ service cloud.firestore {
       const { periodCashIn, periodCashOut, periodCCSpend, periodItems } = computePeriodCashFlows(periods);
 
       // ----- Bank view: default bank, one bank, or all banks combined -----
-      // Balances are anchored to today's live bank balance. Items dated after today add to it going forward;
-      // items dated today or earlier are walked backwards from it. Credit card spending/refunds never touch a bank
-      // (only payoffs and bank-paid items do), and transfers move money between banks without changing the combined total.
+      // Balances are anchored to today's live bank balance. Items dated after today (plus unlogged planned payoffs dated today)
+      // add to it going forward; already-occurred items dated today or earlier are walked backwards from it.
       const sel = plannerBankSelection();
       const defaultBank = getDefaultBank();
       const todayISOp = toISODate(new Date());
       const netFor = (it) => plannerNetFor(it, sel, todayISOp);
+      const isPending = (it) => it.date > todayISOp || it.kind === "payoffplan";
 
       const flat = [];
       periodItems.forEach(list => list.forEach(it => flat.push(it)));
@@ -5183,20 +5189,20 @@ service cloud.firestore {
       if (sel.ok) {
         let bank = sel.now, card = cardNow;
         for (const it of flat) {
-          if (it.date <= todayISOp) continue;
+          if (!isPending(it)) continue;
           bank += (netFor(it) ?? 0); card += cardNet(it);
           it.balAfter = bank; it.cardAfter = card; it.spokenAfter = bank - card;
         }
         bank = sel.now; card = cardNow;
         for (let k = flat.length - 1; k >= 0; k--) {
           const it = flat[k];
-          if (it.date > todayISOp) continue;
+          if (isPending(it)) continue;
           it.balAfter = bank; it.cardAfter = card; it.spokenAfter = bank - card;
           bank -= (netFor(it) ?? 0); card -= cardNet(it);
         }
       } else flat.forEach(it => { it.balAfter = null; it.cardAfter = null; it.spokenAfter = null; });
       const allItems = [];
-      if (sel.ok) flat.forEach(it => { const n = netFor(it) ?? 0, c = cardNet(it); if (n || c) allItems.push({ date: it.date, n, c }); });
+      if (sel.ok) flat.forEach(it => { const n = netFor(it) ?? 0, c = cardNet(it); if (n || c) allItems.push({ date: it.date, n, c, pending: isPending(it) }); });
 
       let carry = 0;
       const rows = [];
@@ -5210,8 +5216,8 @@ service cloud.firestore {
         if (sel.ok) {
           projected = sel.now; cardEnd = cardNow;
           for (const it of allItems) {
-            if (it.date > todayISOp && it.date <= endISO) { projected += it.n; cardEnd += it.c; }
-            else if (it.date > endISO && it.date <= todayISOp) { projected -= it.n; cardEnd -= it.c; }
+            if (it.pending && it.date <= endISO) { projected += it.n; cardEnd += it.c; }
+            else if (!it.pending && it.date > endISO && it.date <= todayISOp) { projected -= it.n; cardEnd -= it.c; }
           }
           spoken = projected - cardEnd;
         }
@@ -5284,32 +5290,21 @@ service cloud.firestore {
     function computeDailyNetWorth() {
       const todayISO = toISODate(new Date());
 
-      const manualAssetsTotal = (state.assets || []).reduce((s, a) => s + Number(a.value || 0), 0);
+      const manualAssetsTotal = (state.assets || []).reduce((s, a) => s + assetCurrent(assetHistory(a)).value, 0);
       const manualLiabilitiesTotal = (state.liabilities || []).reduce((s, l) => s + Number(l.value || 0), 0);
+      const billInstallmentsTotal = computeBillInstallmentsRemaining(todayISO);
       const { bankTotal, creditTotal, spokenFor } = computeAccountsTotals();
 
       const assetsTotal = manualAssetsTotal + bankTotal;
-      const liabilitiesTotal = manualLiabilitiesTotal + creditTotal;
+      const liabilitiesTotal = manualLiabilitiesTotal + creditTotal + billInstallmentsTotal;
 
-      const todayDate = parseISODateLocal(todayISO);
-      const incStart = (state.incomes || []).map(i => i.date).filter(Boolean).sort()[0];
-      const billStart = (state.bills || []).map(b => b.date).filter(Boolean).sort()[0];
-      const unroutedIncomeToday = incStart
-        ? generateIncomeOccurrences(parseISODateLocal(incStart), todayDate)
-            .reduce((s, o) => !o.bankAccountId ? s + Number(o.amount || 0) : s, 0)
-        : 0;
-      // Bank/debit bills are already in bank balances; credit bills are in card balances.
-      const billsToday = billStart
-        ? generateBillOccurrences(parseISODateLocal(billStart), todayDate)
-            .reduce((s, o) => (resolveBillBankId(o) || o.payMethod === "credit") ? s : s + Number(o.amount || 0), 0)
-        : 0;
-
-      
-const netCashflowAdj = unroutedIncomeToday - billsToday;
-      const netWorth = assetsTotal - liabilitiesTotal + netCashflowAdj;
+      const unroutedIncomeToday = 0;
+      const billsToday = 0;
+      const netCashflowAdj = 0;
+      const netWorth = assetsTotal - liabilitiesTotal;
 
       return {
-        todayISO, manualAssetsTotal, manualLiabilitiesTotal, bankTotal, creditTotal, spokenFor,
+        todayISO, manualAssetsTotal, manualLiabilitiesTotal, billInstallmentsTotal, bankTotal, creditTotal, spokenFor,
         assetsTotal, liabilitiesTotal, unroutedIncomeToday, billsToday,
         netCashflowAdj, netWorth
       };
@@ -5563,8 +5558,8 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
         </div>`;
       };
       const items = row.items.slice().sort((x, y) => x.date < y.date ? -1 : (x.date > y.date ? 1 : 0));
-      const done = items.filter(it => it.date <= todayISO).reverse();   // newest first
-      const next = items.filter(it => it.date > todayISO);
+      const done = items.filter(it => it.date <= todayISO && it.kind !== "payoffplan").reverse();   // newest first
+      const next = items.filter(it => it.date > todayISO || it.kind === "payoffplan");
       $("#cp-done-count").textContent = `(${done.length})`;
       $("#cp-next-count").textContent = `(${next.length})`;
       $("#cp-done").innerHTML = done.length ? done.map(it => line(it, true)).join("") : `<div class="text-sm text-slate-500">Nothing yet this period.</div>`;
@@ -5739,8 +5734,17 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
         .reduce((s, o) => s + Number(o.amount || 0), 0);
 
       const actual = new Map(), used = new Set();
-      let totalAllSpend = 0;   // ALL spending this month (every category incl. unbudgeted + Uncategorized, minus refunds, excl. card payoffs)
-      for (const r of getLedgerBaseRows().rows) {
+      let totalAllSpend = 0;   // ALL spending this month (full-month scheduled bills + expenses minus refunds, excl. card payoffs & savings/investing)
+      for (const b of state.bills || []) {
+        if (b && b.category && String(b.category).trim()) {
+          const c = categoryLabel(b.category);
+          if (c !== UNCATEGORIZED) used.add(c);
+        }
+      }
+      const monthBillRows = generateBillOccurrences(new Date(y, mo - 1, 1), new Date(y, mo, 0))
+        .map(o => ({ kind: "bill", occ: o, date: o.date }));
+      const txnRows = (state.transactions || []).map(t => ({ kind: "txn", t, date: t.date }));
+      for (const r of [...txnRows, ...monthBillRows]) {
         const amt = rowSpend(r);
         if (!amt) continue;
         const cat = categoryLabel(rowCategoryRaw(r));
@@ -5749,7 +5753,7 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
         if (inMonth) {
           if (cat === UNCATEGORIZED) used.add(cat);   // only listed when it has spending this month (or a budget)
           actual.set(cat, (actual.get(cat) || 0) + amt);
-          totalAllSpend += amt;
+          if (!KPI_SAVE_RX.test(cat)) totalAllSpend += amt;
         }
       }
       const budgets = new Map();
@@ -5763,7 +5767,7 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
         const budgetAmt = !b ? 0 : (mode === "percent" ? monthIncome * val / 100 : val);
         const act = actual.get(cat) || 0;
         const has = !!b && budgetAmt > 0;
-        if (has) { totBudget += budgetAmt; totActual += act; }
+        if (has && !KPI_SAVE_RX.test(cat)) { totBudget += budgetAmt; totActual += act; }
         return { cat, b, mode, val, budgetAmt, act, has, pct: budgetAmt > 0 ? (act / budgetAmt) * 100 : 0, left: budgetAmt - act };
       });
 
@@ -5946,17 +5950,19 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
       const monthLabel = (d) => MN[d.getMonth()] + " " + d.getFullYear();
       const computeAlloc = (aStart, aDays, aEnd = t0) => {
         const aStartISO = toISODate(aStart), aEndISO = toISODate(aEnd);
-        let aFixed = 0, aReg = 0, aInv = 0;
+        let aFixed = 0, aDebitReg = 0, aCCReg = 0, aInv = 0;
         for (const r of rows) {
           if (!r.date || r.date < aStartISO || r.date > aEndISO) continue;
           const a = rowSpend(r);
           if (!a) continue;
           if (isSave(r)) aInv += a;
           else if (r.kind === "bill") aFixed += a;
-          else aReg += a;
+          else if (r.t && r.t.cardType === "credit") aCCReg += a;
+          else aDebitReg += a;
         }
+        const aRawReg = aDebitReg + aCCReg;
         const aInc = sum(generateIncomeOccurrences(aStart, aEnd));
-        return { startISO: aStartISO, endISO: aEndISO, days: aDays, income: aInc, fixed: aFixed, reg: aReg, inv: aInv };
+        return { startISO: aStartISO, endISO: aEndISO, days: aDays, income: aInc, fixed: aFixed, debitReg: aDebitReg, ccReg: aCCReg, rawReg: aRawReg, reg: aRawReg, inv: aInv };
       };
       // Credit card balances still owed on the last day of a month (revolving cards only: installment plans can't be zeroed out)
       const cardsOwedAt = (iso) => (state.creditCards || []).filter(c => !isInstallment(c))
@@ -5973,14 +5979,19 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
         for (let d = ms; d < thisMonthStart; d = new Date(d.getFullYear(), d.getMonth() + 1, 1)) elig.push(d);
         perAll = elig.map(d => {
           const end = new Date(d.getFullYear(), d.getMonth() + 1, 0);
-          return { label: monthLabel(d), ...computeAlloc(d, end.getDate(), end), cardBal: cardsOwedAt(toISODate(end)) };
+          const base = computeAlloc(d, end.getDate(), end);
+          const cardBal = cardsOwedAt(toISODate(end));
+          // Option 1B (EOM Zero-Out Math): Regular counts debit spend + the portion of credit card regular spend cleared by month-end;
+          // any unpaid balance remaining at month-end sits in cardBal so it is never double-counted and never counted as savings.
+          const paidReg = base.debitReg + Math.max(0, base.ccReg - cardBal);
+          return { label: monthLabel(d), ...base, reg: paidReg, cardBal };
         });
         const agg = (per) => {
           if (!per.length) return null;
           const tot = (k) => per.reduce((s, x) => s + x[k], 0);
           return {
             startISO: per[0].startISO, endISO: per[per.length - 1].endISO, days: tot("days"), months: per.length,
-            income: tot("income"), fixed: tot("fixed"), reg: tot("reg"), inv: tot("inv"), perMonth: per
+            income: tot("income"), fixed: tot("fixed"), reg: tot("reg"), rawReg: tot("rawReg"), inv: tot("inv"), perMonth: per
           };
         };
         alloc = agg(perAll);                    // every eligible month
@@ -5990,7 +6001,7 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
       // Regular spending averaged over EVERY fully completed calendar month (same months as the all-months tile).
       // Feeds Est. annualized spend and Cash runway. null until one full month exists.
       let regMonthly = null;
-      const regPer = perAll.map(x => ({ label: x.label, reg: x.reg }));
+      const regPer = perAll.map(x => ({ label: x.label, reg: x.rawReg }));
       if (regPer.length) regMonthly = regPer.reduce((s, x) => s + x.reg, 0) / regPer.length;
 
       // This month vs last month (to the same day)
@@ -6035,7 +6046,8 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
         .filter(o => !o.payoffCardId && !KPI_SAVE_RX.test(categoryLabel(o.category)));
       const fixed = sum(fixedOcc);
       // Annualized fixed costs: every bill scheduled over the next 12 months (same exclusions as above)
-      const fixedAnnualOcc = generateBillOccurrences(t0, addDays(t0, 364))
+      const fixedAnnualEnd = addDays(clampedMonthDate(y + 1, m, day), -1);
+      const fixedAnnualOcc = generateBillOccurrences(t0, fixedAnnualEnd)
         .filter(o => !o.payoffCardId && !KPI_SAVE_RX.test(categoryLabel(o.category)));
       const fixedAnnual = sum(fixedAnnualOcc);
 
@@ -6263,7 +6275,7 @@ const netCashflowAdj = unroutedIncomeToday - billsToday;
           detail: {
             formula: "Sum of every bill scheduled over the next 12 months",
             rows: [
-              ["Window", todayISO + " to " + toISODate(addDays(t0, 364))],
+              ["Window", todayISO + " to " + toISODate(fixedAnnualEnd)],
               ["Scheduled bills", fm(fixedAnnual), true],
               ["Per month (÷ 12)", fm(fixedAnnual / 12)]
             ],
