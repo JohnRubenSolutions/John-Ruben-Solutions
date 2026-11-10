@@ -6098,31 +6098,42 @@ service cloud.firestore {
         const thisMonthStart = new Date(t0.getFullYear(), t0.getMonth(), 1);
         const elig = [];
         for (let d = ms; d < thisMonthStart; d = new Date(d.getFullYear(), d.getMonth() + 1, 1)) elig.push(d);
-        // Card position for a period: what was owed at the start, charged, paid, and owed at the end (revolving cards only).
-        // Payments are assumed to clear the oldest balance first, so "earlier balance still owed" = start balance − payments (never below 0).
-        const cardPosition = (pStart, pEnd) => {
+        // Card position for a period: pooled across all revolving credit cards (installment plans excluded).
+        // Payoffs entered in the month are applied first to scheduled credit card bills for that month,
+        // then to that month's credit card everyday expenses, and any remaining payoff reduces the earlier card balance.
+        const cardPosition = (pStart, pEnd, mEnd = pEnd) => {
           const oISO = toISODate(addDays(pStart, -1)), sISO = toISODate(pStart), eISO = toISODate(pEnd);
           const shadow = makePayoffShadowTest();
-          const billOccs = generateBillOccurrences(pStart, pEnd);
-          let O = 0, C = 0, Ch = 0, Y = 0, carried = 0, newUnpaid = 0, paidEarlier = 0;
-          for (const c of (state.creditCards || []).filter(x => !isInstallment(x))) {
-            const o = Math.max(0, computeCreditCardBalance(c, oISO));
-            const e = Math.max(0, computeCreditCardBalance(c, eISO));
-            let ch = 0, py = 0;
-            for (const t of state.transactions || []) {
-              if (t.cardType !== "credit" || t.cardId !== c.id || !t.date || t.date < sISO || t.date > eISO) continue;
-              const a = Number(t.amount || 0);
-              if (t.txnType === "expense") ch += a; else if (t.txnType === "credit") ch -= a; else if (t.txnType === "payoff") py += a;
-            }
-            for (const occ of billOccs) {
-              if (occ.payMethod === "credit" && occ.payCardId === c.id) ch += Number(occ.amount || 0);
-              if (occ.payoffCardId === c.id && !shadow(occ)) py += Number(occ.amount || 0);
-            }
-            const pay = Math.max(0, py);
-            const car = Math.min(Math.max(0, o - pay), e);
-            O += o; C += e; Ch += ch; Y += pay; carried += car; newUnpaid += e - car; paidEarlier += Math.min(o, pay);
+          const revCards = (state.creditCards || []).filter(x => !isInstallment(x));
+          const revIds = new Set(revCards.map(x => x.id));
+          const O = Math.max(0, revCards.reduce((s, c) => s + computeCreditCardBalance(c, oISO), 0));
+          let ccExp = 0, py = 0, ccBills = 0;
+          for (const t of state.transactions || []) {
+            if (t.cardType !== "credit" || !revIds.has(t.cardId) || !t.date || t.date < sISO || t.date > eISO) continue;
+            const a = Number(t.amount || 0);
+            if (t.txnType === "expense") ccExp += a;
+            else if (t.txnType === "credit") ccExp -= a;
+            else if (t.txnType === "payoff") py += a;
           }
-          return { O, C, Ch, Y, carried, newUnpaid, paidEarlier };
+          for (const occ of generateBillOccurrences(pStart, mEnd)) {
+            if (occ.payMethod === "credit" && revIds.has(occ.payCardId) && !occ.payoffCardId) ccBills += Number(occ.amount || 0);
+            if (occ.payoffCardId && revIds.has(occ.payoffCardId) && occ.date <= eISO && !shadow(occ)) py += Number(occ.amount || 0);
+          }
+          const Y = Math.max(0, py);
+          const billsPos = Math.max(0, ccBills);
+          const expPos = Math.max(0, ccExp);
+          const payToBills = Math.min(Y, billsPos);
+          const remAfterBills = Math.max(0, Y - billsPos);
+          const payToExp = Math.min(remAfterBills, expPos);
+          const remAfterExp = Math.max(0, remAfterBills - expPos);
+          const paidEarlier = Math.min(O, remAfterExp);
+          const carried = Math.max(0, O - remAfterExp);
+          const unpaidBills = Math.max(0, billsPos - payToBills);
+          const unpaidExp = Math.max(0, expPos - payToExp);
+          const newUnpaid = unpaidBills + unpaidExp;
+          const Ch = ccBills + ccExp;
+          const C = Math.max(0, O + Ch - Y);
+          return { O, C, Ch, Y, ccBills, ccExp, payToBills, payToExp, paidEarlier, carried, newUnpaid };
         };
         // Spending by category for a window (bills + debit + card purchases, net of refunds; investing excluded).
         // schedFrom adds bills scheduled after today so the current month's list matches its Bills slice.
@@ -6146,7 +6157,7 @@ service cloud.firestore {
         perAll = elig.map(d => {
           const end = new Date(d.getFullYear(), d.getMonth() + 1, 0);
           const base = computeAlloc(d, end.getDate(), end);
-          const card = cardPosition(d, end);
+          const card = cardPosition(d, end, end);
           return { label: monthLabel(d), ...base, reg: base.rawReg, card, carried: card.carried, schedFrom: null };
         });
         const agg = (per) => {
@@ -6154,26 +6165,32 @@ service cloud.firestore {
           const tot = (k) => per.reduce((s, x) => s + x[k], 0);
           return {
             startISO: per[0].startISO, endISO: per[per.length - 1].endISO, days: tot("days"), months: per.length,
-            income: tot("income"), fixed: tot("fixed"), reg: tot("reg"), rawReg: tot("rawReg"), inv: tot("inv"), perMonth: per,
+            income: tot("income"), fixed: tot("fixed"), debitReg: tot("debitReg"), ccReg: tot("ccReg"), reg: tot("reg"), rawReg: tot("rawReg"), inv: tot("inv"), perMonth: per,
             // card position over the window: start balance from the first month, end balance (and what it is made of) from the last
             card: {
               O: per[0].card.O, C: per[per.length - 1].card.C, carried: per[per.length - 1].carried, newUnpaid: per[per.length - 1].card.newUnpaid,
-              Ch: per.reduce((a, x) => a + x.card.Ch, 0), Y: per.reduce((a, x) => a + x.card.Y, 0), paidEarlier: per.reduce((a, x) => a + x.card.paidEarlier, 0)
+              ccBills: per.reduce((a, x) => a + x.card.ccBills, 0),
+              ccExp: per.reduce((a, x) => a + x.card.ccExp, 0),
+              Ch: per.reduce((a, x) => a + x.card.Ch, 0),
+              Y: per.reduce((a, x) => a + x.card.Y, 0),
+              payToBills: per.reduce((a, x) => a + x.card.payToBills, 0),
+              payToExp: per.reduce((a, x) => a + x.card.payToExp, 0),
+              paidEarlier: per.reduce((a, x) => a + x.card.paidEarlier, 0)
             },
             cats: catTotals(parseISODateLocal(per[0].startISO), parseISODateLocal(per[per.length - 1].endISO), per[per.length - 1].schedFrom)
           };
         };
         alloc = agg(perAll);                    // every eligible month
         allocMonths = agg(perAll.slice(-3));    // the most recent 3 eligible months (no longer shown as a tile)
-        // Current month status: this month's scheduled income and scheduled bills (full month), regular spending so far
-        // (through today), and card balances owed today. Saved = what is left of this month's income right now.
+        // Current month status: this month's scheduled income and scheduled bills (full month), everyday spending (debit & credit),
+        // and earlier card balance (carry forward after payoffs cover scheduled credit bills & credit expenses).
         const cmStart = new Date(t0.getFullYear(), t0.getMonth(), 1);
         const cmEnd = new Date(t0.getFullYear(), t0.getMonth() + 1, 0);
-        const cmBase = computeAlloc(cmStart, cmEnd.getDate(), t0);
+        const cmBase = computeAlloc(cmStart, cmEnd.getDate(), cmEnd);
         const cmIncome = sum(generateIncomeOccurrences(cmStart, cmEnd).filter(o => !o.isOther));
         const cmFixed = sum(generateBillOccurrences(cmStart, cmEnd)
           .filter(o => !o.payoffCardId && !KPI_SAVE_RX.test(categoryLabel(o.category))));
-        const cmCard = cardPosition(cmStart, t0);
+        const cmCard = cardPosition(cmStart, cmEnd, cmEnd);
         allocCur = agg([{ label: monthLabel(cmStart), ...cmBase, income: cmIncome, fixed: cmFixed, reg: cmBase.rawReg, card: cmCard, carried: cmCard.carried,
                           schedFrom: addDays(t0, 1), startISO: toISODate(cmStart), endISO: toISODate(cmEnd), days: cmEnd.getDate() }]);
       }
@@ -6280,20 +6297,22 @@ service cloud.firestore {
         return list;
       };
 
-      // Where your income goes: all-data tile + last-90-days tile, built by the same function so the format matches
+      // Where your income goes: all-data tile + current-month tile, built by the same function so the format matches
       const deriveAlloc = (al) => {
         if (!al || al.income <= 0) return null;
-        // Earlier card balance still owed at the END of the window, counted once (a lingering balance is not repeated every month)
+        // Earlier card balance (carry forward) still owed at the END of the window, counted once
         const cardSum = (al.perMonth[al.perMonth.length - 1] || {}).carried || 0;
-        const saved = al.income - al.fixed - al.reg - cardSum;
+        const saved = al.income - al.fixed - al.debitReg - al.ccReg - cardSum;
         const f = Math.round(al.fixed / al.income * 1000) / 10;
+        const dr = Math.round(al.debitReg / al.income * 1000) / 10;
+        const cr = Math.round(al.ccReg / al.income * 1000) / 10;
         const r = Math.round(al.reg / al.income * 1000) / 10;
         const c = Math.round(cardSum / al.income * 1000) / 10;
-        const s = Math.round((100 - f - r - c) * 10) / 10;      // left to save = whatever is left, so the four always total 100%
+        const s = Math.round((100 - f - dr - cr - c) * 10) / 10;      // left to save = whatever is left, so the five always total 100%
         const totInv = al.perMonth.reduce((a, m) => a + (m.inv || 0), 0);
         const netInv = saved <= 0 ? saved : Math.min(totInv, saved);   // invested first, anything above that is cash left over
         const netCash = saved - netInv;
-        return { ...al, saved, cardSum, netInv, netCash, f, r, c, s, k: al.months ? 1 / al.months : 30 / al.days, unit: al.months ? "month" : "30 days" };
+        return { ...al, saved, cardSum, netInv, netCash, f, dr, cr, r, c, s, k: al.months ? 1 / al.months : 30 / al.days, unit: al.months ? "month" : "30 days" };
       };
       const A = deriveAlloc(alloc), AM = deriveAlloc(allocMonths), AC = deriveAlloc(allocCur);
       const dd = (a, b) => { const d = Math.round((a - b) * 10) / 10; return (d > 0 ? "+" : "") + d.toFixed(1) + " pts"; };
@@ -6302,14 +6321,14 @@ service cloud.firestore {
           return {
             label: cfg.label, wide: true, value: "—", status: null,
             sub: cfg.emptySub || (firstTxn ? "Needs income entries" : "Log transactions to see where your income goes"),
-            detail: { formula: "Bills + Everyday spending + Earlier card balance + Left to save = 100% of income", rows: [["Status", firstTxn ? "No scheduled income found yet" : "No transactions logged yet"]], note: cfg.note }
+            detail: { formula: "Bills + Everyday (Debit) + Everyday (Credit) + Earlier card balance + Left to save = 100% of income", rows: [["Status", firstTxn ? "No scheduled income found yet" : "No transactions logged yet"]], note: cfg.note }
           };
         }
-        const f0 = Math.round(X.f), r0 = Math.round(X.r), c0 = Math.round(X.c), s0 = 100 - f0 - r0 - c0;
-        const R = ref ? { f0: Math.round(ref.f), r0: Math.round(ref.r), c0: Math.round(ref.c) } : null;
-        if (R) R.s0 = 100 - R.f0 - R.r0 - R.c0;
-        const tot = Math.max(X.income, X.fixed + X.reg + X.cardSum);
-        const wf = Math.max(0, X.fixed) / tot * 100, wr = Math.max(0, X.reg) / tot * 100, wc = Math.max(0, X.cardSum) / tot * 100, ws = Math.max(0, X.saved) / tot * 100;
+        const f0 = Math.round(X.f), dr0 = Math.round(X.dr), cr0 = Math.round(X.cr), c0 = Math.round(X.c), s0 = 100 - f0 - dr0 - cr0 - c0;
+        const R = ref ? { f0: Math.round(ref.f), dr0: Math.round(ref.dr), cr0: Math.round(ref.cr), c0: Math.round(ref.c) } : null;
+        if (R) R.s0 = 100 - R.f0 - R.dr0 - R.cr0 - R.c0;
+        const tot = Math.max(X.income, X.fixed + X.debitReg + X.ccReg + X.cardSum);
+        const wf = Math.max(0, X.fixed) / tot * 100, wdr = Math.max(0, X.debitReg) / tot * 100, wcr = Math.max(0, X.ccReg) / tot * 100, wc = Math.max(0, X.cardSum) / tot * 100, ws = Math.max(0, X.saved) / tot * 100;
         const rk = { good: 0, warn: 1, bad: 2 };
         const sSt = hi(X.s / 100, 0.2, 0.1), fSt = lo(X.f / 100, 0.5, 0.65);
         const dl = (d, upGood) => {
@@ -6320,8 +6339,9 @@ service cloud.firestore {
         };
         const parts = [
           { l: "Bills", c: "#6366f1", p: f0, v: X.fixed * X.k, d: R ? f0 - R.f0 : null, up: false },
-          { l: "Everyday spending", c: "#f59e0b", p: r0, v: X.reg * X.k, d: R ? r0 - R.r0 : null, up: false },
-          { l: "Earlier card balance", c: "#f43f5e", p: c0, v: X.cardSum, d: null, up: false, u: "still owed" },
+          { l: "Everyday (Debit)", c: "#0ea5e9", p: dr0, v: X.debitReg * X.k, d: R ? dr0 - R.dr0 : null, up: false },
+          { l: "Everyday (Credit)", c: "#f59e0b", p: cr0, v: X.ccReg * X.k, d: R ? cr0 - R.cr0 : null, up: false },
+          { l: "Earlier card balance", c: "#f43f5e", p: c0, v: X.cardSum, d: null, up: false, u: "carry forward" },
           { l: "Left to save", c: "#10b981", p: s0, v: X.saved * X.k, d: R ? s0 - R.s0 : null, up: true }
         ];
         const K = X.card || {};
@@ -6330,39 +6350,45 @@ service cloud.firestore {
           ["Total income", fm(X.income)],
           ["Other deposits (gifts etc.)", "not counted as income"],
           ["Bills (scheduled fixed bills, excl. card payoffs and investing)", fm(X.fixed) + " · " + X.f.toFixed(1) + "%"],
-          ["Everyday spending (debit + all credit card purchases, net of refunds, paid or not)", fm(X.reg) + " · " + X.r.toFixed(1) + "%"],
-          ["Earlier card balance still owed (carried in from before, not yet paid)", fm(X.cardSum) + " · " + X.c.toFixed(1) + "%"],
-          ["Left to save (income − bills − everyday − earlier card balance)", fm(X.saved) + " · " + X.s.toFixed(1) + "%", true],
+          ["Everyday spending — Debit (debit card purchases, net of refunds)", fm(X.debitReg) + " · " + X.dr.toFixed(1) + "%"],
+          ["Everyday spending — Credit (credit card purchases, net of refunds)", fm(X.ccReg) + " · " + X.cr.toFixed(1) + "%"],
+          ["Earlier card balance / Carry forward (after payoffs cover credit bills & credit expenses)", fm(X.cardSum) + " · " + X.c.toFixed(1) + "%"],
+          ["Left to save (income − bills − debit − credit − earlier card balance)", fm(X.saved) + " · " + X.s.toFixed(1) + "%", true],
           ["   of which invested", fm(X.netInv) + " · " + P1(X.netInv / X.income)],
           ["   of which cash left over", fm(X.netCash) + " · " + P1(X.netCash / X.income)],
           ["Total", "100.0%", true],
           [X.months ? "Monthly average (totals ÷ " + X.months + " month" + (X.months === 1 ? "" : "s") + ")" : "30-day average (totals ÷ " + X.days + " days × 30)", null],
           ["Income", fm(X.income * X.k)],
           ["Bills", fm(X.fixed * X.k)],
-          ["Everyday spending", fm(X.reg * X.k)],
+          ["Everyday (Debit)", fm(X.debitReg * X.k)],
+          ["Everyday (Credit)", fm(X.ccReg * X.k)],
           ["Left to save", fm(X.saved * X.k), true],
-          ["Card activity (revolving cards; installment plans excluded)", null],
-          ["Owed at the start", fm(K.O || 0)],
-          ["+ Charged on cards (purchases and bills, net of refunds)", fm(K.Ch || 0)],
-          ["− Paid toward cards", fm(K.Y || 0)],
-          ["= Owed at the end", fm(K.C || 0), true],
-          ["   of which from earlier months (unpaid)", fm(K.carried || 0)],
-          ["   of which this period's spending (already inside Everyday spending)", fm(K.newUnpaid || 0)],
-          ["Paid toward earlier balances (counted as spending when it was spent)", fm(K.paidEarlier || 0)]
+          ["Earlier card balance & payoff priority (revolving cards; installments excluded)", null],
+          ["Starting / carry-forward balance at start", fm(K.O || 0)],
+          ["+ Credit card bills scheduled in window", fm(K.ccBills || 0)],
+          ["+ Credit card everyday expenses (net of refunds)", fm(K.ccExp || 0)],
+          ["− Credit card payoffs entered in window", fm(K.Y || 0)],
+          ["   1. Payoff applied to credit card bills first", fm(K.payToBills || 0)],
+          ["   2. Remaining payoff applied to credit card expenses", fm(K.payToExp || 0)],
+          ["   3. Remaining payoff applied to earlier card balance", fm(K.paidEarlier || 0)],
+          ["= Total card balance at end (carries forward to next month)", fm(K.C || 0), true],
+          ["− Unpaid credit bills & expenses from this window (already in Bills & Everyday Credit)", fm(K.newUnpaid || 0)],
+          ["= Earlier card balance (carry forward on tile)", fm(K.carried || 0), true]
         ];
         if (X.perMonth) {
-          rows.push(["Month by month (income · bills / everyday / earlier card balance / left to save)", null]);
+          rows.push(["Month by month (income · bills / debit / credit / earlier card balance / left to save)", null]);
           for (const m of X.perMonth) {
-            const b = m.carried || 0, sv = m.income - m.fixed - m.reg - b;
+            const b = m.carried || 0, sv = m.income - m.fixed - m.debitReg - m.ccReg - b;
             rows.push([m.label, m.income > 0
-              ? fm(m.income) + " · " + P1(m.fixed / m.income) + " / " + P1(m.reg / m.income) + " / " + P1(b / m.income) + " / " + P1(sv / m.income)
+              ? fm(m.income) + " · " + P1(m.fixed / m.income) + " / " + P1(m.debitReg / m.income) + " / " + P1(m.ccReg / m.income) + " / " + P1(b / m.income) + " / " + P1(sv / m.income)
               : "no income scheduled"]);
           }
         }
         if (ref) {
           rows.push(["Compared with the all-months average (" + ref.months + " month" + (ref.months === 1 ? "" : "s") + ")", null]);
           rows.push(["Bills", X.f.toFixed(1) + "% vs " + ref.f.toFixed(1) + "% (" + dd(X.f, ref.f) + ")"]);
-          rows.push(["Everyday spending", X.r.toFixed(1) + "% vs " + ref.r.toFixed(1) + "% (" + dd(X.r, ref.r) + ")"]);
+          rows.push(["Everyday (Debit)", X.dr.toFixed(1) + "% vs " + ref.dr.toFixed(1) + "% (" + dd(X.dr, ref.dr) + ")"]);
+          rows.push(["Everyday (Credit)", X.cr.toFixed(1) + "% vs " + ref.cr.toFixed(1) + "% (" + dd(X.cr, ref.cr) + ")"]);
           rows.push(["Left to save", X.s.toFixed(1) + "% vs " + ref.s.toFixed(1) + "% (" + dd(X.s, ref.s) + ")"]);
         }
         // Where the money went: every spending category for the window (bills + debit + card purchases)
@@ -6373,32 +6399,179 @@ service cloud.firestore {
         }
         return {
           label: cfg.label, wide: true,
-          value: "Bills " + f0 + "% · Everyday " + r0 + "% · Earlier cards owed " + c0 + "% · Left to save " + s0 + "%",
+          value: "Bills " + f0 + "% · Debit " + dr0 + "% · Credit " + cr0 + "% · Earlier cards " + c0 + "% · Left to save " + s0 + "%",
           status: rk[sSt] >= rk[fSt] ? sSt : fSt,
           body: `<div class="mt-2 flex h-2 rounded-full overflow-hidden bg-slate-200">
-              <div style="width:${wf}%;background:#6366f1"></div><div style="width:${wr}%;background:#f59e0b"></div><div style="width:${wc}%;background:#f43f5e"></div><div style="width:${ws}%;background:#10b981"></div></div>
-            <div class="mt-3 grid grid-cols-4 gap-2">${parts.map(i => `<div>
+              <div style="width:${wf}%;background:#6366f1"></div><div style="width:${wdr}%;background:#0ea5e9"></div><div style="width:${wcr}%;background:#f59e0b"></div><div style="width:${wc}%;background:#f43f5e"></div><div style="width:${ws}%;background:#10b981"></div></div>
+            <div class="mt-3 grid grid-cols-2 sm:grid-cols-5 gap-2">${parts.map(i => `<div>
               <div class="text-[11px] text-slate-500 flex items-center gap-1"><span style="display:inline-block;width:8px;height:8px;border-radius:9999px;background:${i.c}"></span>${i.l}</div>
               <div class="text-xl font-bold text-slate-900">${i.p}%</div>
               <div class="text-[11px] text-slate-400">${escapeHtml(fm(i.v))} ${i.u || "/ " + X.unit}</div>${dl(i.d, i.up)}</div>`).join("")}</div>`,
           sub: cfg.sub(X),
-          detail: { formula: "Bills + Everyday spending + Earlier card balance + Left to save = 100% of income (Left to save = Income − Bills − Everyday − Earlier card balance)", rows, list: catList, listTitle: "Spent by category (bills + everyday), share of income", note: cfg.note }
+          detail: { formula: "Bills + Everyday (Debit) + Everyday (Credit) + Earlier card balance + Left to save = 100% of income (Left to save = Income − Bills − Debit − Credit − Earlier card balance)", rows, list: catList, listTitle: "Spent by category (bills + everyday), share of income", note: cfg.note }
         };
       };
-      const allocAllTile = makeAllocTile(A, null, {
-        label: "Where your income goes (all full calendar months)",
-        emptySub: firstTxn ? "Needs at least one completed calendar month with income" : "Log transactions to see this",
-        windowText: (X) => X.perMonth[0].label + (X.months > 1 ? " – " + X.perMonth[X.months - 1].label : "") + " (" + X.months + " completed calendar month" + (X.months === 1 ? "" : "s") + ")",
-        sub: (X) => "Share of income averaged over all " + X.months + " completed calendar month" + (X.months === 1 ? "" : "s") + " (" + X.perMonth[0].label + (X.months > 1 ? " – " + X.perMonth[X.months - 1].label : "") + "). Bills + everyday + earlier card balance + left to save = 100%",
-        note: "Uses every fully completed calendar month, so it sharpens as more months are logged; the current month joins once it is over. The month of your very first logged transaction is skipped unless it was on the 1st. Bills = scheduled fixed bills. Everyday spending = everything you spent on debit and on credit cards in those months (net of refunds), counted when you spent it, whether or not the card is paid yet, so new card spending is never mistaken for savings. Earlier card balance = debt carried in from before the window that is still unpaid at the end of the last month (payments are assumed to clear the oldest balance first); it is counted once, not repeated for every month it lingers. Left to save = income − bills − everyday spending − earlier card balance (investing counts as saved). Shares are each bucket's total across the months divided by total income, so the four add to 100%; dollars are the average per month, except the card balance, which is what is owed at the end. Because of that, the month-by-month lines below do not add up to these totals. Green when what is left to save is 20%+ and bills are 50% or less; red when it is under 10% or bills are over 65%; otherwise amber. Click the tile to see spending by category and card activity."
-      });
-      const allocMonthsTile = makeAllocTile(AC, A, {
-        label: "Where your income goes (this month so far)",
-        emptySub: firstTxn ? "No scheduled income found for this month yet" : "Log transactions to see this",
-        windowText: (X) => X.perMonth[0].label + " (current month, through today)",
-        sub: (X) => "Share of " + X.perMonth[0].label + "'s scheduled income: bills scheduled this month, everyday spending so far (debit + card), earlier card balance still owed, and what is left. Compare with the all-months tile",
-        note: "Current month status. Income = everything scheduled this month (Other deposits such as gifts are not counted). Bills = all bills scheduled this month, including ones not yet due (card payoffs and investing excluded). Everyday spending = everything spent so far this month on debit and credit cards (net of refunds), counted when spent whether or not the card is paid, so unpaid card spending never shows up as savings. Earlier card balance = debt carried in from before this month that is still unpaid today (payments are assumed to clear the oldest balance first). Left to save = income − bills − everyday spending − earlier card balance (investing counts as saved); it moves as the month goes on. Card payments made this month toward earlier balances are not new spending (they were counted when the money was spent) and appear under Card activity. Click the tile to see spending by category and card activity. The change under each percentage compares with the all-months average. Dot color follows the same rule as the all-months tile."
-      });
+      // ===== Where your income goes: cash-vs-cards view, built for paying every card off each month =====
+      // Paid directly = bills not on a card + debit purchases (+ installment-card purchases). Charged to cards = bills on revolving
+      // cards (scheduled) + everyday card purchases. Card bill to clear = old balance + this month's card charges.
+      const revCardsAll = (state.creditCards || []).filter(c => !isInstallment(c));
+      const cardMonthRows = (mStart, upTo, mEnd) => {
+        const oISO = toISODate(addDays(mStart, -1)), sISO = toISODate(mStart), uISO = toISODate(upTo);
+        const shadow = makePayoffShadowTest();
+        const bl = generateBillOccurrences(mStart, mEnd);
+        return revCardsAll.map(c => {
+          const O = Math.max(0, computeCreditCardBalance(c, oISO));
+          let bills = 0, exp = 0, paid = 0;
+          for (const t of state.transactions || []) {
+            if (t.cardType !== "credit" || t.cardId !== c.id || !t.date || t.date < sISO || t.date > uISO) continue;
+            const a = Number(t.amount || 0);
+            if (t.txnType === "payoff") paid += a;
+            else if (!isSave({ kind: "txn", t })) { if (t.txnType === "expense") exp += a; else if (t.txnType === "credit") exp -= a; }
+          }
+          for (const o of bl) {
+            if (o.payMethod === "credit" && o.payCardId === c.id && !o.payoffCardId && !KPI_SAVE_RX.test(categoryLabel(o.category))) bills += Number(o.amount || 0);
+            if (o.payoffCardId === c.id && o.date <= uISO && !shadow(o)) paid += Number(o.amount || 0);
+          }
+          return { name: c.name || "Card", O, bills, exp, paid, still: Math.max(0, O + bills + exp - paid) };
+        });
+      };
+      const sumCards = (list, k) => list.reduce((a, x) => a + x[k], 0);
+      const cardSplit = (m, list) => {
+        const bills = sumCards(list, "bills"), exp = Math.max(0, sumCards(list, "exp"));
+        const direct = Math.max(0, m.fixed - bills) + m.debitReg + Math.max(0, m.ccReg - exp);
+        return { bills, exp, direct };
+      };
+      const COL = { direct: "#6366f1", bills: "#a855f7", exp: "#f59e0b", old: "#f43f5e", left: "#10b981" };
+      const slice = (l, c, p, v, u) => `<div>
+              <div class="text-[11px] text-slate-500 flex items-center gap-1"><span style="display:inline-block;width:8px;height:8px;border-radius:9999px;background:${c}"></span>${l}</div>
+              <div class="text-xl font-bold text-slate-900">${p}%</div>
+              <div class="text-[11px] text-slate-400">${escapeHtml(fm(v))} ${u}</div></div>`;
+      const catRows = (X) => {
+        const list = (X && X.cats || []).slice(0, 12).map(e => [e[0], fm(e[1]) + " · " + P1(e[1] / X.income)]);
+        if (X && (X.cats || []).length > 12) {
+          const rest = X.cats.slice(12).reduce((a, e) => a + e[1], 0);
+          list.push(["Other categories", fm(rest) + " · " + P1(rest / X.income)]);
+        }
+        return list;
+      };
+      const emptyAlloc = (label, sub, formula) => ({ label, wide: true, value: "—", status: null, sub, detail: { formula, rows: [["Status", firstTxn ? "No scheduled income found yet" : "No transactions logged yet"]] } });
+
+      const cardStrip = (cells, owe, paid, extra) => `<div class="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
+              <div class="text-xs font-semibold text-slate-600">Credit cards</div>
+              <div class="mt-2 grid grid-cols-1 sm:grid-cols-3 gap-2">${cells.map(c => `<div><div class="text-[11px] text-slate-500">${c.l}</div><div class="text-lg font-bold text-slate-900">${escapeHtml(c.v)}</div><div class="text-[11px] text-slate-400">${escapeHtml(c.s)}</div></div>`).join("")}</div>
+              ${owe !== null ? `<div class="mt-2 flex h-2 rounded-full overflow-hidden bg-slate-200"><div style="width:${owe > 0 ? Math.min(100, paid / owe * 100) : 100}%;background:#10b981"></div></div>` : ""}
+              ${extra ? `<div class="mt-1 text-[11px] text-slate-500">${escapeHtml(extra)}</div>` : ""}
+            </div>`;
+
+      const allocMonthsTile = (() => {
+        const label = "Where your income goes (this month so far)";
+        if (!AC) return emptyAlloc(label, firstTxn ? "No scheduled income found for this month yet" : "Log transactions to see this", "Bills + Everyday expenses + Old card balance + Left over (savings) = 100% of income");
+        const m = AC.perMonth[0];
+        const list = cardMonthRows(parseISODateLocal(m.startISO), t0, parseISODateLocal(m.endISO));
+        const O = sumCards(list, "O"), paid = sumCards(list, "paid"), still = sumCards(list, "still");
+        const { bills: billsCard, exp: expCard } = cardSplit(m, list);
+        const income = m.income, bills = m.fixed, every = m.debitReg + m.ccReg;
+        const left = income - bills - every - O;
+        const pb = Math.round(bills / income * 100), pe = Math.round(every / income * 100), po = Math.round(O / income * 100), pl = 100 - pb - pe - po;
+        const charged = billsCard + expCard, owe = O + charged;
+        const tot = Math.max(income, bills + every + O), w = (x) => Math.max(0, x) / tot * 100;
+        const cols = O > 0 ? 4 : 3;
+        const rows = [
+          ["Window", m.label + " (current month: income and bills for the full month, everyday spending through today)"],
+          ["Total income", fm(income)],
+          ["Other deposits (gifts etc.)", "not counted as income"],
+          ["Bills (all scheduled bills this month, however paid; card payoffs and savings/investing excluded)", fm(bills) + " · " + P1(bills / income)],
+          ["   charged to credit cards", fm(billsCard)],
+          ["   paid from bank, debit or other", fm(Math.max(0, bills - billsCard))],
+          ["Everyday expenses (debit + credit, net of refunds, through today)", fm(every) + " · " + P1(every / income)],
+          ["   on debit", fm(m.debitReg)],
+          ["   on credit cards", fm(m.ccReg)],
+          ["Old card balance at the start of the month (comes out of this month's income)", fm(O) + " · " + P1(O / income)],
+          ["Left over (savings) = income − bills − everyday − old card balance", fm(left) + " · " + P1(left / income), true],
+          ["   savings & investing recorded this month (already counted as left over)", fm(m.inv || 0)],
+          ["Total", "100.0%", true],
+          ["Credit cards (revolving cards; installment plans excluded)", null],
+          ["Charged this month (bills on cards + everyday on cards)", fm(charged)],
+          ["Old balance at the start", fm(O)],
+          ["Card bill to clear this month", fm(owe), true],
+          ["Paid off so far (payoffs entered through today)", fm(paid) + " · " + P1(paid / income) + " of income"],
+          ["Left on cards", fm(still), true],
+          ["Per card", null]
+        ];
+        for (const c of list) rows.push([c.name, "start " + fm(c.O) + " + bills " + fm(c.bills) + " + everyday " + fm(c.exp) + " − paid " + fm(c.paid) + " = " + fm(c.still) + " left"]);
+        if (!list.length) rows.push(["No revolving credit cards found", "—"]);
+        return {
+          label, wide: true,
+          value: "Bills " + pb + "% · Everyday " + pe + "% · " + (O > 0 ? "Old card balance " + po + "% · " : "") + "Left over " + pl + "% · Paid off cards " + fm(paid) + " · Left on cards " + fm(still),
+          status: left < 0 ? "bad" : hi(pl / 100, 0.2, 0.1),
+          body: `<div class="mt-2 flex h-2 rounded-full overflow-hidden bg-slate-200">
+              <div style="width:${w(bills)}%;background:${COL.direct}"></div><div style="width:${w(every)}%;background:${COL.exp}"></div><div style="width:${w(O)}%;background:${COL.old}"></div><div style="width:${w(left)}%;background:${COL.left}"></div></div>
+            <div class="mt-3 grid grid-cols-2 sm:grid-cols-${cols} gap-2">${slice("Bills", COL.direct, pb, bills, "this month")}${slice("Everyday expenses", COL.exp, pe, every, "so far")}${O > 0 ? slice("Old card balance", COL.old, po, O, "at start") : ""}${slice("Left over (savings)", COL.left, pl, left, "after all that")}</div>
+            ${cardStrip([
+              { l: "Charged to cards", v: fm(charged), s: "bills " + fm(billsCard) + " + everyday " + fm(expCard) + " (inside the lines above)" },
+              { l: "Paid off so far", v: fm(paid), s: P1(paid / income) + " of income" },
+              { l: "Left on cards", v: fm(still), s: O > 0 ? "includes " + fm(O) + " old balance, before payoffs" : "still to pay this month" }
+            ], owe, paid, "Card charges are already inside Bills and Everyday, so a balance on your cards is never counted as savings.")}`,
+          sub: "Your income split into bills, everyday expenses and what is left over, with what you charged, paid off and still owe on credit cards",
+          detail: {
+            formula: "Bills + Everyday expenses + Old card balance + Left over (savings) = 100% of income",
+            rows, list: catRows(AC), listTitle: "Spent by category (bills + everyday), share of income",
+            note: "Income = everything scheduled this month (Other deposits such as gifts are not counted). Bills = every scheduled bill for the month, including ones not yet due and however they are paid; card payoff bills and savings/investing bills are not bills. Everyday expenses = debit and credit purchases so far this month, net of refunds, excluding savings/investing categories. Old card balance = what your revolving cards owed on the last day of the previous month; it only appears when it is above zero, and it comes out of this month's income whether or not you have paid it yet. Left over = income − bills − everyday expenses − old card balance, so it is your savings (and investing) for the month. The Credit cards box is information, not another deduction: card charges are already inside Bills and Everyday, so nothing owed on a card is counted as savings. Paid off so far = card payoffs entered through today (payoff bills dated later do not count yet); Left on cards = what the cards still owe after those payoffs. Calendar months are used, not statement cycles, and interest and fees only appear if you log them as card expenses. Installment plans are excluded."
+          }
+        };
+      })();
+
+      const allocAllTile = (() => {
+        const label = "Where your income goes (all full calendar months)";
+        if (!A) return emptyAlloc(label, firstTxn ? "Needs at least one completed calendar month with income" : "Log transactions to see this", "Bills + Everyday expenses + Left over (savings) = 100% of income");
+        const per = A.perMonth.map(m => {
+          const e0 = parseISODateLocal(m.endISO);
+          const list = cardMonthRows(parseISODateLocal(m.startISO), e0, e0);
+          const { bills: billsCard, exp: expCard } = cardSplit(m, list);
+          const every = m.debitReg + m.ccReg;
+          return { label: m.label, income: m.income, bills: m.fixed, every, left: m.income - m.fixed - every, charged: billsCard + expCard, paid: sumCards(list, "paid"), still: sumCards(list, "still") };
+        });
+        const n = per.length, T = (k) => per.reduce((a, x) => a + x[k], 0);
+        const inc = T("income"), bilT = T("bills"), evT = T("every"), leftT = T("left"), chT = T("charged"), paidT = T("paid"), stillT = T("still");
+        const pb = Math.round(bilT / inc * 100), pe = Math.round(evT / inc * 100), pl = 100 - pb - pe;
+        const tot = Math.max(inc, bilT + evT), w = (x) => Math.max(0, x) / tot * 100;
+        const owedNow = cardsOwedAt(toISODate(t0));
+        const rows = [
+          ["Window", A.perMonth[0].label + (n > 1 ? " – " + A.perMonth[n - 1].label : "") + " (" + n + " completed calendar month" + (n === 1 ? "" : "s") + ")"],
+          ["Monthly average (totals ÷ " + n + " month" + (n === 1 ? "" : "s") + ")", null],
+          ["Income", fm(inc / n)],
+          ["Bills (all scheduled bills, however paid; savings/investing excluded)", fm(bilT / n) + " · " + P1(bilT / inc)],
+          ["Everyday expenses (debit + credit, net of refunds)", fm(evT / n) + " · " + P1(evT / inc)],
+          ["Left over (savings) = income − bills − everyday", fm(leftT / n) + " · " + P1(leftT / inc), true],
+          ["Total", "100.0%", true],
+          ["Credit cards, monthly average (revolving cards)", null],
+          ["Charged to cards (bills on cards + everyday on cards)", fm(chT / n) + " · " + P1(chT / inc) + " of income"],
+          ["Paid off", fm(paidT / n) + " · " + P1(paidT / inc) + " of income"],
+          ["Left on cards at month end", fm(stillT / n)],
+          ["Owed on revolving cards today", fm(owedNow)],
+          ["Month by month (income · bills / everyday / left over · charged to cards · paid off · left on cards)", null]
+        ];
+        for (const x of per) rows.push([x.label, fm(x.income) + " · " + P1(x.income > 0 ? x.bills / x.income : 0) + " / " + P1(x.income > 0 ? x.every / x.income : 0) + " / " + P1(x.income > 0 ? x.left / x.income : 0) + " · " + fm(x.charged) + " · " + fm(x.paid) + " · " + fm(x.still)]);
+        return {
+          label, wide: true,
+          value: "Bills " + pb + "% · Everyday " + pe + "% · Left over " + pl + "% · Avg paid off cards " + fm(paidT / n) + "/mo · Avg left on cards " + fm(stillT / n),
+          status: hi(pl / 100, 0.2, 0.1),
+          body: `<div class="mt-2 flex h-2 rounded-full overflow-hidden bg-slate-200">
+              <div style="width:${w(bilT)}%;background:${COL.direct}"></div><div style="width:${w(evT)}%;background:${COL.exp}"></div><div style="width:${w(leftT)}%;background:${COL.left}"></div></div>
+            <div class="mt-3 grid grid-cols-2 sm:grid-cols-3 gap-2">${slice("Bills", COL.direct, pb, bilT / n, "/ month")}${slice("Everyday expenses", COL.exp, pe, evT / n, "/ month")}${slice("Left over (savings)", COL.left, pl, leftT / n, "/ month")}</div>
+            ${cardStrip([
+              { l: "Charged to cards", v: fm(chT / n) + "/mo", s: P1(chT / inc) + " of income (inside the lines above)" },
+              { l: "Paid off", v: fm(paidT / n) + "/mo", s: P1(paidT / inc) + " of income" },
+              { l: "Left on cards at month end", v: fm(stillT / n) + "/mo", s: "owed on cards today: " + fm(owedNow) }
+            ], null, 0, "Averages over the completed months. Card charges are already inside Bills and Everyday, so they are not deducted twice.")}`,
+          sub: "Averaged over " + n + " completed calendar month" + (n === 1 ? "" : "s") + ": your income split into bills, everyday expenses and what is left over, with how much you charge, pay off and leave on credit cards",
+          detail: {
+            formula: "Bills + Everyday expenses + Left over (savings) = 100% of income",
+            rows, list: catRows(A), listTitle: "Spent by category (bills + everyday), share of income",
+            note: "Every fully completed calendar month is used; the month of your very first logged transaction is skipped unless it was on the 1st. Bills = every scheduled bill however it is paid (card payoff bills and savings/investing bills are not bills). Everyday expenses = debit and credit purchases, net of refunds, excluding savings/investing categories. Left over = income − bills − everyday expenses, so it is your savings (and investing). Everything is counted when it is spent, so an old card balance is never counted again in a later month, and nothing owed on a card is counted as savings. The Credit cards box is information, not another deduction. Paid off = card payoffs entered in those months; left on cards = what the revolving cards still owed at each month end, averaged. Calendar months are used, not statement cycles, and interest and fees only appear if you log them as card expenses."
+          }
+        };
+      })();
 
       const spendRows = useMonths ? [
         ["Annualized fixed (bills scheduled next 12 months)", fm(fixedAnnual)],
