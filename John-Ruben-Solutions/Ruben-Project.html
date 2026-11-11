@@ -340,7 +340,7 @@
           <div class="flex items-center justify-between gap-4">
             <div>
               <h2 class="text-2xl font-bold text-slate-900">Dashboard</h2>
-              <p class="text-slate-500 mt-1" id="dashboard-subtitle">Calculates Real-time</p>
+              <p class="text-slate-500 mt-1" id="dashboard-subtitle">Calculates in real-time from your entries.</p>
             </div>
             <div class="bg-white rounded-xl border border-slate-200 shadow-sm px-4 py-2 text-right">
               <div class="text-xs text-slate-500">Today</div>
@@ -6341,6 +6341,7 @@ service cloud.firestore {
       let mtd = 0, prevMtd = 0;
       for (const r of rows) {
         if (!r.date) continue;
+        if (r.kind === "bill") continue;   // pace & vs-last-month track everyday expenses (debit + credit) only; bills are left out
         const a = rowSpend(r);
         if (!a) continue;
         const rm = r.date.slice(0, 7);
@@ -6735,7 +6736,7 @@ service cloud.firestore {
             ],
             listTitle: "By budget: this month (spent / budget) · last month by this day",
             list: budRows.slice().sort((a, b) => b.amt - a.amt).map(b => [b.cat, fm(b.spent) + " / " + fm(b.amt) + " · last " + fm(b.pspent) + " / " + fm(b.pamt)]),
-            note: "Green within 5 pts of last month's pace, amber 5–10 pts ahead, red more than 10 pts ahead. Always red once 100% of the budget is used. Percent-based budgets use that month's scheduled income."
+            note: "Green within 5 pts of last month's pace, amber 5–10 pts ahead, red more than 10 pts ahead. Always red once 100% of the budget is used. Percent-based budgets use that month's scheduled income. Only everyday expenses (debit and credit) count toward spending; bills are excluded."
           } },
         { label: "Spending vs last month", value: vsPrev === null ? "—" : (vsPrev > 0 ? "+" : "") + P(vsPrev),
           status: vsPrev === null ? null : lo(vsPrev, 0, 0.1),
@@ -6747,7 +6748,7 @@ service cloud.firestore {
               ["Last month through day " + day, fm(prevMtd)],
               ["Change", fm(mtd - prevMtd) + (vsPrev === null ? "" : " (" + (vsPrev > 0 ? "+" : "") + P1(vsPrev) + ")"), true]
             ],
-            note: "Counts bills dated up to today plus purchases, net of refunds. Excludes card payoffs and investing. Green at 0% or less, amber up to +10%, red above."
+            note: "Counts everyday expenses (debit and credit), net of refunds. Bills, card payoffs and investing are excluded. Green at 0% or less, amber up to +10%, red above."
           } },
         { label: "Fixed-cost ratio", value: fix === null ? "—" : P(fix), status: fix === null ? null : lo(fix, 0.5, 0.65),
           sub: fm(fixed) + " in bills this month (recurring + one-time, excl. card payoffs). Target under 50% of income",
