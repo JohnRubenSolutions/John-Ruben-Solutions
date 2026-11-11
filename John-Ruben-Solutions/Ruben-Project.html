@@ -999,6 +999,22 @@
                 <label class="block text-sm font-medium text-slate-700 mb-1" for="transfer-note">Note (optional)</label>
                 <input type="text" id="transfer-note" placeholder="Move to savings, fund bills…" autocomplete="off" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
               </div>
+              <div class="col-span-2 lg:col-span-6 flex flex-wrap items-end gap-x-4 gap-y-2">
+                <label class="inline-flex items-center gap-2 text-sm font-medium text-slate-700 py-2.5 cursor-pointer"><input type="checkbox" id="transfer-recurring" class="h-4 w-4 rounded border-slate-300"> Repeat this transfer</label>
+                <div id="transfer-repeat-opts" class="hidden flex flex-wrap items-end gap-3">
+                  <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1" for="transfer-recurrence-type">Frequency</label>
+                    <select id="transfer-recurrence-type" class="border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                      <option value="weekly">Weekly</option><option value="biweekly">Every 2 weeks</option><option value="monthly" selected>Monthly</option><option value="quarterly">Quarterly</option><option value="annual">Annually</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1" for="transfer-end-date">End date (optional)</label>
+                    <input type="date" id="transfer-end-date" class="border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brand-500 outline-none">
+                  </div>
+                  <div class="text-xs text-slate-500 max-w-xs pb-2">The date above is the first transfer. Every occurrence on or before today moves money in your balances right away.</div>
+                </div>
+              </div>
               <div class="col-span-2 lg:col-span-6 flex flex-wrap items-center gap-2">
                 <button type="submit" class="w-full lg:w-auto bg-brand-600 hover:bg-brand-700 text-white font-semibold px-6 py-3.5 lg:py-2.5 rounded-xl lg:rounded-lg text-base shadow-md">Save Transfer</button>
                 <button type="button" id="transfer-swap-btn" class="px-4 py-2.5 rounded-lg border border-slate-300 text-slate-700 text-sm">⇄ Swap</button>
@@ -1249,6 +1265,7 @@
                 </div>
               </form>
 
+              <div id="income-filter" class="mt-4"></div>
               <div class="mt-4 overflow-x-auto">
                 <table class="w-full text-sm">
                   <thead>
@@ -1353,6 +1370,7 @@
                 </div>
               </form>
 
+              <div id="bills-filter" class="mt-4"></div>
               <div class="mt-4 overflow-x-auto">
                 <table class="w-full text-sm">
                   <thead>
@@ -2540,7 +2558,7 @@ service cloud.firestore {
         }
       }
       // Transfers between your own bank accounts: money leaves one, arrives in the other (net worth is unchanged).
-      for (const t of state.transfers || []) {
+      for (const t of transferOccurrences(null, parseISODateLocal(todayISO))) {
         if (!t.date || t.date > todayISO) continue;
         const amt = Number(t.amount || 0);
         if (t.fromBankId === bank.id) balance -= amt;
@@ -3351,6 +3369,43 @@ service cloud.firestore {
     });
 
     // ===== Bank-to-bank transfers =====
+    // Expands transfers into dated occurrences: one-time transfers appear once, recurring ones repeat until their end date.
+    // fromDate null = from the very beginning. Each occurrence keeps the series id in .id so edits open the whole series.
+    function transferOccurrences(fromDate, toDate) {
+      const out = [];
+      for (const t of state.transfers || []) {
+        if (!t.date) continue;
+        const start = parseISODateLocal(t.date);
+        if (!t.isRecurring) {
+          if ((fromDate && start < fromDate) || start > toDate) continue;
+          out.push({ ...t, recurring: false });
+          continue;
+        }
+        const end = t.endDate ? parseISODateLocal(t.endDate) : null;
+        forEachRecurringDate(start, normTransferRecur(t.recurrenceType), (fromDate && fromDate > start) ? fromDate : start, toDate,
+          (d) => out.push({ ...t, date: toISODate(d), recurring: true }), end);
+      }
+      return out;
+    }
+    function syncTransferRepeatUI() {
+      const on = $("#transfer-recurring").checked;
+      $("#transfer-repeat-opts").classList.toggle("hidden", !on);
+      const lbl = document.querySelector('label[for="transfer-date"]');
+      if (lbl) lbl.textContent = on ? "First transfer" : "Date";
+    }
+    function startTransferEdit(t) {
+      ui.editing.transferId = t.id;
+      $("#transfer-amount").value = t.amount; $("#transfer-from").value = t.fromBankId; $("#transfer-to").value = t.toBankId;
+      $("#transfer-date").value = t.date || toISODate(new Date()); $("#transfer-note").value = t.note || "";
+      $("#transfer-recurring").checked = !!t.isRecurring;
+      $("#transfer-recurrence-type").value = normTransferRecur(t.recurrenceType);
+      $("#transfer-end-date").value = t.endDate || "";
+      syncTransferRepeatUI();
+      $("#transfer-editing-banner").classList.remove("hidden");
+      $("#transfer-card").scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+    $("#transfer-recurring").addEventListener("change", syncTransferRepeatUI);
+
     function renderTransfers() {
       const list = $("#transfer-list");
       if (!list) return;
@@ -3370,30 +3425,53 @@ service cloud.firestore {
       if (!$("#transfer-date").value) $("#transfer-date").value = toISODate(new Date());
 
       const nameOf = (id, fallback) => ((state.bankAccounts || []).find(b => b.id === id) || {}).name || fallback || "Deleted account";
-      const rows = (state.transfers || []).slice().sort((a, b) => (b.date || "") < (a.date || "") ? -1 : ((b.date || "") > (a.date || "") ? 1 : 0)).slice(0, 15);
-      list.innerHTML = rows.length ? rows.map(t => `
+      // Only active recurring transfers (plus upcoming one-time ones) are listed here. Past transfers stay in your balances
+      // and in the Transaction Ledger, where they can still be edited.
+      const todayISO = toISODate(new Date());
+      const cadence = (t) => ({ weekly: "Weekly", biweekly: "Every 2 weeks", quarterly: "Quarterly", annual: "Annually" }[t.recurrenceType]) || `Monthly (day ${parseISODateLocal(t.date).getDate()})`;
+      const nextOf = (t) => {
+        let nxt = null;
+        const td = parseISODateLocal(todayISO);
+        forEachRecurringDate(parseISODateLocal(t.date), normTransferRecur(t.recurrenceType), td, addDays(td, 400), (d) => { if (!nxt) nxt = toISODate(d); }, t.endDate ? parseISODateLocal(t.endDate) : null);
+        return nxt;
+      };
+      const recurring = (state.transfers || []).filter(t => t.isRecurring && (!t.endDate || t.endDate >= todayISO))
+        .map(t => ({ t, next: nextOf(t) })).sort((a, b) => (a.next || "9999") < (b.next || "9999") ? -1 : 1);
+      const upcoming = (state.transfers || []).filter(t => !t.isRecurring && t.date && t.date > todayISO)
+        .sort((a, b) => a.date < b.date ? -1 : 1);
+      const card = (t, subtitle, canStop) => `
         <div class="flex flex-wrap items-center justify-between gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2">
           <div class="min-w-[180px] flex-1">
             <div class="text-sm font-medium text-slate-800">${escapeHtml(nameOf(t.fromBankId, t.fromName))} → ${escapeHtml(nameOf(t.toBankId, t.toName))}</div>
-            <div class="text-xs text-slate-500">${escapeHtml(t.date || "")}${t.date > toISODate(new Date()) ? " · scheduled" : ""}${t.note ? " · " + escapeHtml(t.note) : ""}</div>
+            <div class="text-xs text-slate-500">${subtitle}${t.note ? " · " + escapeHtml(t.note) : ""}</div>
           </div>
           <div class="text-sm font-semibold text-slate-700">${formatMoney(t.amount)}</div>
           <div class="inline-flex items-center gap-3">
             <button type="button" class="text-brand-600 hover:underline text-sm" data-tr-edit="${t.id}">Edit</button>
+            ${canStop ? `<button type="button" class="text-amber-600 hover:underline text-sm" data-tr-stop="${t.id}">Stop repeating</button>` : ""}
             <button type="button" class="text-rose-600 hover:underline text-sm" data-tr-del="${t.id}">Delete</button>
           </div>
-        </div>`).join("") : `<div class="text-sm text-slate-500">No transfers yet.</div>`;
+        </div>`;
+      const heading = (txt) => `<div class="text-xs font-semibold uppercase tracking-wide text-slate-500 pt-1">${txt}</div>`;
+      list.innerHTML = (recurring.length ? heading("Recurring transfers") + recurring.map(({ t, next }) =>
+          card(t, `${cadence(t)}${next ? " · next " + escapeHtml(next) : ""}${t.endDate ? " · ends " + escapeHtml(t.endDate) : ""}`, true)).join("") : "")
+        + (upcoming.length ? heading("Scheduled one-time") + upcoming.map(t => card(t, escapeHtml(t.date) + " · scheduled", false)).join("") : "")
+        || `<div class="text-sm text-slate-500">No active recurring transfers. Turn on <b>Repeat this transfer</b> when you save one to schedule it. Past transfers live in the Transaction Ledger.</div>`;
       list.querySelectorAll("[data-tr-edit]").forEach(b => b.addEventListener("click", () => {
         const t = (state.transfers || []).find(x => x.id === b.dataset.trEdit);
-        if (!t) return;
-        ui.editing.transferId = t.id;
-        $("#transfer-amount").value = t.amount; $("#transfer-from").value = t.fromBankId; $("#transfer-to").value = t.toBankId;
-        $("#transfer-date").value = t.date || toISODate(new Date()); $("#transfer-note").value = t.note || "";
-        $("#transfer-editing-banner").classList.remove("hidden");
-        $("#transfer-card").scrollIntoView({ behavior: "smooth", block: "start" });
+        if (t) startTransferEdit(t);
+      }));
+      list.querySelectorAll("[data-tr-stop]").forEach(b => b.addEventListener("click", async () => {
+        if (!confirm("Stop repeating this transfer after today? Transfers already made stay in your balances and the ledger.")) return;
+        try { await setDoc(doc(db, "users", currentUser.uid, "transfers", b.dataset.trStop), { endDate: todayISO }, { merge: true }); }
+        catch (err) { alert(err?.message || "Failed to update transfer"); }
       }));
       list.querySelectorAll("[data-tr-del]").forEach(b => b.addEventListener("click", async () => {
-        if (!confirm("Delete this transfer? Both account balances will be adjusted back.")) return;
+        const t = (state.transfers || []).find(x => x.id === b.dataset.trDel);
+        const msg = t && t.isRecurring
+          ? "Delete this recurring transfer? Every past and future occurrence is removed and both account balances are adjusted back. (Use Stop repeating to keep the history.)"
+          : "Delete this transfer? Both account balances will be adjusted back.";
+        if (!confirm(msg)) return;
         try { await deleteDoc(doc(db, "users", currentUser.uid, "transfers", b.dataset.trDel)); }
         catch (err) { alert(err?.message || "Failed to delete transfer"); }
       }));
@@ -3402,6 +3480,8 @@ service cloud.firestore {
     function resetTransferForm() {
       ui.editing.transferId = null;
       $("#transfer-amount").value = ""; $("#transfer-note").value = "";
+      $("#transfer-recurring").checked = false; $("#transfer-end-date").value = ""; $("#transfer-recurrence-type").value = "monthly";
+      syncTransferRepeatUI();
       $("#transfer-editing-banner").classList.add("hidden");
     }
     $("#transfer-cancel-edit-btn").addEventListener("click", resetTransferForm);
@@ -3418,10 +3498,17 @@ service cloud.firestore {
       if (!fromBankId || !toBankId) { alert("Choose both accounts."); return; }
       if (fromBankId === toBankId) { alert("Choose two different accounts."); return; }
       const nameOf = id => ((state.bankAccounts || []).find(b => b.id === id) || {}).name || "";
+      const isRecurring = $("#transfer-recurring").checked;
+      const endDate = isRecurring ? ($("#transfer-end-date").value || null) : null;
+      if (endDate && endDate < date) { alert("The end date can't be before the first transfer date."); return; }
+      if (isRecurring && date < toISODate(new Date()) && !ui.editing.transferId &&
+          !confirm("The first transfer date is in the past, so every occurrence up to today will be applied to your balances now. Continue?")) return;
       const payload = {
         date, amount: Math.round(amount * 100) / 100, fromBankId, toBankId,
         fromName: nameOf(fromBankId), toName: nameOf(toBankId),
-        note: $("#transfer-note").value.trim(), createdAt: serverTimestamp()
+        note: $("#transfer-note").value.trim(),
+        isRecurring, recurrenceType: isRecurring ? normTransferRecur($("#transfer-recurrence-type").value) : null, endDate,
+        createdAt: serverTimestamp()
       };
       try {
         if (ui.editing.transferId) {
@@ -3430,7 +3517,7 @@ service cloud.firestore {
         } else {
           await addDoc(userCol("transfers"), payload);
         }
-        showToast(`Transferred ${formatMoney(payload.amount)} · ${payload.fromName} → ${payload.toName}`);
+        showToast(isRecurring ? `Recurring transfer saved · ${formatMoney(payload.amount)} · ${payload.fromName} → ${payload.toName}` : `Transferred ${formatMoney(payload.amount)} · ${payload.fromName} → ${payload.toName}`);
         resetTransferForm();
       } catch (err) {
         alert(err?.message || "Failed to save transfer");
@@ -3616,8 +3703,7 @@ service cloud.firestore {
         incomeRows = generateIncomeOccurrences(parseISODateLocal(incDates[0]), parseISODateLocal(todayISO))
           .map(o => ({ kind: "income", occ: o, date: o.date }));
       }
-      const transferRows = (state.transfers || []).filter(t => t.date && t.date <= todayISO)
-        .map(t => ({ kind: "transfer", t, date: t.date }));
+      const transferRows = transferOccurrences(null, parseISODateLocal(todayISO)).map(t => ({ kind: "transfer", t, date: t.date }));
       return { incomeRows, transferRows };
     }
     function ledgerBankName(id, fallback) {
@@ -3851,11 +3937,11 @@ service cloud.firestore {
               <td class="px-3 py-2 text-slate-700">${escapeHtml(t.date || "")}</td>
               <td class="px-3 py-2 text-slate-700">${escapeHtml(ledgerBankName(t.fromBankId, t.fromName))} → ${escapeHtml(ledgerBankName(t.toBankId, t.toName))}</td>
               <td class="px-3 py-2"><span class="text-xs text-slate-600 border border-slate-300 rounded-full px-2 py-0.5 whitespace-nowrap">Transfer</span></td>
-              <td class="px-3 py-2 text-slate-700">${t.note ? escapeHtml(t.note) : `<span class="text-slate-400">Bank transfer</span>`}</td>
+              <td class="px-3 py-2 text-slate-700">${t.note ? escapeHtml(t.note) : `<span class="text-slate-400">Bank transfer</span>`}${t.recurring ? ` <span class="text-xs text-slate-400">· recurring</span>` : ""}</td>
               <td class="px-3 py-2"><span class="text-slate-400" title="Transfers are not spending">—</span></td>
               <td class="px-3 py-2 text-right text-slate-500 whitespace-nowrap">${formatMoney(t.amount)}</td>
               <td class="px-3 py-2 text-right">
-                <button class="text-brand-600 hover:underline text-sm" data-action="edit-transfer" data-id="${t.id}">Edit transfer</button>
+                <button class="text-brand-600 hover:underline text-sm" data-action="edit-transfer" data-id="${t.id}">${t.recurring ? "Edit series" : "Edit transfer"}</button>
               </td>
             `;
             tbody.appendChild(xTr);
@@ -3916,11 +4002,7 @@ service cloud.firestore {
           btn.addEventListener("click", () => {
             const t = (state.transfers || []).find(x => x.id === btn.dataset.id);
             if (!t) return;
-            ui.editing.transferId = t.id;
-            $("#transfer-amount").value = t.amount; $("#transfer-from").value = t.fromBankId; $("#transfer-to").value = t.toBankId;
-            $("#transfer-date").value = t.date || toISODate(new Date()); $("#transfer-note").value = t.note || "";
-            $("#transfer-editing-banner").classList.remove("hidden");
-            $("#transfer-card").scrollIntoView({ behavior: "smooth", block: "start" });
+            startTransferEdit(t);
           });
         });
 
@@ -4199,6 +4281,43 @@ service cloud.firestore {
     const lc = (v) => String(v ?? "").toLowerCase();
     const bankNameById = (id) => lc((state.bankAccounts || []).find(b => b.id === id)?.name);
     const normRecur = (v) => ["monthly", "biweekly", "quarterly", "annual"].includes(v) ? v : "monthly";
+    const normTransferRecur = (v) => ["weekly", "biweekly", "monthly", "quarterly", "annual"].includes(v) ? v : "monthly";
+    // Active / Ended filter for the Income and Bills tables. Ended = a recurring entry whose end date has passed,
+    // or a one-time entry dated before today.
+    const listFilter = { income: "active", bills: "active" };
+    const itemEnded = (x) => {
+      const today = toISODate(new Date());
+      if (x.isRecurring) return !!x.endDate && x.endDate < today;
+      return !!x.date && x.date < today;
+    };
+    const billEnded = (b) => {
+      if (b.isInstallment) {
+        const today = toISODate(new Date());
+        const st = installmentStatus(b, today);
+        if (st && st.endISO) return st.endISO < today;
+      }
+      return itemEnded(b);
+    };
+    const listFilterMatch = (kind, ended) => listFilter[kind] === "all" || (listFilter[kind] === "ended") === ended;
+    function renderListFilter(kind, items, pred) {
+      const box = document.getElementById(kind + "-filter");
+      if (!box) return;
+      if (!items.length) { box.innerHTML = ""; return; }
+      const ended = items.filter(pred).length;
+      const opts = [["active", "Active", items.length - ended], ["ended", "Ended", ended], ["all", "All", items.length]];
+      box.innerHTML = `<div role="group" aria-label="Filter ${kind} entries" class="inline-flex rounded-lg bg-slate-100 p-1 gap-1">${opts.map(([k, l, n]) => {
+        const on = listFilter[kind] === k;
+        return `<button type="button" data-list-filter="${kind}:${k}" aria-pressed="${on}" class="px-3 py-1.5 text-sm rounded-md transition-colors ${on ? "bg-white shadow-sm text-slate-900 font-semibold" : "text-slate-500 hover:text-slate-700"}">${l} <span class="text-xs ${on ? "text-slate-500" : "text-slate-400"}">${n}</span></button>`;
+      }).join("")}</div>`;
+    }
+    const emptyFilterRow = (kind, total, noun) => `<tr><td colspan="6" class="px-3 py-4 text-center text-slate-500">No ${listFilter[kind]} ${noun}. <button type="button" data-list-filter="${kind}:all" class="text-brand-600 hover:underline">Show all (${total})</button></td></tr>`;
+    document.addEventListener("click", (e) => {
+      const b = e.target.closest("[data-list-filter]");
+      if (!b) return;
+      const [kind, val] = b.dataset.listFilter.split(":");
+      listFilter[kind] = val;
+      if (kind === "income") renderIncomes(); else if (kind === "bills") renderBills();
+    });
     const recurrenceKey = (x) => !x.isRecurring ? "one-time" : ({ biweekly: "bi-weekly", quarterly: "quarterly", annual: "annual" }[x.recurrenceType] || "monthly");
     const num = (v) => Number(v) || 0;
     const SORT_GETTERS = {
@@ -4357,11 +4476,14 @@ service cloud.firestore {
     function renderIncomes() {
       const tbody = $("#income-table-body");
       tbody.innerHTML = "";
-      const items = applySort("income", sortByDateAsc(state.incomes, "date").reverse());
-      if (!items.length) {
+      const allItems = applySort("income", sortByDateAsc(state.incomes, "date").reverse());
+      renderListFilter("income", allItems, itemEnded);
+      const items = allItems.filter(x => listFilterMatch("income", itemEnded(x)));
+      if (!allItems.length) {
         tbody.innerHTML = `<tr><td colspan="6" class="px-3 py-3 text-center text-slate-500">No incomes yet.</td></tr>`;
         return;
       }
+      if (!items.length) { tbody.innerHTML = emptyFilterRow("income", allItems.length, "income entries"); return; }
       for (const i of items) {
         const bank = state.bankAccounts.find(b => b.id === i.bankAccountId);
         const recurLabel = !i.isRecurring
@@ -4369,12 +4491,14 @@ service cloud.firestore {
           : ((i.recurrenceType === "biweekly" ? "Bi-Weekly" : `Monthly (day ${parseISODateLocal(i.date).getDate()})`) + (i.endDate ? ` · ends ${escapeHtml(i.endDate)}` : ""));
 
         const tr = document.createElement("tr");
+        const ended = itemEnded(i);
+        if (ended) tr.className = "opacity-60";
         tr.innerHTML = `
           <td class="px-3 py-2 font-medium text-slate-800">${escapeHtml(i.source)}${i.type === "other" ? ` <span class="badge badge-emerald ml-1" title="Counts toward your bank balance, but not as income in budgets or income metrics">Other</span>` : ""}</td>
           <td class="px-3 py-2 text-slate-700">${escapeHtml(i.date)}</td>
           <td class="px-3 py-2 text-slate-700">${bank ? escapeHtml(bank.name) : '<span class="text-slate-400">Not tracked</span>'}</td>
           <td class="px-3 py-2">
-            <span class="badge ${i.isRecurring ? "badge-brand" : "badge-slate"}">${recurLabel}</span>
+            <span class="badge ${i.isRecurring ? "badge-brand" : "badge-slate"}">${recurLabel}</span>${ended ? ' <span class="badge badge-slate">Ended</span>' : ""}
           </td>
           <td class="px-3 py-2 text-right font-semibold text-emerald-700">${formatMoney(i.amount)}</td>
           <td class="px-3 py-2 text-right">
@@ -4476,16 +4600,17 @@ service cloud.firestore {
     // endDate (optional Date): the last date the series may occur; later scheduled dates are not generated.
     function forEachRecurringDate(startDate, recurrenceType, scanStart, scanEndRaw, cb, endDate) {
       const scanEnd = (endDate && endDate < scanEndRaw) ? endDate : scanEndRaw;
-      if (recurrenceType === "biweekly") {
+      if (recurrenceType === "biweekly" || recurrenceType === "weekly") {
+        const stepDays = recurrenceType === "weekly" ? 7 : 14;
         let cursor = new Date(startDate);
         if (cursor < scanStart) {
           const diffDays = Math.round((scanStart - cursor) / 86400000);
-          cursor = addDays(startDate, Math.floor(diffDays / 14) * 14);
+          cursor = addDays(startDate, Math.floor(diffDays / stepDays) * stepDays);
         }
         let guard = 0;
         while (cursor <= scanEnd && guard < 600) {
           if (cursor >= scanStart) cb(new Date(cursor));
-          cursor = addDays(cursor, 14);
+          cursor = addDays(cursor, stepDays);
           guard++;
         }
       } else {
@@ -4911,12 +5036,15 @@ service cloud.firestore {
       renderInstallmentPlans();
       const tbody = $("#bills-table-body");
       tbody.innerHTML = "";
-      const items = applySort("bills", sortByDateAsc(state.bills, "date").reverse());
+      const allItems = applySort("bills", sortByDateAsc(state.bills, "date").reverse());
+      renderListFilter("bills", allItems, billEnded);
+      const items = allItems.filter(x => listFilterMatch("bills", billEnded(x)));
 
-      if (!items.length) {
+      if (!allItems.length) {
         tbody.innerHTML = `<tr><td colspan="6" class="px-3 py-3 text-center text-slate-500">No future bills yet.</td></tr>`;
         return;
       }
+      if (!items.length) { tbody.innerHTML = emptyFilterRow("bills", allItems.length, "bills"); return; }
 
       for (const b of items) {
         let instHtml = "";
@@ -4938,6 +5066,8 @@ service cloud.firestore {
               : `Monthly (day ${parseISODateLocal(b.date).getDate()})`) + ((instEnd || b.endDate) ? ` · ends ${escapeHtml(instEnd || b.endDate)}` : ""));
 
         const tr = document.createElement("tr");
+        const ended = billEnded(b);
+        if (ended) tr.className = "opacity-60";
         tr.innerHTML = `
           <td class="px-3 py-2 font-medium text-slate-800">
             ${escapeHtml(b.name)}
@@ -4949,7 +5079,7 @@ service cloud.firestore {
           <td class="px-3 py-2 text-slate-700">${escapeHtml(b.category || "-")}</td>
           <td class="px-3 py-2 text-slate-700">${escapeHtml(b.date)}</td>
           <td class="px-3 py-2">
-            <span class="badge ${b.isRecurring ? "badge-brand" : "badge-slate"}">${recurLabel}</span>
+            <span class="badge ${b.isRecurring ? "badge-brand" : "badge-slate"}">${recurLabel}</span>${ended ? ' <span class="badge badge-slate">Ended</span>' : ""}
           </td>
           <td class="px-3 py-2 text-right font-semibold text-rose-700">${formatMoney(b.amount)}</td>
           <td class="px-3 py-2 text-right">
@@ -5207,8 +5337,8 @@ service cloud.firestore {
         }
       }
 
-      // Transfers between your own banks: shown in the list but never counted as cash in / out.
-      for (const t of state.transfers || []) {
+      // Transfers between your own banks: shown in the list but never counted as cash in / out. Recurring ones repeat each period.
+      for (const t of (periods.length ? transferOccurrences(periods[0].start, periods[periods.length - 1].end) : [])) {
         if (!t.date) continue;
         const idx = assignToPeriod(t.date, periods);
         if (idx < 0) continue;
@@ -5216,7 +5346,7 @@ service cloud.firestore {
         periodItems[idx].push({
           kind: "transfer", id: t.id, recurring: false, key: null,
           date: t.date, originalDate: t.date,
-          name: `Transfer: ${nm(t.fromBankId, t.fromName)} → ${nm(t.toBankId, t.toName)}`, sub: t.note || "",
+          name: `Transfer: ${nm(t.fromBankId, t.fromName)} → ${nm(t.toBankId, t.toName)}`, sub: (t.recurring ? "Recurring" + (t.note ? " · " : "") : "") + (t.note || ""),
           amount: Number(t.amount || 0), flow: "transfer", fromBankId: t.fromBankId, toBankId: t.toBankId
         });
       }
@@ -5714,7 +5844,7 @@ service cloud.firestore {
         items.push({ type: label, date: t.date || "", text: `${t.cardName} (${t.cardType === "debit" ? "Debit" : "Credit"}) — ${t.description} on ${t.date} (${formatMoney(t.amount)})` });
       }
       for (const t of state.transfers || []) {
-        items.push({ type: "Transfer", date: t.date || "", text: `Transfer: ${t.fromName || "?"} → ${t.toName || "?"} on ${t.date} (${formatMoney(t.amount)})` });
+        items.push({ type: "Transfer", date: t.date || "", text: `Transfer: ${t.fromName || "?"} → ${t.toName || "?"} on ${t.date} (${formatMoney(t.amount)})${t.isRecurring ? " · repeats " + normTransferRecur(t.recurrenceType) + (t.endDate ? " until " + t.endDate : "") : ""}` });
       }
       for (const b of state.bankAccounts || []) {
         items.push({ type: "Bank Account", date: b.createdAt?.toDate?.()?.toISOString?.() || new Date().toISOString(), text: `Added/Updated bank account: ${b.name}` });
@@ -6585,9 +6715,7 @@ service cloud.firestore {
         ["Est. annualized spend (× 12)", fm(annualSpend), true]
       ];
 
-      const tiles = [
-        allocAllTile,
-        allocMonthsTile,
+      const tilesRaw = [
         { label: "Budget pace (this month)", value: pace === null ? "—" : P(pace) + " used",
           status: pace === null ? null
             : (pace >= 1 ? "bad"                                           // budget fully used (or over): always red
@@ -6701,9 +6829,15 @@ service cloud.firestore {
             note: "Green at 30% or less, amber up to 60%, red above."
           } },
       ];
+      // Dashboard order: key numbers first, then where your income goes (this month, then all months), then anything else.
+      const keyOrder = ["Budget pace (this month)", "Spending vs last month", "Fixed-cost ratio", "Credit utilization", "Cash runway", "Debt-to-assets", "Est. annualized fixed cost", "Est. annualized spend"];
+      const keyTiles = keyOrder.map(l => tilesRaw.find(t => t.label === l)).filter(Boolean);
+      const otherTiles = tilesRaw.filter(t => !keyTiles.includes(t));
+      const tiles = [{ heading: "Key numbers" }, ...keyTiles, { heading: "Where your income goes" }, allocMonthsTile, allocAllTile,
+        ...(otherTiles.length ? [{ heading: "More" }, ...otherTiles] : [])];
       kpiTiles = tiles;
       const dot = { good: "#10b981", warn: "#f59e0b", bad: "#e11d48" };
-      box.innerHTML = tiles.map((t, i) => `
+      box.innerHTML = tiles.map((t, i) => t.heading ? `<div class="col-span-full"><h3 class="text-xs font-semibold uppercase tracking-wide text-slate-500 ${i ? "pt-3" : ""}">${escapeHtml(t.heading)}</h3></div>` : `
         <div data-kpi-idx="${i}" role="button" tabindex="0" title="Click for calculation details" class="${t.wide ? "col-span-2 " : ""}bg-slate-50 rounded-xl border border-slate-200 p-4 cursor-pointer hover:bg-white hover:border-slate-400 transition-colors">
           <div class="flex items-center justify-between gap-2">
             <div class="text-xs text-slate-500">${escapeHtml(t.label)}</div>
