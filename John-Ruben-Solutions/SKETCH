@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sketch &amp; Guess</title>
+<style>
+:root{--bg:#f4f5f9;--card:#fff;--text:#1c2030;--muted:#6b7288;--line:#e2e5ee;--accent:#7048e8;--ok:#2f9e44;--danger:#e03131;--gold:#f59f00;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root{--bg:#12141c;--card:#1c2030;--text:#eceef6;--muted:#9aa2ba;--line:#2e3448;--accent:#9775fa;--ok:#51cf66;--danger:#ff6b6b;--gold:#ffd43b;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:900px;margin:0 auto;padding:16px}
+h1{margin:0;font-size:1.6rem}h1 span{color:var(--accent)}h2{margin:0 0 10px;font-size:1.05rem}
+header{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+input,select{font:inherit;color:var(--text);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:9px 11px;min-width:0}
+input:focus,select:focus{outline:2px solid var(--accent);border-color:transparent}
+button{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--bg);color:var(--text);border-radius:10px;padding:9px 13px}
+button:hover{border-color:var(--accent)}
+.pri{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600}
+.dng{color:var(--danger)}.sm{padding:5px 9px;font-size:.85rem}.muted{color:var(--muted);font-size:.9rem}
+.code{font-size:1.3rem;font-weight:800;letter-spacing:.15em;color:var(--accent)}
+.err{color:var(--danger);margin-top:8px;min-height:1.2em}
+.top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+#msg{font-size:1.15rem}#pat{font:700 1.6rem/1.2 ui-monospace,Menlo,monospace;letter-spacing:.1em;margin-top:4px;word-break:break-all}
+#timer{font-size:1.8rem;font-weight:800}
+canvas{display:block;width:100%;max-width:800px;aspect-ratio:4/3;background:#fff;border:2px solid var(--line);border-radius:12px;touch-action:none;margin:10px auto}
+.sw{width:30px;height:30px;border-radius:50%;padding:0;border:2px solid var(--line)}.sw.on{outline:3px solid var(--accent)}
+.lb{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.pc{border:1px solid var(--line);border-radius:12px;padding:12px;background:var(--bg)}
+.pc.me{outline:2px solid var(--accent)}.pc.lead{border-color:var(--gold)}
+.pc .n{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.pc .s{font-size:2rem;font-weight:800;line-height:1.1}
+.hide{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>Sketch <span>&amp;</span> Guess</h1>
+  <div id="bar" class="row hide"><span class="muted">Game</span><span id="gcode" class="code"></span>
+    <button id="copy" class="sm">Copy invite link</button><button id="leave" class="sm dng">Leave</button></div>
+</header>
+
+<section id="join" class="card hide">
+  <h2>Join or start a game</h2>
+  <div class="row">
+    <input id="jcode" placeholder="Game code" maxlength="5" style="width:140px;text-transform:uppercase" autocomplete="off">
+    <button id="joinBtn" class="pri">Join game</button>
+    <button id="createBtn">Create new game</button>
+  </div>
+  <div id="jerr" class="err"></div>
+  <p class="muted">No names needed. Everyone gets a random nickname, and nobody is told who is drawing.</p>
+</section>
+
+<div id="game" class="hide">
+  <section class="card">
+    <div class="top"><div><div id="msg"></div><div id="pat"></div></div><div id="timer"></div></div>
+    <canvas id="cv" width="800" height="600"></canvas>
+    <div id="tools" class="row hide">
+      <span id="sws" class="row"></span>
+      <select id="size"><option value="3">Thin</option><option value="8" selected>Medium</option><option value="16">Thick</option></select>
+      <button id="eraser" class="sm">Eraser</button>
+      <button id="clearBtn" class="sm dng">Clear</button>
+      <button id="reroll" class="sm">New word</button>
+    </div>
+    <form id="gform" class="row hide" onsubmit="return false">
+      <input id="gin" placeholder="Type your guess…" autocomplete="off" style="flex:1;min-width:160px">
+      <button id="gbtn" class="pri" type="button">Guess</button>
+    </form>
+    <div id="gfb" class="muted" style="min-height:1.3em;margin-top:6px"></div>
+  </section>
+
+  <section id="hostbox" class="card hide">
+    <h2>Host controls</h2>
+    <div class="row">
+      <label class="muted">Difficulty <select id="level"><option value="easy">Easy</option><option value="medium">Medium</option><option value="hard">Hard</option></select></label>
+      <button id="start" class="pri"></button>
+    </div>
+  </section>
+
+  <section class="card"><h2>Scoreboard</h2><div id="lb" class="lb"></div></section>
+</div>
+</div>
+
+<script type="module">
+import {initializeApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import {getAuth,signInAnonymously} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import {getFirestore,doc,getDoc,setDoc,updateDoc,onSnapshot,collection} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+
+const app=initializeApp({apiKey:"AIzaSyDP6Vg2s5uPCrVV4vOK-PtogSdX0Dy21hw",authDomain:"flip-7-game.firebaseapp.com",projectId:"flip-7-game",storageBucket:"flip-7-game.firebasestorage.app",messagingSenderId:"1073060908266",appId:"1:1073060908266:web:4b5958cebc947efc575b93"});
+const auth=getAuth(app),db=getFirestore(app);
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const sum=a=>a.reduce((x,y)=>x+y,0);
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const LS="sketch-guess";
+
+const WORDS={
+ easy:["cat","dog","sun","tree","house","fish","apple","ball","car","star","flower","moon","banana","hat","cup","bird","boat","shoe","egg","cake"],
+ medium:["bicycle","volcano","guitar","snowman","pizza","rainbow","octopus","umbrella","castle","airplane","pirate","penguin","cactus","telescope","robot","scarecrow","giraffe","sandwich","campfire","dinosaur"],
+ hard:["traffic jam","lighthouse","astronaut","time travel","earthquake","fireworks","detective","birthday party","waterfall","roller coaster","magic trick","haunted house","sleepwalking","wedding cake","hot air balloon","snowboarding","dentist","treasure map","lawn mower","spider web"]};
+const CFG={easy:{t:90,b:5},medium:{t:75,b:8},hard:{t:60,b:12}};
+const COLORS=["#111111","#e03131","#1971c2","#2f9e44","#f59f00","#9c36b5","#8d5a2b"];
+const ADJ=["Purple","Sneaky","Jolly","Brave","Silent","Dizzy","Lucky","Cosmic","Fuzzy","Mighty","Sleepy","Zesty"];
+const ANI=["Fox","Otter","Panda","Falcon","Moose","Gecko","Llama","Badger","Koala","Walrus","Heron","Lynx"];
+const norm=s=>s.toLowerCase().replace(/[^a-z0-9]/g,"").replace(/s$/,"");
+const h53=(str,seed=0)=>{let h1=0xdeadbeef^seed,h2=0x41c6ce57^seed;for(let i=0;i<str.length;i++){const c=str.charCodeAt(i);h1=Math.imul(h1^c,2654435761);h2=Math.imul(h2^c,1597334677)}h1=Math.imul(h1^(h1>>>16),2246822507)^Math.imul(h2^(h2>>>13),3266489909);h2=Math.imul(h2^(h2>>>16),2246822507)^Math.imul(h1^(h1>>>13),3266489909);return(4294967296*(2097151&h2)+(h1>>>0)).toString(36)};
+const hashOf=(n,w)=>h53(code+":"+n+":"+norm(w));
+const rand=()=>Array.from({length:5},()=>pick("ABCDEFGHJKLMNPQRSTUVWXYZ23456789")).join("");
+
+let me,code="",G=null,R=null,P=[],S={},unsubs=[],rUnsubs=[],subN=-1,fin=false;
+let cur=null,drawing=false,color=COLORS[0],eraser=false;
+const gref=()=>doc(db,"dgames",code),pref=id=>doc(db,"dgames",code,"players",id||me);
+const rref=n=>doc(db,"dgames",code,"rounds",String(n));
+const isDrawer=()=>R&&R.drawer===me;
+const wk=()=>"sg-w-"+code+"-"+R.n,myWord=()=>{try{return localStorage.getItem(wk())||""}catch(e){return""}};
+const total=p=>sum(Object.values(p.solved||{}))+sum(Object.values(p.dpts||{}));
+const err=m=>$("jerr").textContent=m||"";
+const show=g=>{$("join").classList.toggle("hide",g);$("game").classList.toggle("hide",!g);$("bar").classList.toggle("hide",!g)};
+const cv=$("cv"),ctx=cv.getContext("2d");
+
+/* join / leave */
+async function enter(create){
+  err("");let c=$("jcode").value.trim().toUpperCase();
+  try{
+    if(create){c=rand();await setDoc(doc(db,"dgames",c),{hostUid:me,round:0,createdAt:Date.now()})}
+    else{if(!c)return err("Enter a game code.");if(!(await getDoc(doc(db,"dgames",c))).exists())return err("No game found with that code.")}
+    code=c;
+    if(!(await getDoc(pref())).exists())await setDoc(pref(),{alias:pick(ADJ)+" "+pick(ANI)+" "+(10+Math.floor(Math.random()*90)),joinedAt:Date.now(),solved:{},dpts:{}});
+    try{localStorage.setItem(LS,code)}catch(e){}
+    start();
+  }catch(e){err("Could not connect: "+(e.code||e.message))}
+}
+function start(){
+  stop();show(true);$("gcode").textContent=code;G=null;R=null;P=[];subN=-1;
+  unsubs.push(onSnapshot(gref(),s=>{
+    if(!s.exists()){leave();return}
+    G=s.data();if(G.round!==subN)subRound(G.round);ui();
+  },e=>err(e.code||e.message)));
+  unsubs.push(onSnapshot(collection(gref(),"players"),s=>{P=s.docs.map(d=>({id:d.id,...d.data()}));bonus();ui()}));
+}
+function subRound(n){
+  rUnsubs.forEach(u=>u());rUnsubs=[];R=null;S={};fin=false;subN=n;redraw();
+  if(n<1)return;
+  rUnsubs.push(onSnapshot(rref(n),s=>{R=s.data()||null;if(R&&isDrawer()&&R.status==="pick"&&!R.wordHash)pickWord();bonus();ui();redraw()}));
+  rUnsubs.push(onSnapshot(collection(rref(n),"strokes"),s=>{S={};s.docs.forEach(d=>S[d.id]=d.data());redraw()}));
+}
+function stop(){unsubs.forEach(u=>u());rUnsubs.forEach(u=>u());unsubs=[];rUnsubs=[]}
+function leave(){stop();code="";try{localStorage.removeItem(LS)}catch(e){}show(false)}
+
+/* rounds */
+async function startRound(){
+  const n=G.round+1,pool=P.filter(p=>p.id!==R?.drawer),d=pick(pool.length?pool:P);
+  if(!d)return;
+  try{await setDoc(rref(n),{n,drawer:d.id,level:$("level").value,status:"pick",createdAt:Date.now()});await updateDoc(gref(),{round:n})}
+  catch(e){alert("Could not start: "+(e.code||e.message))}
+}
+async function pickWord(reroll){
+  const w=pick(WORDS[R.level]);
+  try{localStorage.setItem(wk(),w)}catch(e){}
+  const pat=w.split("").map(c=>c===" "?"\u00a0\u00a0":"_").join(" ");
+  const u={wordHash:hashOf(R.n,w),pat,clearedAt:Date.now()};
+  if(!reroll){u.status="live";u.endsAt=Date.now()+CFG[R.level].t*1000}
+  try{await updateDoc(rref(R.n),u)}catch(e){alert("Could not set word: "+(e.code||e.message))}
+}
+async function finish(){try{await updateDoc(rref(R.n),{status:"done",word:myWord()})}catch(e){}}
+function bonus(){
+  if(!R||!isDrawer())return;
+  const c=P.filter(p=>p.id!==me&&p.solved?.[R.n]!==undefined).length*2,mine=P.find(p=>p.id===me);
+  if(mine&&c>0&&(mine.dpts?.[R.n]||0)!==c)updateDoc(pref(),{["dpts."+R.n]:c}).catch(()=>{});
+}
+async function guess(){
+  const g=$("gin").value;if(!g.trim()||!R||R.status!=="live"||isDrawer())return;
+  const left=R.endsAt-Date.now();if(left<=0)return;
+  if(h53(code+":"+R.n+":"+norm(g))===R.wordHash){
+    const pts=Math.max(1,Math.round(CFG[R.level].b*(0.4+0.6*left/(CFG[R.level].t*1000))));
+    $("gin").value="";
+    try{await updateDoc(pref(),{["solved."+R.n]:pts})}catch(e){alert("Could not save: "+(e.code||e.message))}
+  }else{$("gfb").textContent="“"+g.trim()+"” is not it. Try again!";$("gin").value="";$("gin").focus()}
+}
+
+/* UI */
+function ui(){
+  const host=G&&G.hostUid===me,live=R&&R.status==="live",drawer=isDrawer(),mine=P.find(p=>p.id===me);
+  const solved=live&&mine&&mine.solved?.[R.n]!==undefined;
+  $("hostbox").classList.toggle("hide",!host);
+  $("start").textContent=R?"Next round ▶":"Start round 1";
+  let m;
+  if(!R)m=host?"You are the host. Choose a difficulty and start round 1.":"Waiting for the host to start the first round…";
+  else if(R.status==="pick")m=drawer?"Picking your word…":"Someone is picking a word…";
+  else if(live)m=drawer?`You are drawing: <b>${esc(myWord())}</b>`:solved?`✓ Correct! +${mine.solved[R.n]} points`:"Someone is drawing. Type your guess!";
+  else m=`Round over. The answer was <b>${esc(R.word||"—")}</b>`;
+  $("msg").innerHTML=m+(R?` <span class="muted">· ${esc(R.level)} · round ${R.n}</span>`:"");
+  $("pat").textContent=live&&!drawer&&!solved?R.pat:"";
+  $("tools").classList.toggle("hide",!(live&&drawer));
+  $("gform").classList.toggle("hide",!(live&&!drawer&&!solved));
+  if(!(live&&!drawer))$("gfb").textContent="";
+  const max=Math.max(0,...P.map(total));
+  $("lb").innerHTML=[...P].sort((a,b)=>total(b)-total(a)).map(p=>{const t=total(p),ok=R&&p.solved?.[R.n]!==undefined;
+    return `<div class="pc ${p.id===me?"me":""} ${t===max&&max>0?"lead":""}"><div class="n">${t===max&&max>0?"👑 ":""}${esc(p.alias)}${p.id===me?" (you)":""}</div><div class="s">${t}</div><div class="muted">${ok?"✓ guessed":""}</div></div>`}).join("")||'<div class="muted">Waiting for players…</div>';
+}
+function tick(){
+  if(!R||R.status!=="live"){$("timer").textContent="";return}
+  const left=Math.max(0,Math.ceil((R.endsAt-Date.now())/1000));
+  $("timer").textContent=left+"s";
+  if(isDrawer()&&!fin){
+    const others=P.length-1,done=P.filter(p=>p.id!==me&&p.solved?.[R.n]!==undefined).length;
+    if(left<=0||(others>0&&done>=others)){fin=true;finish()}
+  }
+  if(left<=0)$("gform").classList.add("hide");
+}
+setInterval(tick,400);
+
+/* canvas */
+function drawS(s){
+  const p=s.pts;ctx.strokeStyle=s.color;ctx.lineWidth=s.w;ctx.lineCap=ctx.lineJoin="round";
+  ctx.beginPath();ctx.moveTo(p[0]*800,p[1]*600);
+  for(let i=2;i<p.length;i+=2)ctx.lineTo(p[i]*800,p[i+1]*600);
+  if(p.length===2)ctx.lineTo(p[0]*800+.1,p[1]*600);ctx.stroke();
+}
+function redraw(){
+  ctx.fillStyle="#fff";ctx.fillRect(0,0,800,600);const t0=R?.clearedAt||0;
+  Object.values(S).filter(s=>s.t>=t0).sort((a,b)=>a.t-b.t).forEach(drawS);
+  if(cur)drawS(cur);
+}
+const canDraw=()=>R&&R.status==="live"&&isDrawer()&&Date.now()<R.endsAt;
+function add(e){
+  const r=cv.getBoundingClientRect();
+  if(cur.pts.length<1500)cur.pts.push(+((e.clientX-r.left)/r.width).toFixed(3),+((e.clientY-r.top)/r.height).toFixed(3));
+  redraw();
+}
+cv.addEventListener("pointerdown",e=>{if(!canDraw())return;cv.setPointerCapture(e.pointerId);drawing=true;
+  cur={pts:[],color:eraser?"#ffffff":color,w:eraser?Math.max(+$("size").value,16):+$("size").value,t:Date.now()};add(e)});
+cv.addEventListener("pointermove",e=>{if(drawing)add(e)});
+const endDraw=()=>{
+  if(!drawing)return;drawing=false;const s=cur;cur=null;
+  const id=Math.random().toString(36).slice(2,10);S[id]=s;redraw();
+  setDoc(doc(db,"dgames",code,"rounds",String(R.n),"strokes",id),s).catch(()=>{});
+};
+cv.addEventListener("pointerup",endDraw);cv.addEventListener("pointercancel",endDraw);
+
+/* wiring */
+$("sws").innerHTML=COLORS.map((c,i)=>`<button class="sw ${i?"":"on"}" data-c="${c}" style="background:${c}" aria-label="Colour ${i+1}"></button>`).join("");
+$("sws").onclick=e=>{const b=e.target.closest("button");if(!b)return;color=b.dataset.c;eraser=false;$("eraser").style.borderColor="";document.querySelectorAll(".sw").forEach(x=>x.classList.toggle("on",x===b))};
+$("eraser").onclick=()=>{eraser=!eraser;$("eraser").style.borderColor=eraser?"var(--accent)":""};
+$("clearBtn").onclick=()=>{if(R)updateDoc(rref(R.n),{clearedAt:Date.now()}).catch(()=>{})};
+$("reroll").onclick=()=>{if(!R||P.some(p=>p.solved?.[R.n]!==undefined))return alert("Someone already guessed it, so the word can no longer change.");pickWord(true)};
+$("gbtn").onclick=guess;
+$("gin").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();guess()}});
+$("joinBtn").onclick=()=>enter(false);$("createBtn").onclick=()=>enter(true);
+$("jcode").addEventListener("keydown",e=>{if(e.key==="Enter")enter(false)});
+$("start").onclick=()=>{if(R&&R.status!=="done"&&!confirm("The current round is still going. Skip it?"))return;startRound()};
+$("leave").onclick=()=>{if(confirm("Leave this game? You can rejoin with the code."))leave()};
+$("copy").onclick=async()=>{const u=location.origin+location.pathname+"?game="+code;
+  try{await navigator.clipboard.writeText(u);$("copy").textContent="Copied ✓"}catch(e){prompt("Invite link",u)}
+  setTimeout(()=>$("copy").textContent="Copy invite link",1500)};
+
+(async()=>{
+  show(false);
+  let saved="";try{saved=localStorage.getItem(LS)||""}catch(e){}
+  const q=(new URLSearchParams(location.search).get("game")||"").toUpperCase();
+  $("jcode").value=q||saved;
+  try{me=(await signInAnonymously(auth)).user.uid}
+  catch(e){err("Sign-in failed ("+(e.code||e.message)+"). Enable Anonymous sign-in in Firebase Authentication.");return}
+  if(saved&&(!q||q===saved))enter(false);
+})();
+</script>
+</body>
+</html>
