@@ -3,11 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Flip 7 Score Sheet</title>
+<title>Flip 7 Multiplayer</title>
 <style>
 :root{--bg:#f4f5f9;--card:#fff;--text:#1c2030;--muted:#6b7288;--line:#e2e5ee;--accent:#e8590c;--accent2:#2f9e44;--danger:#e03131;--gold:#f59f00;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#12141c;--card:#1c2030;--text:#eceef6;--muted:#9aa2ba;--line:#2e3448;--accent:#ff8a3d;--accent2:#51cf66;--danger:#ff6b6b;--gold:#ffd43b;color-scheme:dark}}
-:root[data-theme="dark"]{--bg:#12141c;--card:#1c2030;--text:#eceef6;--muted:#9aa2ba;--line:#2e3448;--accent:#ff8a3d;--accent2:#51cf66;--danger:#ff6b6b;--gold:#ffd43b;color-scheme:dark}
+@media (prefers-color-scheme:dark){:root{--bg:#12141c;--card:#1c2030;--text:#eceef6;--muted:#9aa2ba;--line:#2e3448;--accent:#ff8a3d;--accent2:#51cf66;--danger:#ff6b6b;--gold:#ffd43b;color-scheme:dark}}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
 .wrap{max-width:980px;margin:0 auto;padding:16px}
@@ -21,27 +20,25 @@ input:focus,select:focus{outline:2px solid var(--accent);border-color:transparen
 button{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--bg);color:var(--text);border-radius:10px;padding:9px 13px}
 button:hover{border-color:var(--accent)}
 .pri{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600}
-.dng{color:var(--danger)}
-.sm{padding:5px 9px;font-size:.85rem}
-.chip{display:inline-flex;align-items:center;gap:6px;background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:4px 6px 4px 12px}
-.chip button{border:0;padding:2px 7px;background:none;color:var(--muted)}
+.dng{color:var(--danger)}.sm{padding:5px 9px;font-size:.85rem}
 .muted{color:var(--muted);font-size:.9rem}
+.code{font-size:1.3rem;font-weight:800;letter-spacing:.15em;color:var(--accent)}
+.err{color:var(--danger);margin-top:8px;min-height:1.2em}
 .lb{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
 .pc{border:1px solid var(--line);border-radius:12px;padding:12px;background:var(--bg)}
 .pc.lead{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold)}
+.pc.me{outline:2px solid var(--accent)}
 .pc .n{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pc .s{font-size:2rem;font-weight:800;line-height:1.1}
 .bar{height:6px;background:var(--line);border-radius:4px;margin-top:8px;overflow:hidden}
 .bar i{display:block;height:100%;background:var(--accent2)}
-.pe{border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px;background:var(--bg)}
+.pe{border:1px solid var(--line);border-radius:12px;padding:12px;background:var(--bg)}
 .pe.bust{border-color:var(--danger);box-shadow:0 0 0 1px var(--danger)}
-.pe .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
-.pe .tot{font-size:1.8rem;font-weight:800;line-height:1}
-.pe.bust .tot{color:var(--danger)}
+.top{display:flex;justify-content:space-between;align-items:baseline}
+.tot{font-size:1.8rem;font-weight:800;line-height:1}.pe.bust .tot{color:var(--danger)}
 .tape{display:flex;flex-wrap:wrap;gap:5px;min-height:30px;margin:8px 0}
 .tape button{padding:3px 9px;font-size:.9rem;border-radius:999px;background:var(--card)}
-.tape .mod{border-color:var(--accent);color:var(--accent)}
-.tape .dup{border-color:var(--danger);color:var(--danger)}
+.tape .mod{border-color:var(--accent);color:var(--accent)}.tape .dup{border-color:var(--danger);color:var(--danger)}
 .pad{display:grid;grid-template-columns:repeat(auto-fill,minmax(40px,1fr));gap:5px;margin-bottom:6px}
 .pad button{padding:8px 0;font-weight:700;background:var(--card)}
 .tg.on{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700}
@@ -52,179 +49,241 @@ button:hover{border-color:var(--accent)}
 table{border-collapse:collapse;width:100%;min-width:420px}
 th,td{padding:7px 8px;text-align:center;border-bottom:1px solid var(--line)}
 th{color:var(--muted);font-size:.85rem;font-weight:600}
-th.rs{cursor:pointer;text-decoration:underline dotted}
+th.rs,td.rs{cursor:pointer}
 td input{width:70px;text-align:center;padding:6px}
 tfoot td{font-weight:800;font-size:1.1rem;border-top:2px solid var(--line);border-bottom:0}
 .empty{color:var(--muted);text-align:center;padding:18px}
+.hide{display:none}
 </style>
 </head>
 <body>
 <div class="wrap">
 <header>
-  <h1>Flip <span>7</span> Score Sheet</h1>
-  <div class="row">
-    <label class="muted">Target <input id="target" type="number" min="1" style="width:80px"></label>
-    <label class="muted">Sort <select id="sort"></select></label>
-    <button id="newGame" class="sm">New game (keep players)</button>
-    <button id="reset" class="sm dng">Reset all</button>
+  <h1>Flip <span>7</span> Multiplayer</h1>
+  <div id="bar" class="row hide">
+    <span class="muted">Game</span><span id="gcode" class="code"></span>
+    <button id="copy" class="sm">Copy invite link</button>
+    <button id="leave" class="sm dng">Leave</button>
   </div>
 </header>
-<div id="banner"></div>
 
-<section class="card">
-  <h2>1 · Players</h2>
-  <form id="addForm" class="row" onsubmit="return false">
-    <input id="pname" placeholder="Add player name…" maxlength="24" style="flex:1;min-width:160px" autocomplete="off">
-    <button id="addBtn" class="pri" type="button">Add player</button>
-  </form>
-  <div id="chips" class="row" style="margin-top:10px"></div>
-</section>
-
-<section class="card">
-  <h2>2 · Round calculator <span id="rn" class="muted"></span></h2>
-  <p class="muted" style="margin:0 0 10px">Tap or type each number card as it is played (tap a card in the tape to remove it). ×2 doubles the number cards only, +2…+10 are flat bonuses, and Flip 7 adds +15. Bust locks the round at 0.</p>
-  <div id="entry"></div>
-  <div class="row" style="margin-top:10px">
-    <button id="save" class="pri">Save round</button>
-    <button id="clear" class="sm">Clear all inputs</button>
+<section id="join" class="card hide">
+  <h2>Join or start a game</h2>
+  <div class="row">
+    <input id="jname" placeholder="Your name" maxlength="24" style="flex:1;min-width:150px" autocomplete="off">
+    <input id="jcode" placeholder="Game code" maxlength="5" style="width:130px;text-transform:uppercase" autocomplete="off">
+    <button id="joinBtn" class="pri">Join game</button>
+    <button id="createBtn">Create new game</button>
   </div>
+  <div id="jerr" class="err"></div>
+  <p class="muted">Create a game to become the host, then share the code. Everyone logs their own scores from their own device.</p>
 </section>
 
-<section class="card">
-  <h2>3 · Scoreboard</h2>
-  <div id="lb" class="lb"></div>
-</section>
+<div id="game" class="hide">
+  <div id="banner"></div>
+  <section class="card">
+    <div class="row" style="justify-content:space-between;margin-bottom:8px">
+      <h2 style="margin:0">Your round <span id="rn" class="muted"></span></h2>
+      <span id="note" class="muted"></span>
+    </div>
+    <div id="calc"></div>
+    <div class="row" style="margin-top:10px"><button id="save" class="pri">Save my score</button></div>
+  </section>
 
-<section class="card">
-  <div class="row" style="justify-content:space-between;margin-bottom:6px">
-    <h2 style="margin:0">Round-by-round <span class="muted">(edit any score · tap a round number to sort by it)</span></h2>
-    <button id="addRound" class="sm">+ Add blank round</button>
-  </div>
-  <div class="scroll"><table id="tbl"></table></div>
-</section>
+  <section class="card">
+    <div class="row" style="justify-content:space-between;margin-bottom:8px">
+      <h2 style="margin:0">Scoreboard</h2>
+      <div class="row">
+        <label class="muted">Sort <select id="sort"></select></label>
+        <span id="host" class="row hide">
+          <label class="muted">Target <input id="target" type="number" min="1" style="width:80px"></label>
+          <button id="next" class="sm pri">Next round ▶</button>
+        </span>
+      </div>
+    </div>
+    <div id="lb" class="lb"></div>
+  </section>
+
+  <section class="card">
+    <h2>Round-by-round <span class="muted">(tap a round number to sort by it<span id="hh"></span>)</span></h2>
+    <div class="scroll"><table id="tbl"></table></div>
+  </section>
+</div>
 </div>
 
-<script>
-const KEY="flip7-scoresheet-v1";
-let S={players:[],rounds:[],target:200,sort:"manual"};
-let draft={};
-const $=id=>document.getElementById(id);
-const uid=()=>Math.random().toString(36).slice(2,9);
-const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-function load(){try{const r=localStorage.getItem(KEY);if(r)S=Object.assign(S,JSON.parse(r))}catch(e){}}
-function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
-const total=pid=>S.rounds.reduce((a,r)=>a+(Number(r.scores[pid])||0),0);
-const D=pid=>draft[pid]||(draft[pid]={c:[],m:[],x:0,f:0,b:0});
-const sum=a=>a.reduce((x,y)=>x+y,0);
-const calc=d=>d.b?0:sum(d.c)*(d.x?2:1)+sum(d.m)+(d.f?15:0);
+<script type="module">
+import {initializeApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import {getAuth,signInAnonymously} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import {getFirestore,doc,getDoc,setDoc,updateDoc,deleteDoc,onSnapshot,collection} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
+const app=initializeApp({
+  apiKey:"AIzaSyDP6Vg2s5uPCrVV4vOK-PtogSdX0Dy21hw",
+  authDomain:"flip-7-game.firebaseapp.com",
+  projectId:"flip-7-game",
+  storageBucket:"flip-7-game.firebasestorage.app",
+  messagingSenderId:"1073060908266",
+  appId:"1:1073060908266:web:4b5958cebc947efc575b93"
+});
+const auth=getAuth(app),db=getFirestore(app);
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const sum=a=>a.reduce((x,y)=>x+y,0);
+const LS="flip7-mp";
+let me=null,code="",G=null,P=[],unsubs=[],sort="manual",lastRound=null;
+let dr={c:[],m:[],x:0,f:0,b:0};
+const calc=d=>d.b?0:sum(d.c)*(d.x?2:1)+sum(d.m)+(d.f?15:0);
+const total=p=>sum(Object.values(p.rounds||{}).map(Number));
+const isHost=()=>G&&G.hostUid===me;
+const gref=()=>doc(db,"games",code);
+const pref=id=>doc(db,"games",code,"players",id||me);
+const show=(a,b)=>{$("join").classList.toggle("hide",a!=="join");$("game").classList.toggle("hide",a!=="game");$("bar").classList.toggle("hide",a!=="game")};
+const err=m=>$("jerr").textContent=m||"";
+const rand=()=>Array.from({length:5},()=>"ABCDEFGHJKLMNPQRSTUVWXYZ23456789"[Math.floor(Math.random()*32)]).join("");
+
+async function enter(c,name,create){
+  err("");
+  c=c.trim().toUpperCase();name=name.trim();
+  if(!name){err("Enter your name.");return false}
+  try{
+    if(create){
+      c=rand();
+      await setDoc(doc(db,"games",c),{hostUid:me,target:200,round:1,createdAt:Date.now()});
+    }else{
+      if(!c){err("Enter a game code.");return false}
+      const s=await getDoc(doc(db,"games",c));
+      if(!s.exists()){err("No game found with that code.");return false}
+    }
+    code=c;
+    await setDoc(pref(),{name,rounds:{},joinedAt:Date.now()},{merge:true});
+    try{localStorage.setItem(LS,JSON.stringify({code,name}))}catch(e){}
+    start();return true;
+  }catch(e){err("Could not connect: "+(e.code||e.message));return false}
+}
+function start(){
+  stop();show("game");
+  $("gcode").textContent=code;G=null;P=[];lastRound=null;dr={c:[],m:[],x:0,f:0,b:0};
+  unsubs.push(onSnapshot(gref(),s=>{
+    if(!s.exists()){leave();err("That game was deleted.");return}
+    G=s.data();
+    if(lastRound!==G.round){lastRound=G.round;dr={c:[],m:[],x:0,f:0,b:0};renderCalc()}
+    $("host").classList.toggle("hide",!isHost());$("hh").textContent=isHost()?"; you can edit any score as host":"";
+    if(document.activeElement!==$("target"))$("target").value=G.target;
+    renderAll();
+  },e=>err(e.code||e.message)));
+  unsubs.push(onSnapshot(collection(gref(),"players"),s=>{
+    P=s.docs.map(d=>({id:d.id,...d.data()}));renderAll();
+  }));
+}
+function stop(){unsubs.forEach(u=>u());unsubs=[]}
+function leave(){
+  stop();code="";G=null;P=[];
+  try{localStorage.removeItem(LS)}catch(e){}
+  show("join");
+}
+
+/* sorting */
 function order(){
-  const a=[...S.players],nm=(x,y)=>x.name.localeCompare(y.name,undefined,{sensitivity:"base"});
-  if(S.sort==="name")a.sort(nm);
-  else if(S.sort==="total")a.sort((x,y)=>total(y.id)-total(x.id)||nm(x,y));
-  else if(S.sort==="live")a.sort((x,y)=>calc(D(y.id))-calc(D(x.id))||nm(x,y));
-  else if(S.sort.startsWith("r:")){const r=S.rounds.find(q=>q.id===S.sort.slice(2));if(r)a.sort((x,y)=>(r.scores[y.id]||0)-(r.scores[x.id]||0)||nm(x,y))}
+  const a=[...P],nm=(x,y)=>x.name.localeCompare(y.name,undefined,{sensitivity:"base"});
+  if(sort==="name")a.sort(nm);
+  else if(sort==="total")a.sort((x,y)=>total(y)-total(x)||nm(x,y));
+  else if(sort.startsWith("r:")){const n=sort.slice(2);a.sort((x,y)=>(Number(y.rounds?.[n])||0)-(Number(x.rounds?.[n])||0)||nm(x,y))}
+  else a.sort((x,y)=>(x.joinedAt||0)-(y.joinedAt||0));
   return a;
 }
 function renderSort(){
-  const idx=S.rounds.findIndex(r=>"r:"+r.id===S.sort);
-  if(S.sort.startsWith("r:")&&idx<0)S.sort="manual";
-  $("sort").innerHTML=[["manual","Join order"],["name","Name A–Z"],["total","Total score (high → low)"],["live","This round (high → low)"]]
-    .concat(idx>=0?[[S.sort,"Round "+(idx+1)+" (high → low)"]]:[])
-    .map(([v,l])=>`<option value="${v}" ${S.sort===v?"selected":""}>${l}</option>`).join("");
+  const o=[["manual","Join order"],["name","Name A–Z"],["total","Total (high → low)"]];
+  if(sort.startsWith("r:"))o.push([sort,"Round "+sort.slice(2)+" (high → low)"]);
+  $("sort").innerHTML=o.map(([v,l])=>`<option value="${v}" ${sort===v?"selected":""}>${l}</option>`).join("");
 }
-function addPlayer(){
-  const v=$("pname").value.trim();if(!v)return;
-  S.players.push({id:uid(),name:v});$("pname").value="";save();render();$("pname").focus();
-}
-function removePlayer(id){
-  if(!confirm("Remove this player and all of their scores?"))return;
-  S.players=S.players.filter(p=>p.id!==id);S.rounds.forEach(r=>delete r.scores[id]);delete draft[id];save();render();
-}
-function renamePlayer(id){
-  const p=S.players.find(x=>x.id===id);const n=prompt("Rename player",p.name);
-  if(n&&n.trim()){p.name=n.trim();save();render()}
-}
-function saveRound(){
-  if(!S.players.length){alert("Add at least one player first.");return}
-  const scores={};
-  S.players.forEach(p=>scores[p.id]=calc(D(p.id)));
-  S.rounds.push({id:uid(),scores});draft={};save();render();
-}
-/* calculator actions */
-function addCard(pid,v,focus){
-  const n=parseInt(v,10);if(isNaN(n)||n<0)return;
-  D(pid).c.push(n);renderEntry(focus?pid:null);renderBoard();
-}
-function rmCard(pid,i){D(pid).c.splice(i,1);renderEntry();renderBoard()}
-function addMod(pid,n){D(pid).m.push(n);renderEntry();renderBoard()}
-function rmMod(pid,i){D(pid).m.splice(i,1);renderEntry();renderBoard()}
-function tog(pid,k){const d=D(pid);d[k]=d[k]?0:1;renderEntry();renderBoard()}
-function undo(pid){const d=D(pid);if(d.m.length&&!d.c.length)d.m.pop();else d.c.pop();renderEntry();renderBoard()}
-function clr(pid){delete draft[pid];renderEntry();renderBoard()}
 
-function renderChips(){
-  $("chips").innerHTML=S.players.length?S.players.map(p=>`<span class="chip"><span ondblclick="renamePlayer('${p.id}')" title="Double-click to rename">${esc(p.name)}</span><button title="Rename" onclick="renamePlayer('${p.id}')">✎</button><button title="Remove" onclick="removePlayer('${p.id}')">✕</button></span>`).join(""):'<span class="muted">No players yet — add everyone at the table.</span>';
+/* calculator (this player only) */
+function renderCalc(focus){
+  const d=dr,hasDup=new Set(d.c).size!==d.c.length,empty=!d.c.length&&!d.m.length;
+  const cards=d.c.map((n,i)=>`<button class="${d.c.indexOf(n)!==i?"dup":""}" title="Remove" onclick="rmCard(${i})">${n}${d.c.indexOf(n)!==i?" ⚠":""}</button>`).join("");
+  const mods=d.m.map((n,i)=>`<button class="mod" title="Remove" onclick="rmMod(${i})">+${n}</button>`).join("");
+  $("rn").textContent="— Round "+(G?G.round:1);
+  $("calc").innerHTML=`<div class="pe ${d.b?"bust":""}">
+    <div class="top"><span class="muted">Tap a card in the tape to remove it</span><span class="tot">${calc(d)}</span></div>
+    <div class="tape">${d.b?'<span class="muted dng">BUST — scores 0</span>':empty?'<span class="muted">No cards yet</span>':""}${cards}${d.x?'<button class="mod" onclick="tog(\'x\')">×2</button>':""}${mods}${d.f?'<button class="mod" onclick="tog(\'f\')">Flip 7 +15</button>':""}</div>
+    ${hasDup&&!d.b?'<div class="muted dng" style="margin-bottom:6px">Duplicate number — did you bust?</div>':""}
+    <div class="pad">${Array.from({length:13},(_,n)=>`<button onclick="addCard(${n})">${n}</button>`).join("")}</div>
+    <div class="row ctl">
+      <input id="cin" type="number" inputmode="numeric" min="0" placeholder="Card #">
+      <button class="sm pri" onclick="addCard($('cin').value,true)">Add</button>
+      <button class="sm tg ${d.x?"on":""}" onclick="tog('x')">×2</button>
+      ${[2,4,6,8,10].map(n=>`<button class="sm" onclick="addMod(${n})">+${n}</button>`).join("")}
+      <button class="sm tg ${d.f?"on":""}" onclick="tog('f')">Flip 7 +15</button>
+      <button class="sm tg bu ${d.b?"on":""}" onclick="tog('b')">${d.b?"Busted ✓":"Bust"}</button>
+      <button class="sm" onclick="undo()">Undo</button>
+      <button class="sm" onclick="clr()">Clear</button>
+    </div></div>`;
+  $("cin").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();addCard($("cin").value,true)}});
+  if(focus)$("cin").focus();
 }
-function renderEntry(focusPid){
-  $("rn").textContent="— Round "+(S.rounds.length+1);
-  $("entry").innerHTML=S.players.length?order().map(p=>{
-    const d=D(p.id),seen={};
-    const cards=d.c.map((n,i)=>{const dup=d.c.indexOf(n)!==i;return `<button class="${dup?"dup":""}" title="Remove" onclick="rmCard('${p.id}',${i})">${n}${dup?" ⚠":""}</button>`}).join("");
-    const mods=d.m.map((n,i)=>`<button class="mod" title="Remove" onclick="rmMod('${p.id}',${i})">+${n}</button>`).join("");
-    const hasDup=new Set(d.c).size!==d.c.length;
-    const empty=!d.c.length&&!d.m.length;
-    const pad=Array.from({length:13},(_,n)=>`<button onclick="addCard('${p.id}',${n})">${n}</button>`).join("");
-    return `<div class="pe ${d.b?"bust":""}">
-      <div class="top"><strong>${esc(p.name)}</strong><span class="tot">${calc(d)}</span></div>
-      <div class="tape">${d.b?'<span class="muted dng">BUST — scores 0</span>':empty?'<span class="muted">No cards yet</span>':""}${cards}${d.x?'<button class="mod" onclick="tog(\''+p.id+'\',\'x\')">×2</button>':""}${mods}${d.f?'<button class="mod" onclick="tog(\''+p.id+'\',\'f\')">Flip 7 +15</button>':""}</div>
-      ${hasDup&&!d.b?'<div class="muted dng" style="margin-bottom:6px">Duplicate number — did they bust?</div>':""}
-      <div class="pad">${pad}</div>
-      <div class="row ctl">
-        <input type="number" inputmode="numeric" min="0" placeholder="Card #" data-p="${p.id}">
-        <button class="sm pri" onclick="addCard('${p.id}',this.previousElementSibling.value,true)">Add</button>
-        <button class="sm tg ${d.x?"on":""}" onclick="tog('${p.id}','x')">×2</button>
-        ${[2,4,6,8,10].map(n=>`<button class="sm" onclick="addMod('${p.id}',${n})">+${n}</button>`).join("")}
-        <button class="sm tg ${d.f?"on":""}" onclick="tog('${p.id}','f')">Flip 7 +15</button>
-        <button class="sm tg bu ${d.b?"on":""}" onclick="tog('${p.id}','b')">${d.b?"Busted ✓":"Bust"}</button>
-        <button class="sm" onclick="undo('${p.id}')">Undo</button>
-        <button class="sm" onclick="clr('${p.id}')">Clear</button>
-      </div></div>`}).join(""):'<div class="empty">Add players above to start scoring.</div>';
-  document.querySelectorAll("#entry input").forEach(inp=>{
-    inp.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();addCard(inp.dataset.p,inp.value,true)}});
-  });
-  if(focusPid){const f=document.querySelector(`#entry input[data-p="${focusPid}"]`);if(f)f.focus()}
+const upd=f=>{renderCalc(f)};
+window.addCard=(v,f)=>{const n=parseInt(v,10);if(isNaN(n)||n<0)return;dr.c.push(n);upd(f)};
+window.rmCard=i=>{dr.c.splice(i,1);upd()};
+window.addMod=n=>{dr.m.push(n);upd()};
+window.rmMod=i=>{dr.m.splice(i,1);upd()};
+window.tog=k=>{dr[k]=dr[k]?0:1;upd()};
+window.undo=()=>{if(dr.m.length&&!dr.c.length)dr.m.pop();else dr.c.pop();upd()};
+window.clr=()=>{dr={c:[],m:[],x:0,f:0,b:0};upd()};
+window.sortRound=n=>{sort=sort==="r:"+n?"manual":"r:"+n;renderAll()};
+window.editCell=async(id,n,v)=>{const x=parseInt(v,10);try{await updateDoc(pref(id),{["rounds."+n]:isNaN(x)?0:x})}catch(e){alert("Could not save: "+(e.code||e.message))}};
+window.kick=async id=>{if(confirm("Remove this player from the game?"))try{await deleteDoc(pref(id))}catch(e){alert(e.code||e.message)}};
+
+async function saveMine(){
+  if(!G)return;
+  try{await updateDoc(pref(),{["rounds."+G.round]:calc(dr)});
+    dr={c:[],m:[],x:0,f:0,b:0};renderCalc()}
+  catch(e){alert("Could not save: "+(e.code||e.message))}
 }
+
+/* boards */
+function renderAll(){renderSort();renderBoard();renderTable()}
 function renderBoard(){
-  const max=Math.max(0,...S.players.map(p=>total(p.id)));
-  const sorted=S.sort==="name"?order():[...S.players].sort((a,b)=>total(b.id)-total(a.id));
-  $("lb").innerHTML=sorted.length?sorted.map(p=>{const t=total(p.id),lv=calc(D(p.id));return `<div class="pc ${t===max&&max>0?"lead":""}"><div class="n">${t===max&&max>0?"👑 ":""}${esc(p.name)}</div><div class="s">${t}</div><div class="bar"><i style="width:${Math.min(100,t/S.target*100)}%"></i></div><div class="muted">${Math.max(0,S.target-t)} to go${lv?` · <b>+${lv}</b> live`:""}</div></div>`}).join(""):'<div class="empty" style="grid-column:1/-1">Scores will appear here.</div>';
-  const win=[...S.players].sort((a,b)=>total(b.id)-total(a.id)).filter(p=>total(p.id)>=S.target);
-  $("banner").innerHTML=win.length?`<div class="banner">🏆 ${esc(win[0].name)} wins with ${total(win[0].id)} points! (Target ${S.target})</div>`:"";
+  if(!G)return;
+  const ps=order(),max=Math.max(0,...P.map(total)),r=G.round;
+  const mine=P.find(p=>p.id===me),done=mine&&mine.rounds&&mine.rounds[r]!==undefined;
+  $("note").textContent=done?"✓ Saved for this round: "+mine.rounds[r]+" (save again to overwrite)":"Not saved yet this round";
+  $("lb").innerHTML=ps.length?ps.map(p=>{const t=total(p),sv=p.rounds&&p.rounds[r]!==undefined;
+    return `<div class="pc ${t===max&&max>0?"lead":""} ${p.id===me?"me":""}"><div class="n">${t===max&&max>0?"👑 ":""}${esc(p.name)}${p.id===G.hostUid?" ★":""}</div><div class="s">${t}</div><div class="bar"><i style="width:${Math.min(100,t/G.target*100)}%"></i></div><div class="muted">${Math.max(0,G.target-t)} to go · ${sv?"✓ in":"…"}${isHost()&&p.id!==me?` <button class="sm dng" onclick="kick('${p.id}')">✕</button>`:""}</div></div>`}).join(""):'<div class="empty" style="grid-column:1/-1">Waiting for players…</div>';
+  const w=[...P].sort((a,b)=>total(b)-total(a))[0];
+  $("banner").innerHTML=w&&total(w)>=G.target?`<div class="banner">🏆 ${esc(w.name)} wins with ${total(w)} points! (Target ${G.target})</div>`:"";
 }
 function renderTable(){
-  if(!S.players.length){$("tbl").innerHTML='<tbody><tr><td class="empty">No players yet.</td></tr></tbody>';return}
-  const ps=order();
-  const head=`<thead><tr><th>Round</th>${ps.map(p=>`<th>${esc(p.name)}</th>`).join("")}<th></th></tr></thead>`;
-  const body=S.rounds.length?S.rounds.map((r,i)=>`<tr><td class="rs" onclick="sortRound('${r.id}')" title="Sort players by this round"><strong>${i+1}${S.sort==="r:"+r.id?" ↓":""}</strong></td>${ps.map(p=>`<td><input type="number" inputmode="numeric" value="${r.scores[p.id]??0}" onchange="editCell('${r.id}','${p.id}',this.value)"></td>`).join("")}<td><button class="sm dng" onclick="delRound('${r.id}')">Delete</button></td></tr>`).join(""):`<tr><td colspan="${ps.length+2}" class="empty">No rounds yet — save your first round above.</td></tr>`;
-  const foot=`<tfoot><tr><td>Total</td>${ps.map(p=>`<td>${total(p.id)}</td>`).join("")}<td></td></tr></tfoot>`;
-  $("tbl").innerHTML=head+`<tbody>${body}</tbody>`+foot;
+  if(!G||!P.length){$("tbl").innerHTML='<tbody><tr><td class="empty">No players yet.</td></tr></tbody>';return}
+  const ps=order(),h=isHost();
+  const head=`<thead><tr><th>Round</th>${ps.map(p=>`<th>${esc(p.name)}</th>`).join("")}</tr></thead>`;
+  let body="";
+  for(let n=1;n<=G.round;n++)body+=`<tr><td class="rs" onclick="sortRound(${n})"><strong>${n}${sort==="r:"+n?" ↓":""}</strong></td>${ps.map(p=>{const v=p.rounds?.[n];return `<td>${h?`<input type="number" inputmode="numeric" value="${v??""}" placeholder="–" onchange="editCell('${p.id}',${n},this.value)">`:(v??"–")}</td>`}).join("")}</tr>`;
+  $("tbl").innerHTML=head+`<tbody>${body}</tbody><tfoot><tr><td>Total</td>${ps.map(p=>`<td>${total(p)}</td>`).join("")}</tr></tfoot>`;
 }
-function sortRound(id){S.sort=S.sort==="r:"+id?"manual":"r:"+id;save();render()}
-function editCell(rid,pid,v){const r=S.rounds.find(x=>x.id===rid);const n=parseInt(v,10);r.scores[pid]=isNaN(n)?0:n;save();renderBoard();renderTable()}
-function delRound(id){if(!confirm("Delete this round?"))return;S.rounds=S.rounds.filter(r=>r.id!==id);save();render()}
-function render(){$("target").value=S.target;renderSort();renderChips();renderEntry();renderBoard();renderTable()}
 
-$("addBtn").onclick=addPlayer;
-$("pname").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();addPlayer()}});
-$("save").onclick=saveRound;
-$("clear").onclick=()=>{draft={};renderEntry();renderBoard()};
-$("sort").onchange=e=>{S.sort=e.target.value;save();render()};
-$("addRound").onclick=()=>{if(!S.players.length)return;const s={};S.players.forEach(p=>s[p.id]=0);S.rounds.push({id:uid(),scores:s});save();render()};
-$("target").onchange=e=>{S.target=Math.max(1,parseInt(e.target.value,10)||200);save();render()};
-$("newGame").onclick=()=>{if(confirm("Clear all rounds but keep players?")){S.rounds=[];draft={};save();render()}};
-$("reset").onclick=()=>{if(confirm("Remove all players and scores?")){S={players:[],rounds:[],target:200,sort:"manual"};draft={};save();render()}};
-load();render();
+/* wiring */
+$("joinBtn").onclick=()=>enter($("jcode").value,$("jname").value,false);
+$("createBtn").onclick=()=>enter("",$("jname").value,true);
+$("save").onclick=saveMine;
+$("sort").onchange=e=>{sort=e.target.value;renderAll()};
+$("leave").onclick=()=>{if(confirm("Leave this game? You can rejoin with the code."))leave()};
+$("copy").onclick=async()=>{
+  const u=location.origin+location.pathname+"?game="+code;
+  try{await navigator.clipboard.writeText(u);$("copy").textContent="Copied ✓"}catch(e){prompt("Invite link",u)}
+  setTimeout(()=>$("copy").textContent="Copy invite link",1500);
+};
+$("next").onclick=async()=>{if(confirm("Start round "+(G.round+1)+" for everyone?"))try{await updateDoc(gref(),{round:G.round+1})}catch(e){alert(e.code||e.message)}};
+$("target").onchange=async e=>{try{await updateDoc(gref(),{target:Math.max(1,parseInt(e.target.value,10)||200)})}catch(x){alert(x.code||x.message)}};
+for(const id of["jname","jcode"])$(id).addEventListener("keydown",e=>{if(e.key==="Enter")$("joinBtn").click()});
+
+(async()=>{
+  show("join");
+  let saved={};try{saved=JSON.parse(localStorage.getItem(LS)||"{}")}catch(e){}
+  const q=new URLSearchParams(location.search).get("game");
+  $("jname").value=saved.name||"";$("jcode").value=(q||saved.code||"").toUpperCase();
+  try{me=(await signInAnonymously(auth)).user.uid}
+  catch(e){err("Sign-in failed ("+(e.code||e.message)+"). Enable Anonymous sign-in in Firebase Authentication.");return}
+  if(saved.code&&saved.name&&(!q||q.toUpperCase()===saved.code))await enter(saved.code,saved.name,false);
+})();
 </script>
 </body>
 </html>
